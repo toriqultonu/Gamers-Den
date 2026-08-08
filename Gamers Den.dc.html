@@ -1,0 +1,2615 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="stylesheet" href="_ds/modernist-c01917a2-c1c0-4d2a-b154-35ca4c6c0308/styles.css">
+<script src="_ds/modernist-c01917a2-c1c0-4d2a-b154-35ca4c6c0308/_ds_bundle.js"></script>
+<style>
+body { margin: 0; background: #dcdada; }
+a { color: var(--color-accent); text-decoration: none; }
+a:hover { color: var(--color-accent-700); }
+@keyframes gdpulse { 0%,100% { opacity: 1 } 50% { opacity: .2 } }
+.btn { justify-content: center !important; text-align: center !important; }
+.gd-dark {
+  --color-bg: #171514; --color-surface: #211f1e; --color-card: #2a2725;
+  --color-text: #f3f2f2; --color-divider: #3c3835;
+  --color-neutral-100: #2a2725; --color-neutral-200: #211f1e; --color-neutral-300: #343130; --color-neutral-400: #57524e;
+  --color-neutral-700: #b5b0ab; --color-neutral-800: #d6d2ce; --color-neutral-900: #f3f2f2;
+  --color-accent-100: #42150e; --color-accent-700: #ff7a5c; --color-accent-800: #ff9c82;
+  --color-accent-2-100: #42150e; --color-accent-2-800: #ff9c82;
+}
+.gd-dark .input { background: #211f1e; color: var(--color-text); }
+.gd-dark .btn-secondary, .gd-dark .btn-ghost:not(.btn-primary) { background: transparent; }
+</style>
+</helmet>
+
+<section style="padding: 56px; display: flex; flex-direction: column; gap: 64px; font-family: var(--font-body); color: var(--color-text)">
+
+  <div id="1a" style="display: flex; flex-direction: column; gap: 16px">
+    <div style="display: flex; align-items: center; gap: 12px">
+      <span style="background: var(--color-accent); color: #fff; font-family: var(--font-heading); font-weight: 800; font-size: 12px; letter-spacing: .1em; padding: 4px 9px">1A</span>
+      <span style="font-family: var(--font-heading); font-weight: 800; font-size: 15px; letter-spacing: .08em; text-transform: uppercase">Front Desk — Web Application</span>
+      <span style="font-size: 12px; opacity: .55">1440 × 900 · clickable · sign in as Admin, Manager or Cashier</span>
+    </div>
+
+    <div class="{{ themeClass }}" style="{{ appStyle }}">
+
+      <div style="width: 218px; flex: none; border-right: 2px solid var(--color-divider); background: var(--color-surface); display: flex; flex-direction: column">
+        <div style="padding: 18px 16px; border-bottom: 2px solid var(--color-divider); display: flex; align-items: center; gap: 11px">
+          <div style="width: 38px; height: 38px; flex: none; background: var(--color-accent); color: #fff; display: grid; place-items: center; font-family: var(--font-heading); font-weight: 800; font-size: 17px; letter-spacing: -.05em">GD</div>
+          <div>
+            <div style="font-family: var(--font-heading); font-weight: 800; font-size: 15px; line-height: 1.1; letter-spacing: -.02em">GAMER'S DEN</div>
+            <div style="font-size: 9px; letter-spacing: .14em; text-transform: uppercase; opacity: .55">Bogura</div>
+          </div>
+        </div>
+
+        <div style="padding: 8px 0; display: flex; flex-direction: column">
+          <sc-for list="{{ nav }}" as="item" hint-placeholder-count="7">
+            <div style="{{ item.style }}" onClick="{{ item.go }}">
+              <span style="{{ item.bar }}"></span>
+              <span>{{ item.label }}</span>
+              <span style="{{ item.badgeStyle }}">{{ item.badge }}</span>
+            </div>
+          </sc-for>
+        </div>
+
+        <div style="margin-top: auto; border-top: 2px solid var(--color-divider); padding: 14px 16px; display: flex; flex-direction: column; gap: 10px">
+          <div style="font-size: 9px; letter-spacing: .14em; text-transform: uppercase; opacity: .55">Signed in</div>
+          <div style="display: flex; align-items: center; gap: 9px">
+            <div style="{{ user.avStyle }}">{{ user.initials }}</div>
+            <div style="min-width: 0">
+              <div style="font-size: 13px; font-family: var(--font-heading); font-weight: 800">{{ user.name }}</div>
+              <div style="font-size: 11px; opacity: .55">{{ user.role }} · since 16:00</div>
+            </div>
+          </div>
+          <button class="btn btn-secondary btn-block" style="justify-content: flex-start" onClick="{{ signOut }}">Sign out</button>
+        </div>
+      </div>
+
+      <div style="flex: 1; min-width: 0; display: flex; flex-direction: column">
+
+        <div style="height: 70px; flex: none; border-bottom: 2px solid var(--color-divider); display: flex; align-items: center; gap: 20px; padding: 0 22px">
+          <div style="font-family: var(--font-heading); font-weight: 800; font-size: 23px; letter-spacing: -.02em">{{ title }}</div>
+          
+          <div style="margin-left: auto; display: flex; align-items: stretch">
+            <div style="padding: 0 22px; display: flex; flex-direction: column; justify-content: center">
+              <div style="font-size: 9px; letter-spacing: .14em; text-transform: uppercase; opacity: .55">Stations busy</div>
+              <div style="font-family: var(--font-heading); font-weight: 800; font-size: 20px">{{ occ }}</div>
+            </div>
+            
+            <div style="padding: 0 0 0 22px; border-left: 2px solid var(--color-divider); display: flex; flex-direction: column; justify-content: center">
+              <div style="font-size: 9px; letter-spacing: .14em; text-transform: uppercase; opacity: .55">Clock</div>
+              <div style="font-family: var(--font-heading); font-weight: 800; font-size: 20px; font-variant-numeric: tabular-nums">{{ wallClock }}</div>
+            </div>
+          </div>
+        </div>
+
+        <sc-if value="{{ isFloor }}" hint-placeholder-val="{{ true }}">
+          <div style="flex: 1; min-height: 0; display: flex">
+            <div style="flex: 1; min-width: 0; padding: 22px; overflow: auto; display: flex; flex-direction: column; gap: 18px">
+              <div style="display: flex; align-items: center; gap: 14px">
+                <span style="font-size: 10px; letter-spacing: .14em; text-transform: uppercase; opacity: .55">Floor map · {{ stationCount }} stations</span>
+                <span style="flex: 1; height: 2px; background: var(--color-divider)"></span>
+                <span style="display: flex; align-items: center; gap: 6px; font-size: 11px"><span style="width: 10px; height: 10px; background: var(--color-accent)"></span>Playing</span>
+                <span style="display: flex; align-items: center; gap: 6px; font-size: 11px"><span style="width: 10px; height: 10px; border: 2px solid var(--color-text)"></span>Free</span>
+                <span style="display: flex; align-items: center; gap: 6px; font-size: 11px"><span style="width: 10px; height: 10px; background: repeating-linear-gradient(45deg, var(--color-text) 0 3px, transparent 3px 6px)"></span>Maintenance</span>
+              </div>
+
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px">
+                <sc-for list="{{ stations }}" as="st" hint-placeholder-count="4">
+                  <div style="{{ st.style }}" onClick="{{ st.pick }}">
+                    <div style="display: flex; align-items: baseline; gap: 10px">
+                      <span style="font-family: var(--font-heading); font-weight: 800; font-size: 27px; letter-spacing: -.03em">{{ st.name }}</span>
+                      <span style="font-size: 11px; letter-spacing: .1em; text-transform: uppercase; opacity: .6">{{ st.kind }}</span>
+                      <span style="{{ st.statusStyle }}">{{ st.statusLabel }}</span>
+                    </div>
+                    <div style="font-size: 13px; opacity: .7">{{ st.who }}</div>
+                    <div style="display: flex; align-items: baseline; gap: 10px; margin-top: 4px">
+                      <span style="font-family: var(--font-heading); font-weight: 800; font-size: 52px; letter-spacing: -.045em; line-height: 1; font-variant-numeric: tabular-nums">{{ st.timeStr }}</span>
+                      <span style="font-size: 11px; letter-spacing: .1em; text-transform: uppercase; opacity: .55">{{ st.timeLabel }}</span>
+                    </div>
+                    <div style="{{ st.barTrack }}"><div style="{{ st.barFill }}"></div></div>
+                    <div style="display: flex; justify-content: space-between; font-size: 12px; opacity: .7; margin-top: 2px">
+                      <span>{{ st.planLabel }}</span>
+                      <span>{{ st.costStr }}</span>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+
+              <div style="height: 2px; background: var(--color-divider)"></div>
+              <div>
+                <div style="font-size: 10px; letter-spacing: .14em; text-transform: uppercase; opacity: .55; margin-bottom: 10px">Rate card · evening</div>
+                <table class="table">
+                  <thead><tr><th>Console</th><th style="text-align: right">30 minutes</th><th style="text-align: right">1 hour</th><th style="text-align: right">2 hours</th><th style="text-align: right">Morning 10–14 (−25%)</th></tr></thead>
+                  <tbody>
+                    <sc-for list="{{ rateCard }}" as="rc" hint-placeholder-count="2">
+                      <tr>
+                        <td style="font-family: var(--font-heading); font-weight: 800">{{ rc.kind }}</td>
+                        <td style="text-align: right">{{ rc.half }}</td>
+                        <td style="text-align: right">{{ rc.hr }}</td>
+                        <td style="text-align: right">{{ rc.two }}</td>
+                        <td style="text-align: right">{{ rc.morning }}</td>
+                      </tr>
+                    </sc-for>
+                  </tbody>
+                </table>
+                <div style="font-size: 12px; opacity: .6; margin-top: 8px">Time sells in 30-minute blocks. A session locks the screen when its last block ends; only a cashier can extend it.</div>
+              </div>
+            </div>
+
+            <div style="width: 356px; flex: none; border-left: 2px solid var(--color-divider); background: var(--color-surface); padding: 20px; display: flex; flex-direction: column; gap: 14px; overflow: auto">
+              <div>
+                <div style="font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--color-accent)">{{ sel.kind }}</div>
+                <div style="font-family: var(--font-heading); font-weight: 800; font-size: 36px; letter-spacing: -.04em; line-height: 1">{{ sel.name }}</div>
+              </div>
+              <div style="height: 2px; background: var(--color-divider)"></div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px">
+                <div>
+                  <div style="font-size: 9px; letter-spacing: .14em; text-transform: uppercase; opacity: .55">Customer</div>
+                  <div style="font-family: var(--font-heading); font-weight: 800; font-size: 15px">{{ sel.who }}</div>
+                  <div style="font-size: 11px; opacity: .6">{{ sel.phone }}</div>
+                </div>
+                <div>
+                  <div style="font-size: 9px; letter-spacing: .14em; text-transform: uppercase; opacity: .55">Wallet · points</div>
+                  <div style="font-family: var(--font-heading); font-weight: 800; font-size: 15px">{{ sel.wallet }}</div>
+                  <div style="font-size: 11px; opacity: .6">{{ sel.points }}</div>
+                </div>
+              </div>
+              <div style="{{ sel.clockBox }}">
+                <div style="font-size: 9px; letter-spacing: .14em; text-transform: uppercase; opacity: .6">{{ sel.timeLabel }}</div>
+                <div style="font-family: var(--font-heading); font-weight: 800; font-size: 50px; letter-spacing: -.045em; line-height: 1.05; font-variant-numeric: tabular-nums">{{ sel.timeStr }}</div>
+                <div style="font-size: 12px; opacity: .75">{{ sel.meta }}</div>
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 8px">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px">
+                  <button class="btn btn-secondary" style="justify-content: flex-start" onClick="{{ reduce }}">−30 min block</button>
+                  <button class="btn btn-secondary" style="justify-content: flex-start" onClick="{{ extend }}">+30 min block</button>
+                </div>
+                <button class="btn btn-secondary btn-block" style="margin: 0; background: var(--color-text); color: var(--color-bg); border-color: var(--color-text)" onClick="{{ togglePause }}">{{ pauseLabel }}</button>
+              </div>
+              <div style="height: 2px; background: var(--color-divider)"></div>
+              <div style="display: flex; flex-direction: column; gap: 7px">
+                <div style="font-size: 9px; letter-spacing: .14em; text-transform: uppercase; opacity: .55">Running bill</div>
+                <div style="display: flex; justify-content: space-between; font-size: 13px"><span>Gaming · {{ sel.blocksLabel }}</span><span style="font-variant-numeric: tabular-nums">{{ sel.gamingStr }}</span></div>
+                <div style="display: flex; justify-content: space-between; font-size: 13px"><span>Food &amp; beverage · {{ sel.itemCount }}</span><span style="font-variant-numeric: tabular-nums">{{ sel.foodStr }}</span></div>
+                <div style="height: 1px; background: var(--color-divider)"></div>
+                <div style="display: flex; justify-content: space-between; font-family: var(--font-heading); font-weight: 800; font-size: 22px"><span>Total</span><span style="font-variant-numeric: tabular-nums">{{ sel.totalStr }}</span></div>
+              </div>
+              <div style="margin-top: auto; display: flex; flex-direction: column; gap: 8px">
+                <button class="btn btn-secondary btn-block" style="margin: 0; background: var(--color-text); color: var(--color-bg); border-color: var(--color-text)" onClick="{{ goPosOnly }}">Add food &amp; drinks</button>
+                <button class="btn btn-primary btn-block" style="height: 48px; font-size: 15px; margin: 0; justify-content: center; text-align: center" onClick="{{ goPos }}">{{ primaryAction }}</button>
+                <sc-if value="{{ canEnd }}" hint-placeholder-val="{{ true }}">
+                  <button class="btn btn-secondary btn-block" style="{{ endStyle }}" onClick="{{ endSession }}">{{ endLabel }}</button>
+                </sc-if>
+              </div>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isPos }}" hint-placeholder-val="{{ false }}">
+          <div style="flex: 1; min-height: 0; display: flex">
+            <div style="flex: 1; min-width: 0; padding: 22px; overflow: auto">
+              <div style="display: flex; gap: 8px; margin-bottom: 16px">
+                <sc-for list="{{ cats }}" as="c" hint-placeholder-count="4">
+                  <button style="{{ c.style }}" onClick="{{ c.go }}">{{ c.label }}</button>
+                </sc-for>
+              </div>
+              <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px">
+                <sc-for list="{{ menu }}" as="m" hint-placeholder-count="12">
+                  <div style="{{ m.style }}" onClick="{{ m.add }}">
+                    <div style="font-size: 9px; letter-spacing: .12em; text-transform: uppercase; color: var(--color-accent)">{{ m.cat }}</div>
+                    <div style="font-family: var(--font-heading); font-weight: 800; font-size: 15px; line-height: 1.15">{{ m.n }}</div>
+                    <div style="margin-top: auto; display: flex; justify-content: space-between; align-items: baseline">
+                      <span style="font-family: var(--font-heading); font-weight: 800; font-size: 18px">{{ m.priceStr }}</span>
+                      <span style="{{ m.stockStyle }}">{{ m.stockStr }}</span>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+
+            <div style="width: 348px; flex: none; border-left: 2px solid var(--color-divider); background: var(--color-surface); padding: 20px; display: flex; flex-direction: column; gap: 11px; overflow: auto">
+              <div style="display: flex; gap: 6px">
+                <sc-for list="{{ pos.modes }}" as="m" hint-placeholder-count="2">
+                  <button style="{{ m.style }}" onClick="{{ m.go }}">{{ m.label }}</button>
+                </sc-for>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: baseline">
+                <div style="font-family: var(--font-heading); font-weight: 800; font-size: 24px; letter-spacing: -.03em">{{ pos.title }}</div>
+                <div style="font-size: 12px; opacity: .6">{{ pos.sub }}</div>
+              </div>
+              <div style="height: 2px; background: var(--color-divider)"></div>
+              <sc-if value="{{ pos.hasStation }}" hint-placeholder-val="{{ true }}">
+                <div style="display: flex; justify-content: space-between; font-size: 13px">
+                  <span>Gaming · {{ sel.blocksLabel }}</span>
+                  <span style="font-variant-numeric: tabular-nums">{{ sel.gamingStr }}</span>
+                </div>
+              </sc-if>
+              <sc-for list="{{ cart }}" as="line" hint-placeholder-count="3">
+                <div style="display: flex; align-items: center; gap: 8px; font-size: 13px">
+                  <span style="flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{ line.n }}</span>
+                  <button class="btn btn-secondary" style="width: 26px; height: 26px; padding: 0; justify-content: center" onClick="{{ line.dec }}">−</button>
+                  <span style="width: 18px; text-align: center; font-variant-numeric: tabular-nums">{{ line.q }}</span>
+                  <button class="btn btn-secondary" style="width: 26px; height: 26px; padding: 0; justify-content: center" onClick="{{ line.inc }}">+</button>
+                  <span style="width: 60px; text-align: right; font-variant-numeric: tabular-nums">{{ line.lineStr }}</span>
+                </div>
+              </sc-for>
+              <div style="height: 2px; background: var(--color-divider)"></div>
+              <div style="display: flex; justify-content: space-between; font-size: 13px"><span>Subtotal</span><span style="font-variant-numeric: tabular-nums">{{ sel.totalStr }}</span></div>
+
+              <sc-if value="{{ tourTicket.show }}" hint-placeholder-val="{{ false }}">
+                <div class="field"><label>Tournament player name</label><input class="input" value="{{ tPlayer.v }}" onChange="{{ tPlayer.set }}" placeholder="Name on the bracket — or attach a member below"></div>
+              </sc-if>
+              <div style="border: 2px solid var(--color-text); background: var(--color-bg); padding: 12px; display: flex; flex-direction: column; gap: 9px">
+                <div style="font-size: 9px; letter-spacing: .14em; text-transform: uppercase; opacity: .55">Member on this bill</div>
+
+                <sc-if value="{{ mem.none }}" hint-placeholder-val="{{ true }}">
+                  <div style="display: flex; flex-direction: column; gap: 8px">
+                    <input class="input" value="{{ mem.query }}" onChange="{{ mem.setQuery }}" placeholder="Search name or phone">
+                    <sc-for list="{{ mem.results }}" as="r" hint-placeholder-count="3">
+                      <div style="{{ r.style }}" onClick="{{ r.pick }}">
+                        <div>
+                          <div style="font-family: var(--font-heading); font-weight: 800; font-size: 13px">{{ r.n }}</div>
+                          <div style="font-size: 11px; opacity: .55">{{ r.phone }}</div>
+                        </div>
+                        <div style="margin-left: auto; text-align: right">
+                          <div style="font-size: 13px; font-variant-numeric: tabular-nums">{{ r.points }} pts</div>
+                          <div style="font-size: 11px; opacity: .55">wallet {{ r.wallet }}</div>
+                        </div>
+                      </div>
+                    </sc-for>
+                    <div style="font-size: 11px; opacity: .5">{{ mem.hint }}</div>
+                  </div>
+                </sc-if>
+
+                <sc-if value="{{ mem.attached }}" hint-placeholder-val="{{ false }}">
+                  <div style="display: flex; flex-direction: column; gap: 10px">
+                    <div style="display: flex; align-items: baseline; gap: 8px">
+                      <div>
+                        <div style="font-family: var(--font-heading); font-weight: 800; font-size: 16px">{{ mem.n }}</div>
+                        <div style="font-size: 11px; opacity: .55">{{ mem.phone }}</div>
+                      </div>
+                      <button class="btn btn-ghost" style="margin-left: auto" onClick="{{ mem.clear }}">Remove</button>
+                    </div>
+                    <div style="display: flex; gap: 16px">
+                      <div>
+                        <div style="font-size: 9px; letter-spacing: .14em; text-transform: uppercase; opacity: .55">Points</div>
+                        <div style="font-family: var(--font-heading); font-weight: 800; font-size: 20px; font-variant-numeric: tabular-nums">{{ mem.points }}</div>
+                      </div>
+                      <div>
+                        <div style="font-size: 9px; letter-spacing: .14em; text-transform: uppercase; opacity: .55">Worth</div>
+                        <div style="font-family: var(--font-heading); font-weight: 800; font-size: 20px">{{ mem.worth }}</div>
+                      </div>
+                      <div>
+                        <div style="font-size: 9px; letter-spacing: .14em; text-transform: uppercase; opacity: .55">Wallet</div>
+                        <div style="font-family: var(--font-heading); font-weight: 800; font-size: 20px">{{ mem.wallet }}</div>
+                      </div>
+                    </div>
+                    <div style="font-size: 9px; letter-spacing: .14em; text-transform: uppercase; opacity: .55">Redeem points</div>
+                    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px">
+                      <sc-for list="{{ mem.steps }}" as="s" hint-placeholder-count="4">
+                        <button style="{{ s.style }}" onClick="{{ s.go }}">{{ s.label }}</button>
+                      </sc-for>
+                    </div>
+                  </div>
+                </sc-if>
+              </div>
+
+              <div style="display: flex; justify-content: space-between; font-size: 13px"><span>{{ mem.redeemLabel }}</span><span style="font-variant-numeric: tabular-nums">{{ sel.loyaltyStr }}</span></div>
+              <div style="display: flex; justify-content: space-between; align-items: baseline; font-family: var(--font-heading); font-weight: 800; font-size: 30px; letter-spacing: -.035em"><span>Due</span><span style="font-variant-numeric: tabular-nums">{{ sel.dueStr }}</span></div>
+              <div style="height: 2px; background: var(--color-divider)"></div>
+              <div style="font-size: 9px; letter-spacing: .14em; text-transform: uppercase; opacity: .55">Split the payment</div>
+              <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px">
+                <sc-for list="{{ methods }}" as="p" hint-placeholder-count="4">
+                  <button style="{{ p.style }}" onClick="{{ p.go }}">{{ p.label }}</button>
+                </sc-for>
+              </div>
+              <div style="display: flex; justify-content: space-between; font-size: 13px"><span>{{ payA.label }}</span><span style="font-variant-numeric: tabular-nums">{{ payA.amt }}</span></div>
+              <div style="display: flex; justify-content: space-between; font-size: 13px"><span>{{ payB.label }}</span><span style="font-variant-numeric: tabular-nums">{{ payB.amt }}</span></div>
+              <button class="btn btn-primary btn-block" style="height: 48px; font-size: 15px; margin-top: auto" onClick="{{ settle }}">{{ pos.settleLabel }}</button>
+            </div>
+
+            <div style="width: 306px; flex: none; border-left: 2px solid var(--color-divider); padding: 20px; overflow: auto; background: var(--color-neutral-200)">
+              <div style="font-size: 9px; letter-spacing: .14em; text-transform: uppercase; opacity: .55; margin-bottom: 10px">80 mm thermal ticket</div>
+              <div style="background: #fff; color: #201e1d; padding: 16px 14px; font-family: ui-monospace, Menlo, monospace; font-size: 11px; line-height: 1.6; box-shadow: var(--shadow-md)">
+                <div style="text-align: center; font-family: var(--font-heading); font-weight: 800; font-size: 19px; letter-spacing: .06em">GAMER'S DEN</div>
+                <div style="text-align: center; font-size: 10px">Jaleshwaritola, Bogura · 01711-000000</div>
+                <div style="border-top: 1px dashed #000; margin: 10px 0"></div>
+                <sc-for list="{{ receiptHead }}" as="r" hint-placeholder-count="5">
+                  <div style="display: flex; justify-content: space-between"><span>{{ r.l }}</span><span>{{ r.v }}</span></div>
+                </sc-for>
+                <div style="border-top: 1px dashed #000; margin: 10px 0"></div>
+                <sc-for list="{{ receiptLines }}" as="r" hint-placeholder-count="4">
+                  <div style="display: flex; justify-content: space-between"><span>{{ r.l }}</span><span>{{ r.v }}</span></div>
+                </sc-for>
+                <div style="border-top: 1px dashed #000; margin: 10px 0"></div>
+                <div style="display: flex; justify-content: space-between; font-weight: 700; font-size: 13px"><span>TOTAL</span><span>{{ sel.dueStr }}</span></div>
+                <div style="display: flex; justify-content: space-between"><span>{{ payA.upper }}</span><span>{{ payA.amt }}</span></div>
+                <div style="display: flex; justify-content: space-between"><span>{{ payB.upper }}</span><span>{{ payB.amt }}</span></div>
+                <div style="border-top: 1px dashed #000; margin: 10px 0"></div>
+                <div style="text-align: center; font-size: 10px">Points earned {{ sel.pointsEarned }} · balance {{ sel.pointsAfter }}</div>
+                <sc-if value="{{ tourTicket.show }}" hint-placeholder-val="{{ false }}">
+                  <div style="border-top: 1px dashed #000; margin: 10px 0"></div>
+                  <div style="text-align: center; font-weight: 700; font-size: 12px; letter-spacing: .15em">TOURNAMENT ENTRY</div>
+                  <div style="text-align: center; font-size: 10px">{{ tourTicket.names }}</div>
+                  <div style="text-align: center; font-size: 10px">Player: {{ tourTicket.player }}</div>
+                  <div style="text-align: center; font-weight: 700; font-size: 13px; letter-spacing: .08em">TOKEN {{ tourTicket.tokens }}</div>
+                  <div style="display: grid; grid-template-columns: repeat(17, 5px); justify-content: center; margin: 8px auto 2px">
+                    <sc-for list="{{ tourTicket.cells }}" as="tqc" hint-placeholder-count="1">
+                      <div style="{{ tqc.style }}"></div>
+                    </sc-for>
+                  </div>
+                  <div style="text-align: center; font-size: 9px">Scan at the bracket desk</div>
+                </sc-if>
+                <div style="text-align: center; margin-top: 6px; font-size: 10px">See you again at the Den</div>
+                <div style="margin-top: 10px; height: 36px; background: repeating-linear-gradient(90deg, #000 0 2px, #fff 2px 4px, #000 4px 5px, #fff 5px 9px)"></div>
+                <div style="text-align: center; font-size: 9px; letter-spacing: .2em; margin-top: 4px">{{ sel.txn }}</div>
+              </div>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isInv }}" hint-placeholder-val="{{ false }}">
+          <div style="flex: 1; min-height: 0; display: flex">
+            <div style="flex: 1; min-width: 0; padding: 22px; overflow: auto">
+              <table class="table">
+                <thead>
+                  <tr><th>Item</th><th>Category</th><th style="text-align: right">Price</th><th style="text-align: right">In stock</th><th style="text-align: right">Reorder at</th><th style="text-align: right">Sold today</th><th>Status</th></tr>
+                </thead>
+                <tbody>
+                  <sc-for list="{{ inventory }}" as="i" hint-placeholder-count="12">
+                    <tr>
+                      <td style="font-family: var(--font-heading); font-weight: 800">{{ i.n }}</td>
+                      <td style="opacity: .7">{{ i.cat }}</td>
+                      <td style="text-align: right; font-variant-numeric: tabular-nums">{{ i.priceStr }}</td>
+                      <td style="text-align: right; font-variant-numeric: tabular-nums">{{ i.stock }}</td>
+                      <td style="text-align: right; font-variant-numeric: tabular-nums; opacity: .5">{{ i.min }}</td>
+                      <td style="text-align: right; font-variant-numeric: tabular-nums">{{ i.sold }}</td>
+                      <td><span class="{{ i.tagClass }}">{{ i.statusLabel }}</span></td>
+                    </tr>
+                  </sc-for>
+                </tbody>
+              </table>
+            </div>
+            <div style="width: 356px; flex: none; border-left: 2px solid var(--color-divider); background: var(--color-surface); padding: 20px; display: flex; flex-direction: column; gap: 14px; overflow: auto">
+              <div style="font-size: 9px; letter-spacing: .14em; text-transform: uppercase; color: var(--color-accent)">Low stock — needs ordering</div>
+              <sc-for list="{{ lowStock }}" as="l" hint-placeholder-count="3">
+                <div style="background: var(--color-bg); border: 2px solid var(--color-accent); padding: 13px; display: flex; flex-direction: column; gap: 3px">
+                  <div style="font-family: var(--font-heading); font-weight: 800; font-size: 16px">{{ l.n }}</div>
+                  <div style="font-size: 12px; opacity: .7">{{ l.msg }}</div>
+                </div>
+              </sc-for>
+              <div style="font-size: 12px; opacity: .6">Stock counts are edited from Setup (Admin) or Menu &amp; stock (Manager).</div>
+              <div style="height: 2px; background: var(--color-divider)"></div>
+              <div style="font-size: 9px; letter-spacing: .14em; text-transform: uppercase; opacity: .55">Equipment register</div>
+              <sc-for list="{{ equipment }}" as="e" hint-placeholder-count="5">
+                <div style="display: flex; justify-content: space-between; font-size: 13px; padding-bottom: 8px; border-bottom: 1px solid var(--color-divider)">
+                  <span>{{ e.n }}</span><span style="opacity: .6">{{ e.v }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isCrm }}" hint-placeholder-val="{{ false }}">
+          <div style="flex: 1; min-height: 0; display: flex">
+            <div style="flex: 1; min-width: 0; padding: 22px; overflow: auto; display: flex; flex-direction: column; gap: 16px">
+              <div style="display: flex; gap: 10px">
+                <input class="input" style="flex: 1" placeholder="Search by name or phone number" value="{{ crmQuery }}" onChange="{{ setCrmQuery }}">
+                <button class="btn btn-primary" style="justify-content: flex-start" onClick="{{ openNewMember }}">New member</button>
+              </div>
+              <table class="table">
+                <thead><tr><th>Member</th><th>Phone</th><th>Plays</th><th style="text-align: right">Wallet</th><th style="text-align: right">Points</th><th style="text-align: right">Visits</th><th style="text-align: right">Lifetime</th></tr></thead>
+                <tbody>
+                  <sc-for list="{{ members }}" as="m" hint-placeholder-count="8">
+                    <tr onClick="{{ m.pick }}" style="{{ m.rowStyle }}">
+                      <td style="font-family: var(--font-heading); font-weight: 800">{{ m.n }}</td>
+                      <td style="opacity: .7">{{ m.phone }}</td>
+                      <td style="opacity: .7">{{ m.fav }}</td>
+                      <td style="text-align: right; font-variant-numeric: tabular-nums">{{ m.wallet }}</td>
+                      <td style="text-align: right; font-variant-numeric: tabular-nums">{{ m.points }}</td>
+                      <td style="text-align: right; font-variant-numeric: tabular-nums">{{ m.visits }}</td>
+                      <td style="text-align: right; font-variant-numeric: tabular-nums">{{ m.lifetime }}</td>
+                    </tr>
+                  </sc-for>
+                </tbody>
+              </table>
+            </div>
+            <div style="width: 356px; flex: none; border-left: 2px solid var(--color-divider); background: var(--color-surface); padding: 20px; display: flex; flex-direction: column; gap: 14px; overflow: auto">
+              <div>
+                <div style="font-size: 9px; letter-spacing: .14em; text-transform: uppercase; color: var(--color-accent)">{{ memberSince }}</div>
+                <div style="font-family: var(--font-heading); font-weight: 800; font-size: 28px; letter-spacing: -.03em; line-height: 1.1">{{ member.n }}</div>
+                <div style="font-size: 12px; opacity: .6">{{ member.phone }}</div>
+              </div>
+              <div style="background: var(--color-text); color: var(--color-bg); padding: 16px; display: flex; flex-direction: column; gap: 4px">
+                <div style="font-size: 9px; letter-spacing: .14em; text-transform: uppercase; opacity: .7">Prepaid wallet</div>
+                <div style="font-family: var(--font-heading); font-weight: 800; font-size: 40px; letter-spacing: -.04em; line-height: 1">{{ member.wallet }}</div>
+                <div style="font-size: 12px; opacity: .7">Session fees deduct automatically</div>
+              </div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px">
+                <button class="btn btn-secondary" style="justify-content: flex-start" onClick="{{ memberTopUp }}">Top up ৳500</button>
+                <button class="btn btn-secondary" style="justify-content: flex-start" onClick="{{ memberRedeem }}">{{ redeemBtnLabel }}</button>
+              </div>
+              <div style="height: 2px; background: var(--color-divider)"></div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px">
+                <div><div style="font-size: 9px; letter-spacing: .14em; text-transform: uppercase; opacity: .55">Loyalty points</div><div style="font-family: var(--font-heading); font-weight: 800; font-size: 22px">{{ member.points }}</div></div>
+                <div><div style="font-size: 9px; letter-spacing: .14em; text-transform: uppercase; opacity: .55">Free time earned</div><div style="font-family: var(--font-heading); font-weight: 800; font-size: 22px">{{ member.freeTime }}</div></div>
+              </div>
+              <div style="height: 2px; background: var(--color-divider)"></div>
+              <div style="font-size: 9px; letter-spacing: .14em; text-transform: uppercase; opacity: .55">Recent visits</div>
+              <sc-for list="{{ memberVisits }}" as="v" hint-placeholder-count="5">
+                <div style="display: flex; justify-content: space-between; font-size: 13px; padding-bottom: 8px; border-bottom: 1px solid var(--color-divider)">
+                  <div><div>{{ v.d }}</div><div style="font-size: 11px; opacity: .55">{{ v.s }}</div></div>
+                  <div style="font-variant-numeric: tabular-nums">{{ v.v }}</div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isShift }}" hint-placeholder-val="{{ false }}">
+          <div style="flex: 1; min-height: 0; display: flex">
+            <div style="flex: 1; min-width: 0; padding: 22px; overflow: auto; display: flex; flex-direction: column; gap: 18px">
+              <div style="display: grid; grid-template-columns: repeat(4, 1fr); border: 2px solid var(--color-divider)">
+                <div style="padding: 14px; border-right: 2px solid var(--color-divider)"><div style="font-size: 9px; letter-spacing: .14em; text-transform: uppercase; opacity: .55">Shift</div><div style="font-family: var(--font-heading); font-weight: 800; font-size: 21px">Evening</div></div>
+                <div style="padding: 14px; border-right: 2px solid var(--color-divider)"><div style="font-size: 9px; letter-spacing: .14em; text-transform: uppercase; opacity: .55">Opened</div><div style="font-family: var(--font-heading); font-weight: 800; font-size: 21px">16:00</div></div>
+                <div style="padding: 14px; border-right: 2px solid var(--color-divider)"><div style="font-size: 9px; letter-spacing: .14em; text-transform: uppercase; opacity: .55">Opening float</div><div style="font-family: var(--font-heading); font-weight: 800; font-size: 21px">৳3,000</div></div>
+                <div style="padding: 14px"><div style="font-size: 9px; letter-spacing: .14em; text-transform: uppercase; opacity: .55">Transactions</div><div style="font-family: var(--font-heading); font-weight: 800; font-size: 21px">38</div></div>
+              </div>
+
+              <div>
+                <div style="font-size: 10px; letter-spacing: .14em; text-transform: uppercase; opacity: .55; margin-bottom: 8px">X report — takings by method</div>
+                <table class="table">
+                  <thead><tr><th>Method</th><th style="text-align: right">Gaming</th><th style="text-align: right">Food &amp; bev</th><th style="text-align: right">Total</th></tr></thead>
+                  <tbody>
+                    <sc-for list="{{ takings }}" as="t" hint-placeholder-count="4">
+                      <tr>
+                        <td style="font-family: var(--font-heading); font-weight: 800">{{ t.m }}</td>
+                        <td style="text-align: right; font-variant-numeric: tabular-nums">{{ t.g }}</td>
+                        <td style="text-align: right; font-variant-numeric: tabular-nums">{{ t.f }}</td>
+                        <td style="text-align: right; font-variant-numeric: tabular-nums; font-family: var(--font-heading); font-weight: 800">{{ t.t }}</td>
+                      </tr>
+                    </sc-for>
+                  </tbody>
+                </table>
+              </div>
+
+              <div style="border: 2px solid var(--color-accent); padding: 12px 16px; display: flex; align-items: center; gap: 14px">
+                <div style="flex: 1">
+                  <div style="font-size: 9px; letter-spacing: .14em; text-transform: uppercase; color: var(--color-accent-700)">Tournament entries this shift</div>
+                  <div style="font-size: 12px; opacity: .65">Every ticket sold at the POS logs here automatically — the drawer reconciles with entry fees included in the takings above.</div>
+                </div>
+                <div style="text-align: right">
+                  <div style="font-family: var(--font-heading); font-weight: 800; font-size: 24px; letter-spacing: -.03em">{{ shiftC.tourStr }}</div>
+                  <div style="font-size: 11px; opacity: .6">{{ shiftC.tourCount }} tickets</div>
+                </div>
+              </div>
+
+              <div style="display: grid; grid-template-columns: repeat(3, 1fr); border: 2px solid var(--color-text)">
+                <div style="padding: 18px; border-right: 2px solid var(--color-divider)"><div style="font-size: 9px; letter-spacing: .14em; text-transform: uppercase; opacity: .55">Expected in drawer</div><div style="font-family: var(--font-heading); font-weight: 800; font-size: 32px; letter-spacing: -.035em">৳9,420</div></div>
+                <div style="padding: 18px; border-right: 2px solid var(--color-divider)"><div style="font-size: 9px; letter-spacing: .14em; text-transform: uppercase; opacity: .55">Counted by cashier</div><div style="font-family: var(--font-heading); font-weight: 800; font-size: 32px; letter-spacing: -.035em">{{ shiftC.countedStr }}</div></div>
+                <div style="{{ shiftC.diffBox }}"><div style="font-size: 9px; letter-spacing: .14em; text-transform: uppercase; opacity: .85">Discrepancy</div><div style="font-family: var(--font-heading); font-weight: 800; font-size: 32px; letter-spacing: -.035em">{{ shiftC.diffStr }}</div></div>
+              </div>
+              <div style="font-size: 12px; opacity: .65">Closing a shift with a discrepancy pushes a notification to the owner's phone.</div>
+            </div>
+
+            <div style="width: 356px; flex: none; border-left: 2px solid var(--color-divider); background: var(--color-surface); padding: 20px; display: flex; flex-direction: column; gap: 12px; overflow: auto">
+              <div style="font-size: 9px; letter-spacing: .14em; text-transform: uppercase; opacity: .55">Count the drawer</div>
+              <div class="field"><label>Notes &amp; coins counted (৳)</label><input class="input" value="{{ shiftC.counted }}" onChange="{{ shiftC.setCounted }}"></div>
+              <div class="field"><label>Handover note</label><textarea class="input" style="min-height: 72px" placeholder="Anything the next shift should know"></textarea></div>
+              <div style="height: 2px; background: var(--color-divider)"></div>
+              <div style="font-size: 9px; letter-spacing: .14em; text-transform: uppercase; opacity: .55">Staff on today</div>
+              <sc-for list="{{ staff }}" as="s" hint-placeholder-count="3">
+                <div style="display: flex; justify-content: space-between; font-size: 13px; padding-bottom: 8px; border-bottom: 1px solid var(--color-divider)">
+                  <div><div style="font-family: var(--font-heading); font-weight: 800">{{ s.n }}</div><div style="font-size: 11px; opacity: .55">{{ s.r }}</div></div>
+                  <div style="opacity: .6">{{ s.h }}</div>
+                </div>
+              </sc-for>
+              <button class="btn btn-primary btn-block" style="height: 48px; font-size: 15px; margin-top: auto" onClick="{{ shiftC.close }}">Print Z report &amp; close shift</button>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isExp }}" hint-placeholder-val="{{ false }}">
+          <div style="flex: 1; min-height: 0; display: flex">
+            <div style="flex: 1; min-width: 0; padding: 22px; overflow: auto; display: flex; flex-direction: column; gap: 16px">
+              <div style="display: grid; grid-template-columns: repeat(3, 1fr); border: 2px solid var(--color-divider)">
+                <div style="padding: 14px; border-right: 2px solid var(--color-divider)"><div style="font-size: 9px; letter-spacing: .14em; text-transform: uppercase; opacity: .55">Petty cash today</div><div style="font-family: var(--font-heading); font-weight: 800; font-size: 26px">{{ exp.todayStr }}</div></div>
+                <div style="padding: 14px; border-right: 2px solid var(--color-divider)"><div style="font-size: 9px; letter-spacing: .14em; text-transform: uppercase; opacity: .55">This month</div><div style="font-family: var(--font-heading); font-weight: 800; font-size: 26px">৳18,640</div></div>
+                <div style="padding: 14px"><div style="font-size: 9px; letter-spacing: .14em; text-transform: uppercase; opacity: .55">Net profit today</div><div style="font-family: var(--font-heading); font-weight: 800; font-size: 26px; color: var(--color-accent-700)">{{ exp.netStr }}</div></div>
+              </div>
+              <table class="table">
+                <thead><tr><th>Time</th><th>Description</th><th>Category</th><th>Recorded by</th><th style="text-align: right">Amount</th></tr></thead>
+                <tbody>
+                  <sc-for list="{{ expenses }}" as="x" hint-placeholder-count="6">
+                    <tr>
+                      <td style="opacity: .6; font-variant-numeric: tabular-nums">{{ x.t }}</td>
+                      <td style="font-family: var(--font-heading); font-weight: 800">{{ x.n }}</td>
+                      <td style="opacity: .7">{{ x.c }}</td>
+                      <td style="opacity: .7">{{ x.by }}</td>
+                      <td style="text-align: right; font-variant-numeric: tabular-nums">{{ x.v }}</td>
+                    </tr>
+                  </sc-for>
+                </tbody>
+              </table>
+            </div>
+            <div style="width: 356px; flex: none; border-left: 2px solid var(--color-divider); background: var(--color-surface); padding: 20px; display: flex; flex-direction: column; gap: 12px">
+              <div style="font-size: 9px; letter-spacing: .14em; text-transform: uppercase; opacity: .55">Record petty cash</div>
+              <div class="field"><label>Description</label><input class="input" placeholder="e.g. Water delivery" value="{{ exp.n }}" onChange="{{ exp.setN }}"></div>
+              <div class="field"><label>Amount (৳)</label><input class="input" placeholder="0" value="{{ exp.amt }}" onChange="{{ exp.setAmt }}"></div>
+              <div class="field"><label>Category</label>
+                <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px">
+                  <sc-for list="{{ exp.cats }}" as="ec" hint-placeholder-count="5">
+                    <span class="{{ ec.cls }}" style="{{ ec.style }}" onClick="{{ ec.go }}">{{ ec.label }}</span>
+                  </sc-for>
+                </div>
+              </div>
+              <button class="btn btn-primary btn-block" style="justify-content: flex-start" onClick="{{ exp.record }}">Record expense</button>
+              <div style="height: 2px; background: var(--color-divider)"></div>
+              <div style="font-size: 12px; opacity: .65">Expenses deduct from the day's profit and appear on the owner's mobile app the moment they sync.</div>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isRep }}" hint-placeholder-val="{{ false }}">
+          <div style="flex: 1; min-height: 0; padding: 22px; overflow: auto; display: flex; flex-direction: column; gap: 20px">
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); border: 2px solid var(--color-text)">
+              <sc-for list="{{ kpis }}" as="k" hint-placeholder-count="4">
+                <div style="{{ k.style }}">
+                  <div style="font-size: 9px; letter-spacing: .14em; text-transform: uppercase; opacity: .6">{{ k.l }}</div>
+                  <div style="font-family: var(--font-heading); font-weight: 800; font-size: 32px; letter-spacing: -.035em">{{ k.v }}</div>
+                  <div style="font-size: 12px; opacity: .65">{{ k.s }}</div>
+                </div>
+              </sc-for>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 22px">
+              <div>
+                <div style="font-size: 10px; letter-spacing: .14em; text-transform: uppercase; opacity: .55; margin-bottom: 14px">Revenue, last 14 days</div>
+                <div style="display: flex; align-items: flex-end; gap: 8px; height: 210px; border-bottom: 2px solid var(--color-text)">
+                  <sc-for list="{{ trend }}" as="d" hint-placeholder-count="14">
+                    <div style="flex: 1; display: flex; flex-direction: column; justify-content: flex-end; gap: 0; height: 100%">
+                      <div style="{{ d.food }}"></div>
+                      <div style="{{ d.game }}"></div>
+                    </div>
+                  </sc-for>
+                </div>
+                <div style="display: flex; gap: 8px; margin-top: 6px">
+                  <sc-for list="{{ trend }}" as="d" hint-placeholder-count="14">
+                    <div style="flex: 1; text-align: center; font-size: 10px; opacity: .5">{{ d.l }}</div>
+                  </sc-for>
+                </div>
+                <div style="display: flex; gap: 18px; margin-top: 14px; font-size: 12px">
+                  <span style="display: flex; align-items: center; gap: 7px"><span style="width: 12px; height: 12px; background: var(--color-accent)"></span>Gaming time</span>
+                  <span style="display: flex; align-items: center; gap: 7px"><span style="width: 12px; height: 12px; background: var(--color-neutral-700)"></span>Food &amp; beverage</span>
+                </div>
+              </div>
+              <div>
+                <div style="font-size: 10px; letter-spacing: .14em; text-transform: uppercase; opacity: .55; margin-bottom: 14px">Station utilisation this week</div>
+                <div style="display: flex; flex-direction: column; gap: 16px">
+                  <sc-for list="{{ util }}" as="u" hint-placeholder-count="4">
+                    <div>
+                      <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 5px">
+                        <span style="font-family: var(--font-heading); font-weight: 800">{{ u.n }}</span><span style="opacity: .6">{{ u.pct }}</span>
+                      </div>
+                      <div style="height: 14px; background: var(--color-neutral-300)"><div style="{{ u.fill }}"></div></div>
+                      <div style="font-size: 11px; opacity: .5; margin-top: 4px">{{ u.hrs }}</div>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+            </div>
+
+            <div style="height: 2px; background: var(--color-divider)"></div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 22px">
+              <div>
+                <div style="font-size: 10px; letter-spacing: .14em; text-transform: uppercase; opacity: .55; margin-bottom: 8px">Busiest hours</div>
+                <table class="table">
+                  <thead><tr><th>Window</th><th style="text-align: right">Avg. stations busy</th><th style="text-align: right">Avg. revenue</th></tr></thead>
+                  <tbody>
+                    <tr><td>10:00 – 14:00</td><td style="text-align: right">0.9 / 4</td><td style="text-align: right">৳1,240</td></tr>
+                    <tr><td>14:00 – 18:00</td><td style="text-align: right">2.4 / 4</td><td style="text-align: right">৳3,860</td></tr>
+                    <tr><td>18:00 – 22:00</td><td style="text-align: right">3.7 / 4</td><td style="text-align: right">৳6,410</td></tr>
+                    <tr><td>22:00 – 00:00</td><td style="text-align: right">2.1 / 4</td><td style="text-align: right">৳2,180</td></tr>
+                  </tbody>
+                </table>
+              </div>
+              <div>
+                <div style="font-size: 10px; letter-spacing: .14em; text-transform: uppercase; opacity: .55; margin-bottom: 8px">Top selling items</div>
+                <table class="table">
+                  <thead><tr><th>Item</th><th style="text-align: right">Units</th><th style="text-align: right">Revenue</th></tr></thead>
+                  <tbody>
+                    <sc-for list="{{ topSellers }}" as="t" hint-placeholder-count="5">
+                      <tr><td style="font-family: var(--font-heading); font-weight: 800">{{ t.n }}</td><td style="text-align: right">{{ t.u }}</td><td style="text-align: right">{{ t.v }}</td></tr>
+                    </sc-for>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isOverview }}" hint-placeholder-val="{{ false }}">
+          <div style="flex: 1; min-height: 0; display: flex">
+            <div style="flex: 1; min-width: 0; padding: 22px; overflow: auto; display: flex; flex-direction: column; gap: 22px">
+
+              <div style="display: grid; grid-template-columns: repeat(4, 1fr); border: 2px solid var(--color-text)">
+                <div style="padding: 18px; border-right: 2px solid var(--color-divider)">
+                  <div style="font-size: 9px; letter-spacing: .14em; text-transform: uppercase; opacity: .55">Occupancy now</div>
+                  <div style="font-family: var(--font-heading); font-weight: 800; font-size: 34px; letter-spacing: -.04em">{{ occPct }}</div>
+                  <div style="font-size: 12px; opacity: .65">{{ occ }} stations busy</div>
+                </div>
+                <div style="padding: 18px; border-right: 2px solid var(--color-divider)">
+                  <div style="font-size: 9px; letter-spacing: .14em; text-transform: uppercase; opacity: .55">Revenue today</div>
+                  <div style="font-family: var(--font-heading); font-weight: 800; font-size: 34px; letter-spacing: -.04em">{{ todayStr }}</div>
+                  <div style="font-size: 12px; opacity: .65">+18% on last Friday</div>
+                </div>
+                <div style="padding: 18px; border-right: 2px solid var(--color-divider)">
+                  <div style="font-size: 9px; letter-spacing: .14em; text-transform: uppercase; opacity: .55">Avg. ticket</div>
+                  <div style="font-family: var(--font-heading); font-weight: 800; font-size: 34px; letter-spacing: -.04em">৳386</div>
+                  <div style="font-size: 12px; opacity: .65">38 sessions today</div>
+                </div>
+                <div style="padding: 18px; background: var(--color-accent); color: #fff">
+                  <div style="font-size: 9px; letter-spacing: .14em; text-transform: uppercase; opacity: .85">Net profit today</div>
+                  <div style="font-family: var(--font-heading); font-weight: 800; font-size: 34px; letter-spacing: -.04em">৳7,930</div>
+                  <div style="font-size: 12px; opacity: .85">after ৳1,180 expenses</div>
+                </div>
+              </div>
+
+              <div>
+                <div style="font-size: 10px; letter-spacing: .14em; text-transform: uppercase; opacity: .55; margin-bottom: 10px">Live stations</div>
+                <div style="display: flex; gap: 12px; overflow-x: auto; padding-bottom: 6px">
+                  <sc-for list="{{ stations }}" as="ov" hint-placeholder-count="4">
+                    <div style="{{ ov.mobileStyle }}" onClick="{{ ov.goFloor }}">
+                      <div style="display: flex; align-items: baseline; gap: 8px">
+                        <span style="font-family: var(--font-heading); font-weight: 800; font-size: 17px">{{ ov.name }}</span>
+                        <span style="font-size: 10px; letter-spacing: .1em; text-transform: uppercase; opacity: .55">{{ ov.kind }}</span>
+                        <span style="{{ ov.statusStyle }}">{{ ov.statusLabel }}</span>
+                      </div>
+                      <div style="font-family: var(--font-heading); font-weight: 800; font-size: 26px; letter-spacing: -.03em; font-variant-numeric: tabular-nums; margin-top: 4px">{{ ov.timeStr }}</div>
+                      <div style="display: flex; justify-content: space-between; font-size: 12px; opacity: .65">
+                        <span>{{ ov.who }}</span><span>{{ ov.costStr }}</span>
+                      </div>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+
+              <div style="height: 2px; background: var(--color-divider)"></div>
+
+              <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 22px">
+                <div>
+                  <div style="font-size: 10px; letter-spacing: .14em; text-transform: uppercase; opacity: .55; margin-bottom: 12px">Revenue, last 30 days</div>
+                  <div style="display: flex; align-items: flex-end; gap: 4px; height: 150px; border-bottom: 2px solid var(--color-text)">
+                    <sc-for list="{{ monthly }}" as="mo" hint-placeholder-count="30">
+                      <div style="{{ mo.style }}"></div>
+                    </sc-for>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; font-size: 11px; opacity: .5; margin-top: 6px">
+                    <span>9 Jul</span><span>৳392,400 total · +11% on the previous 30</span><span>7 Aug</span>
+                  </div>
+                </div>
+                <div>
+                  <div style="font-size: 10px; letter-spacing: .14em; text-transform: uppercase; opacity: .55; margin-bottom: 12px">By day of week</div>
+                  <sc-for list="{{ weekday }}" as="wd" hint-placeholder-count="7">
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 9px">
+                      <span style="width: 34px; font-size: 12px; opacity: .6">{{ wd.l }}</span>
+                      <div style="flex: 1; height: 14px; background: var(--color-neutral-300)"><div style="{{ wd.fill }}"></div></div>
+                      <span style="width: 64px; text-align: right; font-size: 12px; font-variant-numeric: tabular-nums">{{ wd.v }}</span>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+
+              <div style="height: 2px; background: var(--color-divider)"></div>
+
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 22px">
+                <div>
+                  <div style="font-size: 10px; letter-spacing: .14em; text-transform: uppercase; opacity: .55; margin-bottom: 10px">Stock watchlist</div>
+                  <sc-for list="{{ watchlist }}" as="wl" hint-placeholder-count="7">
+                    <div style="margin-bottom: 12px">
+                      <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 4px">
+                        <span style="font-family: var(--font-heading); font-weight: 800">{{ wl.n }}</span>
+                        <span style="opacity: .6">{{ wl.label }}</span>
+                      </div>
+                      <div style="height: 10px; background: var(--color-neutral-300)"><div style="{{ wl.fill }}"></div></div>
+                    </div>
+                  </sc-for>
+                </div>
+                <div>
+                  <div style="font-size: 10px; letter-spacing: .14em; text-transform: uppercase; opacity: .55; margin-bottom: 10px">Staff &amp; recent shift closes</div>
+                  <div style="border: 2px solid var(--color-text); padding: 13px; display: flex; align-items: center; gap: 12px; margin-bottom: 12px">
+                    <div style="width: 38px; height: 38px; background: var(--color-text); color: var(--color-bg); display: grid; place-items: center; font-family: var(--font-heading); font-weight: 800; font-size: 13px">SA</div>
+                    <div><div style="font-family: var(--font-heading); font-weight: 800; font-size: 16px">Sabbir Ahmed</div><div style="font-size: 12px; opacity: .6">Cashier · on shift since 16:00 · float ৳3,000</div></div>
+                  </div>
+                  <sc-for list="{{ shiftHistory }}" as="sh" hint-placeholder-count="5">
+                    <div style="{{ sh.style }}">
+                      <div>
+                        <div style="font-family: var(--font-heading); font-weight: 800; font-size: 14px">{{ sh.n }}</div>
+                        <div style="font-size: 11px; opacity: .55">{{ sh.d }}</div>
+                      </div>
+                      <div style="text-align: right">
+                        <div style="font-variant-numeric: tabular-nums; font-size: 14px">{{ sh.total }}</div>
+                        <div style="{{ sh.diffStyle }}">{{ sh.diff }}</div>
+                      </div>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+            </div>
+
+            <sc-if value="{{ alertsClosed }}" hint-placeholder-val="{{ true }}">
+              <div style="width: 64px; flex: none; border-left: 2px solid var(--color-divider); background: var(--color-surface); padding: 16px 0; display: flex; flex-direction: column; align-items: center; gap: 8px">
+                <button class="btn btn-icon" style="position: relative; width: 40px; height: 40px; justify-content: center" onClick="{{ toggleAlerts }}" aria-label="Open alerts">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"></path><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"></path></svg>
+                  <span style="position: absolute; top: -6px; right: -6px; background: var(--color-accent); color: #fff; font-family: var(--font-heading); font-weight: 800; font-size: 11px; min-width: 18px; height: 18px; display: grid; place-items: center; padding: 0 3px">{{ alertCount }}</span>
+                </button>
+                <div style="font-size: 9px; letter-spacing: .12em; text-transform: uppercase; opacity: .5; writing-mode: vertical-rl">Alerts</div>
+              </div>
+            </sc-if>
+            <sc-if value="{{ alertsOpen }}" hint-placeholder-val="{{ false }}">
+              <div style="width: 356px; flex: none; border-left: 2px solid var(--color-divider); background: var(--color-surface); padding: 20px; display: flex; flex-direction: column; gap: 14px; overflow: auto">
+                <div style="display: flex; align-items: center; gap: 10px">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"></path><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"></path></svg>
+                  <div style="font-size: 9px; letter-spacing: .14em; text-transform: uppercase; opacity: .55">Alerts</div>
+                  <span class="tag tag-accent">{{ alertCount }} unread</span>
+                  <button class="btn btn-ghost" style="margin-left: auto" onClick="{{ toggleAlerts }}">Close</button>
+                </div>
+                <sc-for list="{{ alerts }}" as="al" hint-placeholder-count="6">
+                  <div style="{{ al.style }}">
+                    <div style="display: flex; align-items: baseline; gap: 8px">
+                      <span style="{{ al.kindStyle }}">{{ al.kind }}</span>
+                      <span style="margin-left: auto; font-size: 11px; opacity: .5">{{ al.t }}</span>
+                    </div>
+                    <div style="font-family: var(--font-heading); font-weight: 800; font-size: 16px; line-height: 1.2; margin-top: 4px">{{ al.title }}</div>
+                    <div style="font-size: 12px; opacity: .7; margin-top: 3px">{{ al.body }}</div>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isSettings }}" hint-placeholder-val="{{ false }}">
+          <div style="flex: 1; min-height: 0; overflow: auto; padding: 22px; display: flex; gap: 40px">
+            <div style="width: 480px; display: flex; flex-direction: column; gap: 20px">
+              <div>
+                <div style="font-size: 10px; letter-spacing: .14em; text-transform: uppercase; opacity: .55; margin-bottom: 10px">Appearance</div>
+                <div class="field"><label>Theme</label>
+                  <div style="display: flex; gap: 8px; margin-top: 4px">
+                    <sc-for list="{{ cfg.themes }}" as="cth" hint-placeholder-count="2">
+                      <button style="{{ cth.style }}" onClick="{{ cth.go }}">{{ cth.label }}</button>
+                    </sc-for>
+                  </div>
+                </div>
+                <div class="field" style="margin-top: 12px"><label>Text size</label>
+                  <div style="display: flex; gap: 8px; margin-top: 4px">
+                    <sc-for list="{{ cfg.fonts }}" as="cfs" hint-placeholder-count="3">
+                      <button style="{{ cfs.style }}" onClick="{{ cfs.go }}">{{ cfs.label }}</button>
+                    </sc-for>
+                  </div>
+                </div>
+                <div class="field" style="margin-top: 12px"><label>Accent color</label>
+                  <div style="display: flex; gap: 8px; margin-top: 4px">
+                    <sc-for list="{{ cfg.accents }}" as="cac" hint-placeholder-count="3">
+                      <button style="{{ cac.style }}" onClick="{{ cac.go }}"><span style="{{ cac.sw }}"></span>{{ cac.label }}</button>
+                    </sc-for>
+                  </div>
+                </div>
+              </div>
+              <div style="height: 2px; background: var(--color-divider)"></div>
+              <div>
+                <div style="font-size: 10px; letter-spacing: .14em; text-transform: uppercase; opacity: .55; margin-bottom: 10px">Login screen</div>
+                <div class="field"><label>Background image (left panel)</label>
+                  <div style="{{ cfg.bgPreview }}">{{ cfg.bgPreviewLabel }}</div>
+                  <div style="display: flex; gap: 8px; margin-top: 8px">
+                    <label class="btn btn-secondary" style="cursor: pointer; margin: 0">
+                      Choose image
+                      <input type="file" accept="image/*" onChange="{{ cfg.pickBg }}" style="display: none">
+                    </label>
+                    <button class="btn btn-ghost" style="{{ cfg.clearBgStyle }}" onClick="{{ cfg.clearBg }}">Remove</button>
+                  </div>
+                </div>
+              </div>
+              <div style="height: 2px; background: var(--color-divider)"></div>
+              <div>
+                <div style="font-size: 10px; letter-spacing: .14em; text-transform: uppercase; opacity: .55; margin-bottom: 10px">Terminal</div>
+                <div class="field"><label>Alert & time-up sound</label>
+                  <div style="display: flex; gap: 8px; margin-top: 4px">
+                    <button style="{{ cfg.soundStyle }}" onClick="{{ cfg.toggleSound }}">{{ cfg.soundLabel }}</button>
+                  </div>
+                </div>
+                <div class="field" style="margin-top: 12px"><label>Auto-lock after inactivity (PIN to unlock)</label>
+                  <div style="display: flex; gap: 8px; margin-top: 4px">
+                    <sc-for list="{{ cfg.locks }}" as="clk" hint-placeholder-count="4">
+                      <button style="{{ clk.style }}" onClick="{{ clk.go }}">{{ clk.label }}</button>
+                    </sc-for>
+                  </div>
+                </div>
+                <div class="field" style="margin-top: 12px"><label>Receipt copies per sale</label>
+                  <div style="display: flex; gap: 8px; margin-top: 4px">
+                    <sc-for list="{{ cfg.copies }}" as="ccp" hint-placeholder-count="2">
+                      <button style="{{ ccp.style }}" onClick="{{ ccp.go }}">{{ ccp.label }}</button>
+                    </sc-for>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div style="width: 356px; display: flex; flex-direction: column; gap: 14px">
+              <div style="font-size: 10px; letter-spacing: .14em; text-transform: uppercase; opacity: .55">Profile</div>
+              <div style="display: flex; align-items: center; gap: 14px">
+                <div style="{{ cfg.avatarPreview }}">{{ cfg.initials }}</div>
+                <div>
+                  <div style="font-family: var(--font-heading); font-weight: 800; font-size: 17px">{{ cfg.who }}</div>
+                  <div style="font-size: 12px; opacity: .6">Shown in the sidebar and on shift records</div>
+                </div>
+              </div>
+              <div class="field"><label>Avatar color</label>
+                <div style="display: flex; gap: 8px; margin-top: 6px">
+                  <sc-for list="{{ cfg.swatches }}" as="csw" hint-placeholder-count="6">
+                    <div style="{{ csw.style }}" onClick="{{ csw.go }}"></div>
+                  </sc-for>
+                </div>
+              </div>
+              <button class="btn btn-ghost" style="align-self: flex-start" onClick="{{ cfg.clearAvatar }}">Reset to default</button>
+              <div style="font-size: 12px; opacity: .55">Photo uploads come with the real build — the terminal has no camera, so colors keep profiles tellable apart at a glance.</div>
+              <div style="height: 2px; background: var(--color-divider)"></div>
+              <div style="font-size: 12px; opacity: .6">Appearance settings apply to this terminal for everyone; the profile color follows your login.</div>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isTour }}" hint-placeholder-val="{{ false }}">
+          <div style="flex: 1; min-height: 0; display: flex">
+            <div style="flex: 1; min-width: 0; padding: 22px; overflow: auto; display: flex; flex-direction: column; gap: 18px">
+              <div style="display: flex; gap: 6px">
+                <sc-for list="{{ tour.tabs }}" as="ttb" hint-placeholder-count="2">
+                  <button style="{{ ttb.style }}" onClick="{{ ttb.go }}">{{ ttb.label }}</button>
+                </sc-for>
+              </div>
+
+              <sc-if value="{{ tour.showLive }}" hint-placeholder-val="{{ true }}">
+                <div style="display: flex; gap: 18px; align-items: flex-start">
+                  <div style="width: 250px; flex: none; display: flex; flex-direction: column; gap: 10px">
+                    <div style="font-size: 10px; letter-spacing: .14em; text-transform: uppercase; opacity: .55">Tournaments</div>
+                    <sc-for list="{{ tour.list }}" as="tcd" hint-placeholder-count="2">
+                      <div style="{{ tcd.style }}" onClick="{{ tcd.pick }}">
+                        <div style="display: flex; align-items: baseline; gap: 8px">
+                          <span style="font-family: var(--font-heading); font-weight: 800; font-size: 14px; line-height: 1.2; flex: 1">{{ tcd.name }}</span>
+                          <span class="{{ tcd.tagCls }}">{{ tcd.tagLabel }}</span>
+                        </div>
+                        <div style="font-size: 11px; opacity: .6">{{ tcd.meta }}</div>
+                        <div style="display: flex; justify-content: space-between; font-size: 11px; opacity: .7">
+                          <span>{{ tcd.feeStr }}</span><span>{{ tcd.slotStr }}</span>
+                        </div>
+                      </div>
+                    </sc-for>
+                  </div>
+
+                  <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 16px">
+                    <div>
+                      <div style="display: flex; align-items: baseline; gap: 10px">
+                        <div style="font-family: var(--font-heading); font-weight: 800; font-size: 26px; letter-spacing: -.03em">{{ tour.sel.name }}</div>
+                        <span class="{{ tour.sel.statusCls }}">{{ tour.sel.statusLabel }}</span>
+                      </div>
+                      <div style="font-size: 13px; opacity: .65">{{ tour.sel.meta }} · Entry {{ tour.sel.feeStr }} · Prize {{ tour.sel.prizeStr }} · Blocked stations: {{ tour.sel.blockedStr }}</div>
+                    </div>
+
+                    <sc-if value="{{ tour.hasLiveNow }}" hint-placeholder-val="{{ false }}">
+                      <div style="display: flex; gap: 12px">
+                        <sc-for list="{{ tour.liveNow }}" as="tlv" hint-placeholder-count="2">
+                          <div style="{{ tlv.style }}">
+                            <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 10px">
+                              <span style="font-size: 9px; letter-spacing: .14em; text-transform: uppercase; opacity: .7">Now on {{ tlv.console }}</span>
+                              <span style="font-size: 12px; opacity: .8">{{ tlv.who }}</span>
+                            </div>
+                            <div style="{{ tlv.timeStyle }}">{{ tlv.timeStr }}</div>
+                          </div>
+                        </sc-for>
+                      </div>
+                    </sc-if>
+
+                    <sc-if value="{{ tour.hasWinner }}" hint-placeholder-val="{{ false }}">
+                      <div style="border: 2px solid var(--color-accent); background: var(--color-accent); color: #fff; padding: 16px 18px; display: flex; align-items: baseline; gap: 14px">
+                        <span style="font-size: 10px; letter-spacing: .14em; text-transform: uppercase; opacity: .85">Champion</span>
+                        <span style="font-family: var(--font-heading); font-weight: 800; font-size: 28px; letter-spacing: -.03em">{{ tour.winnerName }}</span>
+                        <span style="margin-left: auto; font-size: 13px; opacity: .85">wins {{ tour.sel.prizeStr }}</span>
+                      </div>
+                    </sc-if>
+
+                    <sc-if value="{{ tour.showBracket }}" hint-placeholder-val="{{ true }}">
+                      <div style="display: flex; gap: 16px; align-items: stretch">
+                        <sc-for list="{{ tour.rounds }}" as="trd" hint-placeholder-count="3">
+                          <div style="flex: 1; display: flex; flex-direction: column; gap: 10px">
+                            <div style="font-size: 10px; letter-spacing: .14em; text-transform: uppercase; opacity: .55">{{ trd.label }}</div>
+                            <div style="flex: 1; display: flex; flex-direction: column; justify-content: space-around; gap: 12px">
+                              <sc-for list="{{ trd.matches }}" as="tmt" hint-placeholder-count="2">
+                                <div style="{{ tmt.style }}">
+                                  <span style="{{ tmt.tagStyle }}">{{ tmt.tag }}</span>
+                                  <sc-for list="{{ tmt.rows }}" as="tpr" hint-placeholder-count="2">
+                                    <div style="{{ tpr.style }}" onClick="{{ tpr.pick }}">
+                                      <span>{{ tpr.name }}</span>
+                                      <span style="{{ tpr.markStyle }}">{{ tpr.mark }}</span>
+                                    </div>
+                                  </sc-for>
+                                </div>
+                              </sc-for>
+                            </div>
+                          </div>
+                        </sc-for>
+                      </div>
+                    </sc-if>
+
+                    <sc-if value="{{ tour.hasBoard }}" hint-placeholder-val="{{ false }}">
+                      <div style="border-top: 2px solid var(--color-divider); padding-top: 14px; display: flex; flex-direction: column; gap: 10px">
+                        <div style="font-size: 10px; letter-spacing: .14em; text-transform: uppercase; opacity: .55">Match board</div>
+                        <div style="font-size: 12px; opacity: .6">{{ tour.boardNote }}</div>
+                        <sc-for list="{{ tour.board }}" as="tbd" hint-placeholder-count="2">
+                          <div style="display: flex; align-items: center; gap: 12px; border: 2px solid var(--color-divider); padding: 10px 12px">
+                            <div style="flex: 1; min-width: 0">
+                              <div style="font-family: var(--font-heading); font-weight: 800; font-size: 14px">{{ tbd.label }}</div>
+                              <div style="font-size: 11px; opacity: .6">{{ tbd.status }}</div>
+                            </div>
+                            <button class="btn btn-secondary" style="{{ tbd.extStyle }}" onClick="{{ tbd.ext }}">+5 min</button>
+                            <button class="btn btn-primary" style="{{ tbd.btnStyle }}" onClick="{{ tbd.start }}">{{ tbd.btnLabel }}</button>
+                          </div>
+                        </sc-for>
+                      </div>
+                    </sc-if>
+
+                    <sc-if value="{{ tour.showReg }}" hint-placeholder-val="{{ false }}">
+                      <div style="display: flex; flex-direction: column; gap: 10px; max-width: 460px">
+                        <div style="font-size: 10px; letter-spacing: .14em; text-transform: uppercase; opacity: .55">Registered players</div>
+                        <sc-for list="{{ tour.regPlayers }}" as="tpl" hint-placeholder-count="5">
+                          <div style="display: flex; justify-content: space-between; font-size: 14px; padding-bottom: 8px; border-bottom: 1px solid var(--color-divider)">
+                            <span style="font-family: var(--font-heading); font-weight: 800">{{ tpl.n }}</span>
+                            <span style="opacity: .5">{{ tpl.seed }}</span>
+                          </div>
+                        </sc-for>
+                        <div style="font-size: 12px; opacity: .6">{{ tour.slotsLeft }}</div>
+                        <sc-if value="{{ tour.canManage }}" hint-placeholder-val="{{ true }}">
+                          <button class="btn btn-primary" style="{{ tour.genStyle }}" onClick="{{ tour.gen }}">Close registration &amp; generate bracket</button>
+                        </sc-if>
+                      </div>
+                    </sc-if>
+                  </div>
+                </div>
+              </sc-if>
+
+              <sc-if value="{{ tour.showHistory }}" hint-placeholder-val="{{ false }}">
+                <table class="table">
+                  <thead><tr><th>Tournament</th><th>Date</th><th>Cadence</th><th style="text-align: right">Entries</th><th style="text-align: right">Prize</th><th>Winner</th></tr></thead>
+                  <tbody>
+                    <sc-for list="{{ tour.history }}" as="thr" hint-placeholder-count="3">
+                      <tr>
+                        <td style="font-family: var(--font-heading); font-weight: 800">{{ thr.name }}</td>
+                        <td style="opacity: .7">{{ thr.date }}</td>
+                        <td style="opacity: .7">{{ thr.cadence }}</td>
+                        <td style="text-align: right; font-variant-numeric: tabular-nums">{{ thr.entries }}</td>
+                        <td style="text-align: right; font-variant-numeric: tabular-nums">{{ thr.prize }}</td>
+                        <td style="font-family: var(--font-heading); font-weight: 800; color: var(--color-accent-700)">{{ thr.winner }}</td>
+                      </tr>
+                    </sc-for>
+                  </tbody>
+                </table>
+              </sc-if>
+            </div>
+
+            <sc-if value="{{ tour.canManage }}" hint-placeholder-val="{{ true }}">
+              <div style="width: 356px; flex: none; border-left: 2px solid var(--color-divider); background: var(--color-surface); padding: 20px; display: flex; flex-direction: column; gap: 12px; overflow: auto">
+                <div style="font-size: 9px; letter-spacing: .14em; text-transform: uppercase; opacity: .55">Selected tournament</div>
+                <div style="font-family: var(--font-heading); font-weight: 800; font-size: 17px; line-height: 1.2">{{ tour.sel.name }}</div>
+                <div class="field">
+                  <label>Blocked stations (no walk-in bookings)</label>
+                  <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px">
+                    <sc-for list="{{ tour.blockChips }}" as="tbc" hint-placeholder-count="4">
+                      <button style="{{ tbc.style }}" onClick="{{ tbc.go }}">{{ tbc.label }}</button>
+                    </sc-for>
+                  </div>
+                </div>
+                <button class="btn btn-secondary btn-block" style="{{ tour.cancelStyle }}" onClick="{{ tour.cancel }}">Cancel tournament</button>
+                <div style="height: 2px; background: var(--color-divider)"></div>
+                <div style="font-size: 9px; letter-spacing: .14em; text-transform: uppercase; color: var(--color-accent-700)">Financial analytics · managers only</div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px">
+                  <div><div style="font-size: 9px; letter-spacing: .12em; text-transform: uppercase; opacity: .55">Revenue</div><div style="font-family: var(--font-heading); font-weight: 800; font-size: 18px">{{ tour.fin.revStr }}</div></div>
+                  <div><div style="font-size: 9px; letter-spacing: .12em; text-transform: uppercase; opacity: .55">Net after prize</div><div style="font-family: var(--font-heading); font-weight: 800; font-size: 18px">{{ tour.fin.netStr }}</div></div>
+                  <div><div style="font-size: 9px; letter-spacing: .12em; text-transform: uppercase; opacity: .55">Opportunity cost</div><div style="font-family: var(--font-heading); font-weight: 800; font-size: 18px">{{ tour.fin.oppStr }}</div></div>
+                  <div><div style="font-size: 9px; letter-spacing: .12em; text-transform: uppercase; opacity: .55">Extra margin</div><div style="{{ tour.fin.extraStyle }}">{{ tour.fin.extraStr }}</div></div>
+                </div>
+                <div style="font-size: 11px; opacity: .55">{{ tour.fin.formula }}</div>
+                <div style="font-size: 12px; opacity: .75">{{ tour.fin.line }}</div>
+                <div style="height: 2px; background: var(--color-divider)"></div>
+                <div style="font-size: 9px; letter-spacing: .14em; text-transform: uppercase; opacity: .55">Arrange a tournament</div>
+                <div class="field"><label>Name</label><input class="input" value="{{ tour.form.name }}" onChange="{{ tour.form.setName }}" placeholder="e.g. FIFA Cup #32"></div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px">
+                  <div class="field"><label>Game</label><input class="input" value="{{ tour.form.game }}" onChange="{{ tour.form.setGame }}" placeholder="FIFA 25"></div>
+                  <div class="field"><label>When</label><input class="input" value="{{ tour.form.when }}" onChange="{{ tour.form.setWhen }}" placeholder="Fri 15 Aug · 19:00"></div>
+                </div>
+                <div class="field">
+                  <label>Cadence</label>
+                  <div style="display: flex; gap: 8px; margin-top: 4px">
+                    <sc-for list="{{ tour.form.cadences }}" as="tfd" hint-placeholder-count="2">
+                      <button style="{{ tfd.style }}" onClick="{{ tfd.go }}">{{ tfd.label }}</button>
+                    </sc-for>
+                  </div>
+                </div>
+                <div class="field">
+                  <label>Player cap (bracket needs a power of two)</label>
+                  <div style="display: flex; gap: 6px; margin-top: 4px">
+                    <sc-for list="{{ tour.form.caps }}" as="tcp" hint-placeholder-count="4">
+                      <button style="{{ tcp.style }}" onClick="{{ tcp.go }}">{{ tcp.label }}</button>
+                    </sc-for>
+                  </div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px">
+                  <div class="field"><label>Entry fee (৳)</label><input class="input" value="{{ tour.form.fee }}" onChange="{{ tour.form.setFee }}" placeholder="200"></div>
+                  <div class="field"><label>Prize pool (৳)</label><input class="input" value="{{ tour.form.prize }}" onChange="{{ tour.form.setPrize }}" placeholder="1200"></div>
+                  <div class="field"><label>Match (min)</label><input class="input" value="{{ tour.form.duration }}" onChange="{{ tour.form.setDuration }}" placeholder="20"></div>
+                </div>
+                <div class="field">
+                  <label>Block stations for the event</label>
+                  <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px">
+                    <sc-for list="{{ tour.form.blocks }}" as="tfc" hint-placeholder-count="4">
+                      <button style="{{ tfc.style }}" onClick="{{ tfc.go }}">{{ tfc.label }}</button>
+                    </sc-for>
+                  </div>
+                </div>
+                <button class="btn btn-primary btn-block" onClick="{{ tour.form.create }}">Create tournament</button>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ tour.readOnly }}" hint-placeholder-val="{{ false }}">
+              <div style="width: 300px; flex: none; border-left: 2px solid var(--color-divider); background: var(--color-surface); padding: 20px; display: flex; flex-direction: column; gap: 14px">
+                <div style="font-size: 9px; letter-spacing: .14em; text-transform: uppercase; opacity: .55">Cashier view</div>
+                <div style="font-size: 13px; opacity: .8">Only a manager or the admin can arrange, edit or cancel tournaments and see event finances. You run the matches: start pending matches from the match board — the system assigns a free allocated console — and click the winner's name in the bracket when a match ends; they advance automatically.</div>
+                <div style="height: 2px; background: var(--color-divider)"></div>
+                <div style="font-size: 13px; opacity: .8">To register a customer: open the point of sale, pick the tournament entry from the Tournament category, type the player's name (or attach a member), take the fee, and print the ticket — its QR code is their bracket pass. The sale logs into your shift's X/Z report automatically, and the bracket generates itself when the last slot sells.</div>
+                <button class="btn btn-primary btn-block" onClick="{{ goPosCounter }}">Sell an entry at the POS</button>
+              </div>
+            </sc-if>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isManage }}" hint-placeholder-val="{{ false }}">
+          <div style="flex: 1; min-height: 0; display: flex">
+            <div style="flex: 1; min-width: 0; padding: 22px; overflow: auto; display: flex; flex-direction: column; gap: 22px">
+
+              <sc-if value="{{ manage.canStations }}" hint-placeholder-val="{{ true }}">
+                <div>
+                  <div style="font-size: 10px; letter-spacing: .14em; text-transform: uppercase; opacity: .55; margin-bottom: 8px">Stations</div>
+                  <table class="table">
+                    <thead><tr><th>Name</th><th>Console</th><th>Rate</th><th>Status</th><th style="text-align: right">Action</th></tr></thead>
+                    <tbody>
+                      <sc-for list="{{ manage.stations }}" as="st" hint-placeholder-count="4">
+                        <tr>
+                          <td style="font-family: var(--font-heading); font-weight: 800">{{ st.name }}</td>
+                          <td style="opacity: .7">{{ st.kind }}</td>
+                          <td style="opacity: .7">{{ st.rate }}</td>
+                          <td style="opacity: .7">{{ st.statusLabel }}</td>
+                          <td style="text-align: right">
+                            <button class="btn btn-ghost" style="{{ st.removeStyle }}" onClick="{{ st.remove }}">{{ st.removeLabel }}</button>
+                          </td>
+                        </tr>
+                      </sc-for>
+                    </tbody>
+                  </table>
+                </div>
+
+                <div>
+                  <div style="font-size: 10px; letter-spacing: .14em; text-transform: uppercase; opacity: .55; margin-bottom: 8px">Pricing · per console</div>
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px">
+                    <sc-for list="{{ manage.rates }}" as="rt" hint-placeholder-count="2">
+                      <div style="border: 2px solid var(--color-text); padding: 16px; display: flex; flex-direction: column; gap: 12px">
+                        <div style="font-family: var(--font-heading); font-weight: 800; font-size: 18px">{{ rt.kind }}</div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px">
+                          <div class="field"><label>Per hour (৳)</label><input class="input" value="{{ rt.hr }}" onChange="{{ rt.setHr }}"></div>
+                          <div class="field"><label>Per 30 min (৳)</label><input class="input" value="{{ rt.half }}" onChange="{{ rt.setHalf }}"></div>
+                        </div>
+                      </div>
+                    </sc-for>
+                  </div>
+                </div>
+
+                <div>
+                  <div style="font-size: 10px; letter-spacing: .14em; text-transform: uppercase; opacity: .55; margin-bottom: 8px">Staff</div>
+                  <table class="table">
+                    <thead><tr><th>Name</th><th>Role</th><th>PIN</th><th>Status</th><th style="text-align: right">Action</th></tr></thead>
+                    <tbody>
+                      <sc-for list="{{ manage.staff }}" as="sp" hint-placeholder-count="3">
+                        <tr>
+                          <td style="font-family: var(--font-heading); font-weight: 800">{{ sp.n }}</td>
+                          <td style="opacity: .7">{{ sp.r }}</td>
+                          <td style="opacity: .7; font-variant-numeric: tabular-nums">{{ sp.pin }}</td>
+                          <td style="opacity: .7">{{ sp.status }}</td>
+                          <td style="text-align: right"><button class="btn btn-ghost" style="{{ sp.removeStyle }}" onClick="{{ sp.remove }}">{{ sp.removeLabel }}</button></td>
+                        </tr>
+                      </sc-for>
+                    </tbody>
+                  </table>
+                  <div style="font-size: 12px; opacity: .6; margin-top: 8px">New staff sign in from the login screen with their role and PIN. Someone on shift can't be removed.</div>
+                </div>
+              </sc-if>
+
+              <div>
+                <div style="font-size: 10px; letter-spacing: .14em; text-transform: uppercase; opacity: .55; margin-bottom: 8px">Menu &amp; stock</div>
+                <table class="table">
+                  <thead><tr><th>Item</th><th>Category</th><th style="width: 110px">Price ৳</th><th style="width: 100px">Stock</th><th style="width: 110px">Reorder at</th><th style="text-align: right">Action</th></tr></thead>
+                  <tbody>
+                    <sc-for list="{{ manage.items }}" as="m" hint-placeholder-count="10">
+                      <tr>
+                        <td style="font-family: var(--font-heading); font-weight: 800">{{ m.n }}</td>
+                        <td style="opacity: .7">{{ m.cat }}</td>
+                        <td><input class="input" style="height: 34px; padding: 4px 8px" value="{{ m.price }}" onChange="{{ m.setPrice }}"></td>
+                        <td><input class="input" style="height: 34px; padding: 4px 8px" value="{{ m.stock }}" onChange="{{ m.setStock }}"></td>
+                        <td><input class="input" style="height: 34px; padding: 4px 8px" value="{{ m.min }}" onChange="{{ m.setMin }}"></td>
+                        <td style="text-align: right"><button class="btn btn-ghost" onClick="{{ m.remove }}">Remove</button></td>
+                      </tr>
+                    </sc-for>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div style="width: 356px; flex: none; border-left: 2px solid var(--color-divider); background: var(--color-surface); padding: 20px; display: flex; flex-direction: column; gap: 16px; overflow: auto">
+              <div style="font-size: 12px; opacity: .7">{{ manage.roleNote }}</div>
+
+              <sc-if value="{{ manage.canStations }}" hint-placeholder-val="{{ true }}">
+                <div style="display: flex; flex-direction: column; gap: 10px">
+                  <div style="height: 2px; background: var(--color-divider)"></div>
+                  <div style="font-size: 9px; letter-spacing: .14em; text-transform: uppercase; opacity: .55">Add a station</div>
+                  <div class="field"><label>Name</label><input class="input" value="{{ manage.newStationName }}" onChange="{{ manage.setStationName }}" placeholder="e.g. Titan II"></div>
+                  <div class="field">
+                    <label>Console</label>
+                    <div style="display: flex; gap: 8px; margin-top: 4px">
+                      <sc-for list="{{ manage.kinds }}" as="k" hint-placeholder-count="2">
+                        <button style="{{ k.style }}" onClick="{{ k.go }}">{{ k.label }}</button>
+                      </sc-for>
+                    </div>
+                  </div>
+                  <button class="btn btn-primary btn-block" style="justify-content: flex-start" onClick="{{ manage.addStation }}">Add station</button>
+                  <div style="height: 2px; background: var(--color-divider)"></div>
+                  <div style="font-size: 9px; letter-spacing: .14em; text-transform: uppercase; opacity: .55">Add staff</div>
+                  <div class="field"><label>Full name</label><input class="input" value="{{ manage.ns.n }}" onChange="{{ manage.ns.setN }}" placeholder="e.g. Rakib Hossain"></div>
+                  <div class="field">
+                    <label>Role</label>
+                    <div style="display: flex; gap: 8px; margin-top: 4px">
+                      <sc-for list="{{ manage.ns.roles }}" as="nr" hint-placeholder-count="2">
+                        <button style="{{ nr.style }}" onClick="{{ nr.go }}">{{ nr.label }}</button>
+                      </sc-for>
+                    </div>
+                  </div>
+                  <div class="field"><label>4-digit PIN</label><input class="input" value="{{ manage.ns.pin }}" onChange="{{ manage.ns.setPin }}" placeholder="0000"></div>
+                  <button class="btn btn-primary btn-block" style="justify-content: flex-start" onClick="{{ manage.addStaff }}">Add staff</button>
+                </div>
+              </sc-if>
+
+              <div style="height: 2px; background: var(--color-divider)"></div>
+              <div style="font-size: 9px; letter-spacing: .14em; text-transform: uppercase; opacity: .55">Add a menu item</div>
+              <div class="field"><label>Name</label><input class="input" value="{{ manage.ni.n }}" onChange="{{ manage.ni.setN }}" placeholder="e.g. Chicken Roll"></div>
+              <div class="field">
+                <label>Category</label>
+                <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px">
+                  <sc-for list="{{ manage.ni.cats }}" as="c" hint-placeholder-count="4">
+                    <button style="{{ c.style }}" onClick="{{ c.go }}">{{ c.label }}</button>
+                  </sc-for>
+                </div>
+              </div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px">
+                <div class="field"><label>Price ৳</label><input class="input" value="{{ manage.ni.price }}" onChange="{{ manage.ni.setPrice }}" placeholder="0"></div>
+                <div class="field"><label>Stock</label><input class="input" value="{{ manage.ni.stock }}" onChange="{{ manage.ni.setStock }}" placeholder="0"></div>
+                <div class="field"><label>Reorder</label><input class="input" value="{{ manage.ni.min }}" onChange="{{ manage.ni.setMin }}" placeholder="0"></div>
+              </div>
+              <button class="btn btn-primary btn-block" style="justify-content: flex-start" onClick="{{ manage.addItem }}">Add item</button>
+            </div>
+          </div>
+        </sc-if>
+
+      </div>
+
+      <sc-if value="{{ showNewMember }}" hint-placeholder-val="{{ false }}">
+        <div style="position: absolute; inset: 0; background: color-mix(in srgb, var(--color-neutral-900) 50%, transparent); display: grid; place-items: center">
+          <div style="width: 620px; background: var(--color-bg); border: 2px solid var(--color-text); box-shadow: var(--shadow-lg)">
+            <div style="padding: 20px 24px; border-bottom: 2px solid var(--color-divider); display: flex; align-items: baseline; gap: 12px">
+              <div style="font-family: var(--font-heading); font-weight: 800; font-size: 24px; letter-spacing: -.03em">New member</div>
+              <div style="font-size: 12px; opacity: .55">Registers to Firestore · Users</div>
+              <button class="btn btn-ghost" style="margin-left: auto" onClick="{{ closeNewMember }}">Close</button>
+            </div>
+
+            <div style="padding: 24px; display: flex; flex-direction: column; gap: 18px">
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px">
+                <div class="field"><label>Full name</label><input class="input" value="{{ nm.name }}" onChange="{{ nm.setName }}" placeholder="e.g. Rifat Hasan"></div>
+                <div class="field"><label>Phone number</label><input class="input" value="{{ nm.phone }}" onChange="{{ nm.setPhone }}" placeholder="+880 1XXX-XXXXXX"></div>
+              </div>
+
+              <div class="field">
+                <label>Preferred console</label>
+                <div style="display: flex; gap: 8px; margin-top: 4px">
+                  <sc-for list="{{ nm.consoles }}" as="c" hint-placeholder-count="3">
+                    <button style="{{ c.style }}" onClick="{{ c.go }}">{{ c.label }}</button>
+                  </sc-for>
+                </div>
+              </div>
+
+              <div class="field">
+                <label>Games they play</label>
+                <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px">
+                  <sc-for list="{{ nm.games }}" as="g" hint-placeholder-count="6">
+                    <button style="{{ g.style }}" onClick="{{ g.go }}">{{ g.label }}</button>
+                  </sc-for>
+                </div>
+              </div>
+
+              <div style="height: 2px; background: var(--color-divider)"></div>
+
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px">
+                <div class="field">
+                  <label>Opening wallet top-up (৳)</label>
+                  <div style="display: flex; gap: 8px; margin-top: 4px">
+                    <sc-for list="{{ nm.topups }}" as="t" hint-placeholder-count="4">
+                      <button style="{{ t.style }}" onClick="{{ t.go }}">{{ t.label }}</button>
+                    </sc-for>
+                  </div>
+                </div>
+                <div class="field">
+                  <label>Paid by</label>
+                  <div style="display: flex; gap: 8px; margin-top: 4px">
+                    <sc-for list="{{ nm.pays }}" as="p" hint-placeholder-count="3">
+                      <button style="{{ p.style }}" onClick="{{ p.go }}">{{ p.label }}</button>
+                    </sc-for>
+                  </div>
+                </div>
+              </div>
+
+              <div style="background: var(--color-surface); padding: 16px; display: flex; align-items: center; gap: 22px">
+                <div>
+                  <div style="font-size: 9px; letter-spacing: .14em; text-transform: uppercase; opacity: .55">Wallet opens at</div>
+                  <div style="font-family: var(--font-heading); font-weight: 800; font-size: 28px; letter-spacing: -.03em">{{ nm.walletStr }}</div>
+                </div>
+                <div>
+                  <div style="font-size: 9px; letter-spacing: .14em; text-transform: uppercase; opacity: .55">Welcome points</div>
+                  <div style="font-family: var(--font-heading); font-weight: 800; font-size: 28px; letter-spacing: -.03em">{{ nm.pointsStr }}</div>
+                </div>
+                <div style="font-size: 12px; opacity: .65; max-width: 240px">{{ nm.note }}</div>
+              </div>
+            </div>
+
+            <div style="padding: 18px 24px; border-top: 2px solid var(--color-divider); display: flex; gap: 10px">
+              <button class="btn btn-primary" style="justify-content: flex-start; height: 44px; font-size: 15px" onClick="{{ saveNewMember }}">Save member</button>
+              <button class="btn btn-secondary" style="justify-content: flex-start" onClick="{{ saveAndSeat }}">{{ nm.seatLabel }}</button>
+              <button class="btn btn-ghost" style="margin-left: auto" onClick="{{ closeNewMember }}">Cancel</button>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ showLogin }}" hint-placeholder-val="{{ true }}">
+        <div style="position: absolute; inset: 0; background: var(--color-bg); display: flex">
+          <div style="{{ loginPanelStyle }}">
+            <div style="display: flex; align-items: center; gap: 14px">
+              <div style="width: 62px; height: 62px; background: #fff; color: var(--color-accent); display: grid; place-items: center; font-family: var(--font-heading); font-weight: 800; font-size: 30px; letter-spacing: -.06em">GD</div>
+              <div>
+                <div style="font-family: var(--font-heading); font-weight: 800; font-size: 27px; letter-spacing: -.03em; line-height: 1">GAMER'S DEN</div>
+                <div style="font-size: 11px; letter-spacing: .22em; text-transform: uppercase; opacity: .85">Bogura · Est. 2025</div>
+              </div>
+            </div>
+            <div style="margin-top: auto">
+              <div style="font-family: var(--font-heading); font-weight: 800; font-size: 62px; line-height: .98; letter-spacing: -.045em; text-wrap: balance">Every minute<br>accounted for.</div>
+              <div style="height: 2px; background: rgba(255,255,255,.5); margin: 26px 0"></div>
+              <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; font-size: 13px">
+                <div><div style="font-family: var(--font-heading); font-weight: 800; font-size: 26px">4</div>stations live</div>
+                <div><div style="font-family: var(--font-heading); font-weight: 800; font-size: 26px">30 min</div>billing blocks</div>
+                <div><div style="font-family: var(--font-heading); font-weight: 800; font-size: 26px">Offline</div>safe till sync</div>
+              </div>
+            </div>
+          </div>
+          <div style="flex: 1; padding: 56px; display: flex; flex-direction: column; justify-content: center; gap: 18px; max-width: 480px">
+            <div>
+              <div style="font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--color-accent)">Front desk terminal 01</div>
+              <div style="font-family: var(--font-heading); font-weight: 800; font-size: 36px; letter-spacing: -.035em">Sign in</div>
+            </div>
+            <div style="height: 2px; background: var(--color-divider)"></div>
+            <div style="font-size: 9px; letter-spacing: .14em; text-transform: uppercase; opacity: .55">Choose your role</div>
+            <sc-for list="{{ roles }}" as="r" hint-placeholder-count="3">
+              <div style="{{ r.style }}" onClick="{{ r.pick }}">
+                <div>
+                  <div style="font-family: var(--font-heading); font-weight: 800; font-size: 17px">{{ r.name }}</div>
+                  <div style="font-size: 12px; opacity: .65">{{ r.perms }}</div>
+                </div>
+                <div style="margin-left: auto; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; opacity: .55">{{ r.role }}</div>
+              </div>
+            </sc-for>
+            <div class="field"><label>PIN</label><input class="input" type="password" value="0000" readonly=""></div>
+            <button class="btn btn-primary btn-block" style="height: 50px; font-size: 16px" onClick="{{ signIn }}">Open shift &amp; enter</button>
+            <div style="font-size: 12px; opacity: .55">Admin sets stations, pricing and stock. Managers edit food and stock only. Cashiers run sessions and the till, and can register members.</div>
+          </div>
+        </div>
+      </sc-if>
+
+    </div>
+  </div>
+
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{}">
+const money = (n) => '৳' + Math.round(n).toLocaleString('en-US');
+const pad = (n) => (n < 10 ? '0' + n : '' + n);
+const clock = (s) => {
+  if (s < 0) s = 0;
+  return pad(Math.floor(s / 3600)) + ':' + pad(Math.floor((s % 3600) / 60)) + ':' + pad(s % 60);
+};
+const RATE = { PS5: { hr: 120, half: 80 }, PS4: { hr: 80, half: 50 } };
+const buildBracket = (players) => {
+  if (players.length < 2) return null;
+  const n = Math.pow(2, Math.ceil(Math.log2(players.length)));
+  const ps = players.slice(); while (ps.length < n) ps.push(null);
+  const r1 = []; for (let i = 0; i < n; i += 2) r1.push({ a: ps[i], b: ps[i + 1], w: ps[i + 1] ? null : ps[i] });
+  const rounds = [r1]; let prev = r1;
+  while (prev.length > 1) {
+    const nx = []; for (let i = 0; i < prev.length; i += 2) nx.push({ a: prev[i].w, b: prev[i + 1].w, w: null });
+    rounds.push(nx); prev = nx;
+  }
+  return rounds;
+};
+const blockCost = (rates, kind, blocks) => {
+  const r = (rates || RATE)[kind] || RATE[kind] || { hr: 0, half: 0 };
+  return Math.floor(blocks / 2) * r.hr + (blocks % 2) * r.half;
+};
+const MENU = [
+  ['Red Bull 250ml', 'Beverage', 180, 4, 10, 14],
+  ['Sting 250ml', 'Beverage', 35, 42, 15, 26],
+  ['Coke 500ml', 'Beverage', 60, 26, 12, 18],
+  ['Cold Coffee', 'Beverage', 150, 19, 8, 9],
+  ['Milk Tea', 'Beverage', 20, 60, 20, 41],
+  ['Mineral Water', 'Beverage', 20, 48, 24, 22],
+  ['Chicken Burger', 'Food', 220, 12, 6, 11],
+  ['French Fries', 'Food', 120, 24, 10, 19],
+  ['Chicken Wings 6pc', 'Food', 260, 3, 6, 8],
+  ['Chicken Momo 8pc', 'Food', 180, 15, 8, 12],
+  ['Club Sandwich', 'Food', 160, 9, 5, 6],
+  ['Pringles', 'Snack', 240, 2, 6, 5],
+  ['Potato Chips', 'Snack', 40, 33, 15, 24],
+  ['Chocolate Bar', 'Snack', 60, 27, 12, 13],
+  ['Extra Controller', 'Extras', 50, 6, 2, 7],
+  ['Headset Rental', 'Extras', 40, 4, 2, 3]
+];
+
+const MEMBERS = [
+  ['Rifat Hasan', '+880 1712-448190', 'FIFA 25 · PS5', '৳1,240', '318', '42', '৳18,600'],
+  ['Nafis Iqbal', '+880 1533-770210', 'Tekken 8 · PS4', '৳0', '86', '11', '৳4,180'],
+  ['Sadia Rahman', '+880 1811-330922', 'Gran Turismo · PS5', '৳2,000', '640', '58', '৳26,400'],
+  ['Imran Kabir', '+880 1622-118840', 'Call of Duty · PS5', '৳320', '204', '27', '৳11,950'],
+  ['Zubair Ahmed', '+880 1977-556210', 'FIFA 25 · PS4', '৳750', '155', '19', '৳7,320'],
+  ['Tanvir Alam', '+880 1744-902316', 'Mortal Kombat · PS5', '৳90', '48', '8', '৳2,940'],
+  ['Arafat Mahmud', '+880 1300-778921', 'God of War · PS5', '৳1,500', '412', '34', '৳15,880'],
+  ['Sabbir Nayem', '+880 1855-664120', 'FIFA 25 · PS4', '৳0', '22', '5', '৳1,460']
+];
+
+class Component extends DCLogic {
+  state = {
+    signedIn: false,
+    role: 'Cashier',
+    view: 'floor',
+    sel: 'Nexus',
+    member: 'Rifat Hasan',
+    cat: 'All',
+    pay: 'Cash',
+    tick: 0,
+    paused: {},
+    extra: {},
+    started: {},
+    cleared: {},
+    newMemberOpen: false,
+    added: [],
+    nm: { name: '', phone: '', console: 'PS5', games: ['FIFA 25'], topup: 500, pay: 'Cash' },
+    run: {},
+    paid: {},
+    posMember: null,
+    posTouched: false,
+    posQuery: '',
+    redeem: 0,
+    carts: {
+      Nexus: [{ n: 'Red Bull 250ml', p: 180, q: 2 }, { n: 'Chicken Burger', p: 220, q: 1 }],
+      Vortex: [],
+      Titan: [],
+      Phantom: [{ n: 'Milk Tea', p: 20, q: 3 }],
+      __counter: []
+    },
+    posMode: 'station',
+    rates: { PS5: { hr: 120, half: 80 }, PS4: { hr: 80, half: 50 } },
+    items: MENU.map((m) => m.slice()),
+    newItem: { n: '', cat: 'Beverage', price: '', stock: '', min: '' },
+    newStation: { name: '', kind: 'PS5' },
+    memberAdj: {},
+    crmQuery: '',
+    expensesAdded: [],
+    expForm: { n: '', amt: '', cat: 'Supplies' },
+    counted: '9120',
+    closedShifts: [],
+    staffList: [
+      { n: 'Sabbir Ahmed', r: 'Cashier', pin: '0417', onShift: true },
+      { n: 'Tamim Iqbal', r: 'Cashier', pin: '2210', onShift: false },
+      { n: 'Farhan Reza', r: 'Manager', pin: '8804', onShift: false }
+    ],
+    newStaff: { n: '', r: 'Cashier', pin: '' },
+    alertsOpen: false,
+    settings: { theme: 'dark', fontScale: 'Default', accent: '#ec3013', sound: true, autoLock: '5 min', receiptCopies: '1', avatars: {}, loginBg: '' },
+    tSel: 't1',
+    tTab: 'live',
+    tSoldAmt: 0,
+    tSoldCount: 0,
+    newT: { name: '', game: '', cadence: 'Weekly', when: '', fee: '200', prize: '', cap: 8, duration: '20', blocked: [] },
+    tPlayerName: '',
+    tournaments: [
+      { id: 't1', name: 'Friday Night FIFA Cup #31', game: 'FIFA 25', cadence: 'Weekly', when: 'Fri 8 Aug · 19:00', fee: 200, prize: 1200, cap: 8, duration: 20, blocked: ['Nexus', 'Vortex'], status: 'LIVE', winner: null,
+        players: ['Rifat Hasan', 'Imran Kabir', 'Sadia Rahman', 'Tanvir Alam', 'Zubair Ahmed', 'Nafis Iqbal', 'Arafat Mahmud', 'Sabbir Nayem'],
+        bracket: [
+          [{ a: 'Rifat Hasan', b: 'Imran Kabir', w: 'Rifat Hasan' }, { a: 'Sadia Rahman', b: 'Tanvir Alam', w: 'Sadia Rahman' }, { a: 'Zubair Ahmed', b: 'Nafis Iqbal', w: 'Nafis Iqbal' }, { a: 'Arafat Mahmud', b: 'Sabbir Nayem', w: 'Arafat Mahmud' }],
+          [{ a: 'Rifat Hasan', b: 'Sadia Rahman', w: 'Rifat Hasan' }, { a: 'Nafis Iqbal', b: 'Arafat Mahmud', w: null, st: 'Vortex', at: 0 }],
+          [{ a: 'Rifat Hasan', b: null, w: null }]
+        ] },
+      { id: 't2', name: 'Monthly Tekken Masters — August', game: 'Tekken 8', cadence: 'Monthly', when: 'Sat 30 Aug · 18:00', fee: 300, prize: 2000, cap: 8, duration: 25, blocked: ['Phantom'], status: 'OPEN', winner: null,
+        players: ['Imran Kabir', 'Tanvir Alam', 'Arafat Mahmud', 'Zubair Ahmed', 'Sabbir Nayem'], bracket: null }
+    ],
+    tHistory: [
+      { name: 'Friday Night FIFA Cup #30', date: 'Fri 1 Aug', cadence: 'Weekly', winner: 'Rifat Hasan', prize: '৳1,200', entries: 8 },
+      { name: 'Monthly Tekken Masters — July', date: 'Sat 26 Jul', cadence: 'Monthly', winner: 'Arafat Mahmud', prize: '৳2,000', entries: 8 },
+      { name: 'Friday Night FIFA Cup #29', date: 'Fri 25 Jul', cadence: 'Weekly', winner: 'Sadia Rahman', prize: '৳1,200', entries: 8 }
+    ],
+    stationDefs: [
+      { name: 'Nexus', kind: 'PS5', status: 'active', who: 'Rifat Hasan', phone: '+880 1712-448190', wallet: '৳1,240', points: '318 pts', blocks: 4, elapsed: 5820 },
+      { name: 'Vortex', kind: 'PS5', status: 'available', who: 'Free — ready to start', phone: '—', wallet: '—', points: '—', blocks: 0, elapsed: 0 },
+      { name: 'Titan', kind: 'PS4', status: 'available', who: 'Free — ready to start', phone: '—', wallet: '—', points: '—', blocks: 0, elapsed: 0 },
+      { name: 'Phantom', kind: 'PS4', status: 'locked', who: 'Nafis Iqbal', phone: '+880 1533-770210', wallet: '৳0', points: '86 pts', blocks: 3, elapsed: 5400 }
+    ]
+  };
+
+  get base() { return this.state.stationDefs; }
+
+  componentDidMount() { this.t = setInterval(() => this.setState((s) => ({ tick: s.tick + 1 })), 1000); }
+  componentWillUnmount() { clearInterval(this.t); }
+
+  runOf(name, s) {
+    s = s || this.state;
+    if (s.run[name]) return s.run[name];
+    const b = s.stationDefs.find((x) => x.name === name);
+    if (!b || s.started[name] || s.cleared[name] || b.status === 'available') return { acc: 0, at: null };
+    return { acc: b.elapsed, at: 0 };
+  }
+
+  blocksOf(name, s) {
+    const b = s.stationDefs.find((x) => x.name === name) || { blocks: 0 };
+    const baseBlocks = s.started[name] ? s.started[name].blocks : (s.cleared[name] ? 0 : b.blocks);
+    return { baseBlocks, cur: s.extra[name] || 0, blocks: Math.max(0, baseBlocks + (s.extra[name] || 0)) };
+  }
+
+  stationList() {
+    return this.base.map((b0) => {
+      const fresh = this.state.started[b0.name];
+      const cleared = this.state.cleared[b0.name];
+      let b = b0;
+      if (fresh) {
+        b = Object.assign({}, b0, { status: 'active', who: fresh.who, phone: '—', wallet: '—', points: '—',
+          blocks: fresh.blocks, elapsed: 0, since: fresh.at });
+      } else if (cleared) {
+        b = Object.assign({}, b0, { status: 'available', who: 'Free — ready to start', phone: '—', wallet: '—', points: '—', blocks: 0, elapsed: 0 });
+      }
+      const blocks = Math.max(0, b.blocks + (this.state.extra[b.name] || 0));
+      const r = this.runOf(b0.name);
+      const running = b.status !== 'available' && r.at != null;
+      const elapsed = b.status === 'available' ? 0 : r.acc + (running ? Math.max(0, this.state.tick - r.at) : 0);
+      const total = blocks * 1800;
+      const noTime = b.status !== 'available' && blocks === 0;
+      const remain = noTime ? 0 : total - elapsed;
+      const locked = b.status !== 'available' && !noTime && remain <= 0;
+      let status = b.status === 'available' ? 'available' : locked ? 'locked' : 'active';
+      const blockedBy = this.state.tournaments.find((t) => t.status !== 'DONE' && t.blocked.indexOf(b.name) >= 0);
+      if (status === 'available' && !this.state.started[b.name] && blockedBy) status = 'reserved';
+      let tMatch = null;
+      if (status === 'reserved' && blockedBy && blockedBy.bracket) {
+        blockedBy.bracket.forEach((rd) => rd.forEach((mm) => { if (mm.st === b.name && !mm.w) tMatch = mm; }));
+        if (tMatch) tMatch = {
+          who: tMatch.a + ' vs ' + tMatch.b,
+          remain: ((blockedBy.duration || 20) + (tMatch.ext || 0)) * 60 - (this.state.tick - (tMatch.at || 0))
+        };
+      }
+      return Object.assign({}, b, { blocks, noTime, running, elapsed, total, remain, status,
+        reservedFor: status === 'reserved' && blockedBy ? blockedBy.name : null,
+        tMatch,
+        started: elapsed > 0 || running,
+        paidBlocks: Math.min(this.state.paid[b.name] || 0, blocks),
+        cost: b.status === 'available' ? 0
+          : Math.max(0, blockCost(this.state.rates, b.kind, blocks) - blockCost(this.state.rates, b.kind, Math.min(this.state.paid[b.name] || 0, blocks))) });
+    });
+  }
+
+  cartOf(name) { return this.state.carts[name] || []; }
+  foodOf(name) { return this.cartOf(name).reduce((a, l) => a + l.p * l.q, 0); }
+
+  addItem(n, p) {
+    const k = this.cartKey();
+    this.setState((s) => {
+      const cur = (s.carts[k] || []).slice();
+      const i = cur.findIndex((l) => l.n === n);
+      if (i >= 0) cur[i] = { n, p, q: cur[i].q + 1 }; else cur.push({ n, p, q: 1 });
+      return { carts: Object.assign({}, s.carts, { [k]: cur }) };
+    });
+  }
+  bump(n, d) {
+    const k = this.cartKey();
+    this.setState((s) => {
+      const cur = (s.carts[k] || []).map((l) => (l.n === n ? { n: l.n, p: l.p, q: l.q + d } : l)).filter((l) => l.q > 0);
+      return { carts: Object.assign({}, s.carts, { [k]: cur }) };
+    });
+  }
+
+  cartKey() { return this.state.posMode === 'counter' ? '__counter' : this.state.sel; }
+
+  setWinner(tid, ri, mi, name) {
+    this.setState((s) => ({
+      tournaments: s.tournaments.map((t) => {
+        if (t.id !== tid) return t;
+        const rounds = t.bracket.map((rd) => rd.map((mm) => Object.assign({}, mm)));
+        rounds[ri][mi].w = name;
+        let winner = t.winner, status = t.status;
+        if (ri + 1 < rounds.length) rounds[ri + 1][Math.floor(mi / 2)][mi % 2 === 0 ? 'a' : 'b'] = name;
+        else { winner = name; status = 'DONE'; }
+        return Object.assign({}, t, { bracket: rounds, winner, status });
+      })
+    }));
+  }
+
+  genBracket(tid) {
+    this.setState((s) => ({
+      tournaments: s.tournaments.map((t) => {
+        if (t.id !== tid || t.bracket || t.players.length < 2) return t;
+        return Object.assign({}, t, { bracket: buildBracket(t.players), status: 'LIVE' });
+      })
+    }));
+  }
+
+  startMatch(tid, ri, mi) {
+    this.setState((s) => ({
+      tournaments: s.tournaments.map((t) => {
+        if (t.id !== tid || !t.bracket) return t;
+        const used = [];
+        t.bracket.forEach((rd) => rd.forEach((m) => { if (m.st && !m.w) used.push(m.st); }));
+        const busy = this.stationList().filter((x) => x.status === 'active' || x.status === 'locked').map((x) => x.name);
+        const free = t.blocked.find((b) => used.indexOf(b) < 0 && busy.indexOf(b) < 0);
+        if (!free) return t;
+        const rounds = t.bracket.map((rd) => rd.map((mm) => Object.assign({}, mm)));
+        rounds[ri][mi].st = free;
+        rounds[ri][mi].at = s.tick;
+        return Object.assign({}, t, { bracket: rounds });
+      })
+    }));
+  }
+
+  addMatchTime(tid, ri, mi, mins) {
+    this.setState((s) => ({
+      tournaments: s.tournaments.map((t) => {
+        if (t.id !== tid || !t.bracket) return t;
+        const rounds = t.bracket.map((rd) => rd.map((mm) => Object.assign({}, mm)));
+        rounds[ri][mi].ext = (rounds[ri][mi].ext || 0) + mins;
+        return Object.assign({}, t, { bracket: rounds });
+      })
+    }));
+  }
+
+  navItem(id, label, badge, extra) {
+    const on = this.state.view === id;
+    return {
+      label, badge: badge || '', go: () => this.setState(Object.assign({ view: id }, extra || {})),
+      style: { display: 'flex', alignItems: 'center', gap: '10px', padding: '9px 16px 9px 0', cursor: 'pointer',
+        fontFamily: 'var(--font-heading)', fontWeight: 800, fontSize: '14px',
+        color: on ? 'var(--color-accent)' : 'var(--color-text)',
+        background: on ? 'color-mix(in srgb, var(--color-accent) 8%, transparent)' : 'transparent' },
+      bar: { width: '6px', height: '20px', flex: 'none', background: on ? 'var(--color-accent)' : 'transparent' },
+      badgeStyle: { marginLeft: 'auto', fontSize: '11px', fontWeight: 400,
+        color: badge ? 'var(--color-accent)' : 'inherit', opacity: badge ? 1 : 0 }
+    };
+  }
+
+  renderVals() {
+    const rates = this.state.rates;
+    const items = this.state.items;
+    const role = this.state.role;
+    const canStations = role === 'Admin';
+    const canItems = role === 'Admin' || role === 'Manager';
+    const S = this.stationList();
+    const sel = S.find((s) => s.name === this.state.sel) || S[0];
+    const busy = S.filter((s) => s.status === 'active' || s.status === 'locked').length;
+    const counter = this.state.posMode === 'counter';
+    const cartKey = counter ? '__counter' : sel.name;
+    const cart = this.cartOf(cartKey);
+    const food = this.foodOf(cartKey);
+    const gaming = counter ? 0 : sel.cost;
+    const total = gaming + food;
+
+    const adjMap = this.state.memberAdj;
+    const allMembers = [].concat(
+      this.state.added.map((a) => [a.name, a.phone, a.fav, a.wallet, a.points, a.visits, a.lifetime]),
+      MEMBERS
+    ).map((m) => {
+      const a = adjMap[m[0]];
+      if (!a) return m;
+      const w = parseInt(String(m[3]).replace(/[^0-9]/g, ''), 10) || 0;
+      const p = parseInt(m[4], 10) || 0;
+      return [m[0], m[1], m[2], money(Math.max(0, w + (a.wallet || 0))), String(Math.max(0, p + (a.points || 0))), m[5], m[6]];
+    });
+    const autoName = !counter && allMembers.some((m) => m[0] === sel.who) ? sel.who : null;
+    const activeName = this.state.posTouched ? this.state.posMember : autoName;
+    const posM = allMembers.find((m) => m[0] === activeName) || null;
+    const ptsAvail = posM ? parseInt(posM[4], 10) : 0;
+    const maxRedeem = Math.min(ptsAvail, total);
+    const loyalty = Math.min(this.state.redeem, maxRedeem);
+    const due = Math.max(0, total - loyalty);
+    const q = this.state.posQuery.trim().toLowerCase();
+    const setRedeem = (v) => this.setState({ redeem: v });
+    const chipS = (on) => ({ padding: '8px 4px', cursor: 'pointer', fontFamily: 'var(--font-heading)', fontWeight: 800,
+      fontSize: '12px', border: '2px solid ' + (on ? 'var(--color-accent)' : 'var(--color-divider)'),
+      background: on ? 'var(--color-accent)' : 'transparent', color: on ? '#fff' : 'var(--color-text)' });
+    const mem = posM ? {
+      none: false, attached: true, n: posM[0], phone: posM[1],
+      points: ptsAvail, worth: money(ptsAvail), wallet: posM[3],
+      redeemLabel: 'Points redeemed (' + loyalty + ' pts)',
+      clear: () => this.setState({ posMember: null, posTouched: true, redeem: 0, posQuery: '' }),
+      steps: [0, 100, 200, maxRedeem].filter((v, i, a) => a.indexOf(v) === i && v <= maxRedeem)
+        .map((v) => ({ label: v === 0 ? 'None' : (v === maxRedeem ? 'Max ' + v : String(v)), style: chipS(loyalty === v), go: () => setRedeem(v) }))
+    } : {
+      none: true, attached: false, query: this.state.posQuery,
+      redeemLabel: 'Points redeemed',
+      setQuery: (e) => this.setState({ posQuery: e.target.value }),
+      hint: q && !allMembers.some((m) => m[0].toLowerCase().indexOf(q) >= 0 || (q.replace(/[^0-9]/g, '').length > 0 && m[1].replace(/[^0-9]/g, '').indexOf(q.replace(/[^0-9]/g, '')) >= 0))
+        ? 'No member matches — register them from Members, or take payment as a walk-in.'
+        : q ? 'Tap a member to attach them to this bill.' : 'Points are worth ৳1 each and can cover part of the bill.',
+      results: (q ? allMembers.filter((m) => {
+        const digits = q.replace(/[^0-9]/g, '');
+        if (m[0].toLowerCase().indexOf(q) >= 0) return true;
+        return digits.length > 0 && m[1].replace(/[^0-9]/g, '').indexOf(digits) >= 0;
+      }) : allMembers.slice(0, 3))
+        .slice(0, 4).map((m) => ({
+          n: m[0], phone: m[1], points: m[4], wallet: m[3],
+          pick: () => this.setState({ posMember: m[0], posTouched: true, redeem: 0 }),
+          style: { display: 'flex', alignItems: 'center', gap: '10px', padding: '9px 10px', cursor: 'pointer', border: '2px solid var(--color-divider)' }
+        }))
+    };
+    const now = new Date();
+    const outTime = pad(now.getHours()) + ':' + pad(now.getMinutes());
+    const inAt = new Date(now.getTime() - sel.elapsed * 1000);
+    const inTime = sel.status === 'available' ? '—' : pad(inAt.getHours()) + ':' + pad(inAt.getMinutes());
+    const txnId = 'GD-2608-0' + (41 + this.base.findIndex((b) => b.name === sel.name));
+
+    const statusChip = (st) => {
+      const map = { active: ['Playing', 'var(--color-accent)', '#fff'], available: ['Free', 'transparent', 'var(--color-text)'], locked: ['Locked', 'var(--color-text)', 'var(--color-bg)'], reserved: ['Reserved', 'var(--color-accent-100)', 'var(--color-accent-700)'], maintenance: ['Service', 'var(--color-neutral-400)', '#fff'] };
+      const m = map[st] || map.active;
+      return { fontSize: '10px', letterSpacing: '.1em', textTransform: 'uppercase', padding: '2px 8px',
+        background: m[1], color: m[2], border: st === 'available' ? '1px solid var(--color-divider)' : 'none',
+        fontFamily: 'var(--font-heading)', fontWeight: 800, marginLeft: 'auto' };
+    };
+
+    const stations = S.map((st) => {
+      const on = st.name === sel.name;
+      const pctLeft = st.total ? Math.max(0, Math.min(1, st.remain / st.total)) : 0;
+      return {
+        name: st.name, kind: st.kind === 'PS5' ? 'PlayStation 5' : 'PlayStation 4',
+        who: st.status === 'reserved' ? (st.tMatch ? st.tMatch.who : 'Tournament · ' + st.reservedFor) : st.who,
+        statusLabel: st.status === 'active' ? (st.running ? 'Playing' : st.noTime ? 'Open' : st.started ? 'Paused' : 'Ready') : st.status === 'locked' ? 'Time up' : st.status === 'reserved' ? (st.tMatch ? 'Match' : 'Reserved') : 'Free',
+        statusStyle: statusChip(st.status),
+        timeStr: st.status === 'available' ? '--:--:--' : st.status === 'reserved' ? (st.tMatch ? clock(Math.abs(st.tMatch.remain)) : '--:--:--') : clock(Math.abs(st.remain)),
+        timeLabel: st.status === 'available' ? 'no session' : st.status === 'reserved' ? (st.tMatch ? (st.tMatch.remain > 0 ? 'match left' : 'match over') : 'blocked for event') : st.noTime ? 'no time bought' : !st.running && !st.started ? 'not started' : st.remain > 0 ? 'left' : 'over',
+        planLabel: st.status === 'available' ? rates[st.kind].hr + '/hr · ' + rates[st.kind].half + '/30min' : st.status === 'reserved' ? (st.tMatch ? st.reservedFor : 'No walk-in bookings') : st.noTime ? 'Add a 30 min block' : st.blocks + ' × 30-min block' + (st.blocks === 1 ? '' : 's'),
+        costStr: st.status === 'available' || st.status === 'reserved' ? '—' : money(st.cost + this.foodOf(st.name)),
+        pick: () => this.setState({ sel: st.name, posTouched: false, posMember: null, posQuery: '', redeem: 0 }),
+        style: {
+          padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: '2px', cursor: 'pointer', minHeight: '210px',
+          background: st.status === 'active' ? 'var(--color-card, #fff)' : st.status === 'locked' ? 'var(--color-accent-100)' : 'transparent',
+          border: '2px solid ' + (st.status === 'available' ? 'var(--color-divider)' : st.status === 'reserved' ? 'var(--color-accent)' : 'var(--color-text)'),
+          borderLeft: '10px solid ' + (st.status === 'active' || st.status === 'reserved' ? 'var(--color-accent)' : st.status === 'locked' ? 'var(--color-text)' : 'var(--color-divider)'),
+          outline: on ? '3px solid var(--color-accent)' : 'none', outlineOffset: '3px'
+        },
+        barTrack: { height: '8px', background: 'var(--color-neutral-300)', marginTop: 'auto' },
+        barFill: { height: '8px', width: (pctLeft * 100).toFixed(1) + '%', background: st.remain > 0 ? 'var(--color-accent)' : 'var(--color-text)' },
+        goFloor: () => this.setState({ view: 'floor', sel: st.name, posTouched: false, posMember: null, posQuery: '', redeem: 0 }),
+        mobileStyle: {
+          flex: 'none', width: '256px', cursor: 'pointer',
+          padding: '14px', border: '2px solid ' + (st.status === 'available' ? 'var(--color-divider)' : 'var(--color-text)'),
+          borderLeft: '8px solid ' + (st.status === 'active' ? 'var(--color-accent)' : st.status === 'locked' ? 'var(--color-text)' : 'var(--color-divider)'),
+          background: st.status === 'locked' ? 'var(--color-accent-100)' : 'transparent'
+        }
+      };
+    });
+
+    const cats = ['All', 'Beverage', 'Food', 'Snack', 'Extras', 'Tournament'].map((c) => ({
+      label: c, go: () => this.setState({ cat: c }),
+      style: { padding: '9px 16px', cursor: 'pointer', fontFamily: 'var(--font-heading)', fontWeight: 800, fontSize: '13px',
+        border: '2px solid ' + (this.state.cat === c ? 'var(--color-accent)' : 'var(--color-divider)'),
+        background: this.state.cat === c ? 'var(--color-accent)' : 'transparent',
+        color: this.state.cat === c ? '#fff' : 'var(--color-text)' }
+    }));
+
+    const tourOpen = this.state.tournaments.filter((t) => t.status !== 'DONE');
+    const tourMenu = (this.state.cat === 'All' || this.state.cat === 'Tournament') ? tourOpen.map((t) => {
+      const left = (t.cap || 8) - t.players.length;
+      return {
+        n: 'Entry — ' + t.name, cat: 'Tournament', priceStr: money(t.fee),
+        stockStr: left > 0 ? left + ' slots left' : 'Full',
+        stockStyle: { fontSize: '11px', color: left <= 2 ? 'var(--color-accent-700)' : 'inherit', opacity: left <= 2 ? 1 : .55 },
+        add: left > 0 ? () => this.addItem('Entry — ' + t.name, t.fee) : () => {},
+        style: { border: '2px solid var(--color-accent)', background: 'var(--color-surface)', padding: '13px',
+          cursor: left > 0 ? 'pointer' : 'not-allowed', opacity: left > 0 ? 1 : .5,
+          display: 'flex', flexDirection: 'column', gap: '4px', minHeight: '104px' }
+      };
+    }) : [];
+    const menu = items.filter((m) => this.state.cat === 'All' || m[1] === this.state.cat).map((m) => ({
+      n: m[0], cat: m[1], priceStr: money(m[2]), stockStr: m[3] <= m[4] ? m[3] + ' left · low' : m[3] + ' left',
+      stockStyle: { fontSize: '11px', color: m[3] <= m[4] ? 'var(--color-accent-700)' : 'inherit', opacity: m[3] <= m[4] ? 1 : .55 },
+      add: () => this.addItem(m[0], m[2]),
+      style: { border: '2px solid var(--color-divider)', background: 'var(--color-surface)', padding: '13px',
+        cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '4px', minHeight: '104px' }
+    }));
+
+    const inventory = items.map((m) => ({
+      n: m[0], cat: m[1], priceStr: money(m[2]), stock: m[3], min: m[4], sold: m[5],
+      statusLabel: m[3] <= m[4] ? 'Reorder' : m[3] <= m[4] * 1.6 ? 'Watch' : 'Healthy',
+      tagClass: m[3] <= m[4] ? 'tag tag-accent' : m[3] <= m[4] * 1.6 ? 'tag tag-outline' : 'tag tag-neutral'
+    }));
+    const lowStock = items.filter((m) => m[3] <= m[4]).map((m) => ({ n: m[0], msg: m[3] + ' left, reorder point is ' + m[4] + ' · sells ' + m[5] + '/day' }));
+    const watchlist = items.slice(0, 7).map((m) => {
+      const p = Math.max(4, Math.min(100, (m[3] / (m[4] * 3)) * 100));
+      return { n: m[0], label: m[3] + ' / min ' + m[4],
+        fill: { height: '10px', width: p.toFixed(0) + '%', background: m[3] <= m[4] ? 'var(--color-accent)' : 'var(--color-text)' } };
+    });
+
+    const methods = ['Cash', 'bKash', 'Nagad', 'Wallet'].map((p) => ({
+      label: p, go: () => this.setState({ pay: p }),
+      style: { padding: '9px 4px', cursor: 'pointer', fontFamily: 'var(--font-heading)', fontWeight: 800, fontSize: '12px',
+        border: '2px solid ' + (this.state.pay === p ? 'var(--color-accent)' : 'var(--color-divider)'),
+        background: this.state.pay === p ? 'var(--color-accent)' : 'transparent',
+        color: this.state.pay === p ? '#fff' : 'var(--color-text)' }
+    }));
+    const cashPart = Math.min(due, 500);
+    const payA = { label: 'Cash', upper: 'CASH', amt: money(cashPart) };
+    const payB = { label: this.state.pay === 'Cash' ? 'bKash' : this.state.pay, upper: (this.state.pay === 'Cash' ? 'bKash' : this.state.pay).toUpperCase(), amt: money(due - cashPart) };
+
+    const trendData = [62, 58, 71, 66, 84, 96, 88, 60, 55, 74, 69, 87, 99, 92];
+    const maxT = 100;
+    const trend = trendData.map((v, i) => ({
+      l: ['25', '26', '27', '28', '29', '30', '31', '1', '2', '3', '4', '5', '6', '7'][i],
+      game: { height: (v * 0.66 / maxT * 210).toFixed(0) + 'px', background: 'var(--color-accent)' },
+      food: { height: (v * 0.34 / maxT * 210).toFixed(0) + 'px', background: 'var(--color-neutral-700)' }
+    }));
+
+    const hourlyData = [8, 14, 11, 19, 26, 34, 48, 62, 74, 58, 31];
+    const hourly = hourlyData.map((v, i) => ({
+      l: [10, 12, 14, 15, 16, 17, 18, 19, 20, 21, 22][i] + '',
+      style: { height: (v / 74 * 108).toFixed(0) + 'px', background: v > 55 ? 'var(--color-accent)' : 'var(--color-text)' }
+    }));
+
+    const monthly = [54, 61, 48, 72, 66, 80, 95, 58, 52, 69, 74, 88, 91, 60, 57, 66, 71, 84, 97, 62, 55, 70, 76, 86, 93, 64, 59, 73, 81, 99].map((v) => ({
+      style: { flex: 1, height: (v / 99 * 120).toFixed(0) + 'px', background: v > 85 ? 'var(--color-accent)' : 'var(--color-neutral-700)' }
+    }));
+
+    const weekday = [['Mon', 41], ['Tue', 38], ['Wed', 46], ['Thu', 62], ['Fri', 100], ['Sat', 88], ['Sun', 57]].map((w) => ({
+      l: w[0], v: money(w[1] * 184),
+      fill: { height: '14px', width: w[1] + '%', background: w[1] > 80 ? 'var(--color-accent)' : 'var(--color-text)' }
+    }));
+
+    const util = [['Nexus', 78], ['Vortex', 71], ['Titan', 54], ['Phantom', 46]].map((u) => ({
+      n: u[0], pct: u[1] + '%', hrs: (u[1] * 0.84).toFixed(0) + ' hours sold of 84 open',
+      fill: { height: '14px', width: u[1] + '%', background: u[1] > 70 ? 'var(--color-accent)' : 'var(--color-text)' }
+    }));
+
+    const nmS = this.state.nm;
+    const setNm = (k, v) => this.setState((s) => ({ nm: Object.assign({}, s.nm, { [k]: v }) }));
+    const chip = (on) => ({ padding: '8px 14px', cursor: 'pointer', fontFamily: 'var(--font-heading)', fontWeight: 800,
+      fontSize: '13px', border: '2px solid ' + (on ? 'var(--color-accent)' : 'var(--color-divider)'),
+      background: on ? 'var(--color-accent)' : 'transparent', color: on ? '#fff' : 'var(--color-text)' });
+    const welcomePts = Math.round(nmS.topup / 10);
+    const nmClean = () => ({
+      name: nmS.name.trim() || 'New Member',
+      phone: nmS.phone.trim() || '+880 1XXX-XXXXXX',
+      fav: (nmS.games[0] || 'FIFA 25') + ' · ' + nmS.console,
+      wallet: money(nmS.topup), points: String(welcomePts), visits: '0', lifetime: money(nmS.topup)
+    });
+    const freeStation = (this.stationList().find((x) => x.status === 'available') || {}).name;
+    const saveMember = (seat) => this.setState((s) => {
+      const m = nmClean();
+      const next = {
+        added: [m].concat(s.added),
+        member: m.name,
+        newMemberOpen: false,
+        view: seat && freeStation ? 'floor' : 'crm',
+        nm: { name: '', phone: '', console: 'PS5', games: ['FIFA 25'], topup: 500, pay: 'Cash' }
+      };
+      if (seat && freeStation) {
+        next.sel = freeStation;
+        next.started = Object.assign({}, s.started, { [freeStation]: { at: s.tick, blocks: 0, who: m.name } });
+        next.cleared = Object.assign({}, s.cleared, { [freeStation]: false });
+        next.extra = Object.assign({}, s.extra, { [freeStation]: 0 });
+        next.run = Object.assign({}, s.run, { [freeStation]: { acc: 0, at: null } });
+        next.carts = Object.assign({}, s.carts, { [freeStation]: [] });
+      }
+      return next;
+    });
+
+    const cq = this.state.crmQuery.trim().toLowerCase();
+    const membersAll = allMembers.map((m) => ({
+      n: m[0], phone: m[1], fav: m[2], wallet: m[3], points: m[4], visits: m[5], lifetime: m[6],
+      freeTime: Math.floor(parseInt(m[4], 10) / 100) * 30 >= 60
+        ? Math.floor(Math.floor(parseInt(m[4], 10) / 100) * 30 / 60) + ' h ' + (Math.floor(parseInt(m[4], 10) / 100) * 30) % 60 + ' m'
+        : Math.floor(parseInt(m[4], 10) / 100) * 30 + ' m',
+      pick: () => this.setState({ member: m[0] }),
+      rowStyle: { cursor: 'pointer', background: this.state.member === m[0] ? 'color-mix(in srgb, var(--color-accent) 10%, transparent)' : 'transparent' }
+    }));
+    const members = cq ? membersAll.filter((m) => m.n.toLowerCase().indexOf(cq) >= 0 || m.phone.replace(/[^0-9]/g, '').indexOf(cq.replace(/[^0-9]/g, '')) >= 0 && cq.replace(/[^0-9]/g, '')) : membersAll;
+    const member = membersAll.find((m) => m.n === this.state.member) || membersAll[0];
+    member.freeTime = Math.floor((parseInt(member.points, 10) || 0) / 300) + ' h';
+    const bumpAdj = (s, name, dW, dP) => Object.assign({}, s.memberAdj, {
+      [name]: {
+        wallet: ((s.memberAdj[name] || {}).wallet || 0) + dW,
+        points: ((s.memberAdj[name] || {}).points || 0) + dP
+      }
+    });
+    const isNewMember = this.state.added.some((a) => a.name === member.n);
+    const memberVisits = isNewMember ? [{ d: 'No visits yet', s: 'Registered today', v: '—' }] : [
+      { d: 'Fri 7 Aug · Nexus', s: '2 h · PS5', v: '৳480' },
+      { d: 'Wed 5 Aug · Vortex', s: '1.5 h · PS5', v: '৳340' },
+      { d: 'Mon 3 Aug · Titan', s: '1 h · PS4', v: '৳180' },
+      { d: 'Sat 1 Aug · Nexus', s: '3 h · PS5', v: '৳640' },
+      { d: 'Thu 30 Jul · Nexus', s: '2 h · PS5', v: '৳520' }
+    ];
+
+    const alerts = [
+      ['Cash', 'Shift closed ৳300 short', 'Evening shift, Sabbir Ahmed. Expected ৳9,420, counted ৳9,120.', '2 min ago', true],
+      ['Stock', 'Pringles out in ~2 days', '2 packs left against a reorder point of 6. Sells 5 a day.', '18 min ago', true],
+      ['Session', 'Phantom locked at time-up', 'Nafis Iqbal, 3 blocks finished. Waiting on the cashier to extend or check out.', '31 min ago', true],
+      ['Stock', 'Chicken Wings below reorder', '3 portions left of 6.', '1 h ago', false],
+      ['Sync', 'Terminal was offline 6 minutes', '4 transactions cached locally, all synced at 20:14.', '3 h ago', false],
+      ['Revenue', 'Best Friday in five weeks', '৳14,610 by 21:00, 18% up on last Friday.', '5 h ago', false]
+    ].map((a) => ({
+      kind: a[0], title: a[1], body: a[2], t: a[3], unread: a[4],
+      kindStyle: { fontSize: '10px', letterSpacing: '.14em', textTransform: 'uppercase', fontFamily: 'var(--font-heading)', fontWeight: 800, color: a[4] ? 'var(--color-accent)' : 'var(--color-neutral-700)' },
+      style: { padding: '14px', border: '2px solid ' + (a[4] ? 'var(--color-text)' : 'var(--color-divider)'), background: a[4] ? 'var(--color-card, #fff)' : 'transparent' }
+    }));
+
+    const shiftHistory = this.state.closedShifts.concat([
+      ['Sabbir Ahmed', 'Thu 6 Aug · evening', '৳11,240', 'balanced', false],
+      ['Tamim Iqbal', 'Thu 6 Aug · morning', '৳4,860', '−৳150', true],
+      ['Sabbir Ahmed', 'Wed 5 Aug · evening', '৳9,980', 'balanced', false],
+      ['Farhan Reza', 'Wed 5 Aug · morning', '৳5,120', 'balanced', false],
+      ['Tamim Iqbal', 'Tue 4 Aug · evening', '৳10,410', '−৳420', true]
+    ]).map((s) => ({
+      n: s[0], d: s[1], total: s[2], diff: s[3],
+      diffStyle: { fontSize: '11px', color: s[4] ? 'var(--color-accent)' : 'inherit', opacity: s[4] ? 1 : .5 },
+      style: { display: 'flex', justifyContent: 'space-between', padding: '9px 0', borderBottom: '1px solid var(--color-divider)' }
+    }));
+
+    const firstManager = (this.state.staffList.find((x) => x.r === 'Manager') || { n: 'No manager yet' }).n;
+    const firstCashier = (this.state.staffList.find((x) => x.r === 'Cashier') || { n: 'No cashier yet' }).n;
+    const roleName = { Admin: 'Owner', Manager: firstManager, Cashier: firstCashier }[this.state.role];
+    const roles = [
+      { role: 'Admin', name: 'Owner — Full access', perms: 'Everything, including setup and staff' },
+      { role: 'Manager', name: firstManager, perms: 'Menu, stock, shift close, expenses' },
+      { role: 'Cashier', name: firstCashier, perms: 'Sessions, POS, expenses, members' }
+    ].map((r) => ({
+      role: r.role, name: r.name, perms: r.perms,
+      pick: () => this.setState({ role: r.role }),
+      style: { display: 'flex', alignItems: 'center', gap: '12px', padding: '14px', cursor: 'pointer',
+        border: '2px solid ' + (this.state.role === r.role ? 'var(--color-accent)' : 'var(--color-divider)'),
+        background: this.state.role === r.role ? 'color-mix(in srgb, var(--color-accent) 8%, transparent)' : 'transparent' }
+    }));
+
+    const expTotal = 1180 + this.state.expensesAdded.reduce((a, x) => a + (x.amt || 0), 0);
+    const expected = 9420;
+    const cnt = parseInt(this.state.counted, 10) || 0;
+    const diff = cnt - expected;
+    const shiftC = {
+      counted: this.state.counted,
+      setCounted: (e) => this.setState({ counted: e.target.value }),
+      countedStr: money(cnt),
+      diffStr: diff === 0 ? 'Balanced' : (diff < 0 ? '−' : '+') + money(Math.abs(diff)),
+      diffBox: { padding: '18px', background: diff === 0 ? 'var(--color-text)' : 'var(--color-accent)', color: diff === 0 ? 'var(--color-bg)' : '#fff' },
+      tourCount: String(6 + this.state.tSoldCount),
+      tourStr: money(1200 + this.state.tSoldAmt),
+      close: () => this.setState((s) => ({
+        closedShifts: [[roleName, 'Fri 7 Aug · evening', money(expected), diff === 0 ? 'balanced' : (diff < 0 ? '−' : '+') + money(Math.abs(diff)), diff !== 0]].concat(s.closedShifts),
+        signedIn: false, counted: '9120'
+      }))
+    };
+    const setNewItem = (k, v) => this.setState((s) => ({ newItem: Object.assign({}, s.newItem, { [k]: v }) }));
+    const setNewStation = (k, v) => this.setState((s) => ({ newStation: Object.assign({}, s.newStation, { [k]: v }) }));
+    const editItem = (name, idx, v) => this.setState((s) => ({
+      items: s.items.map((m) => (m[0] === name ? m.map((c, i) => (i === idx ? v : c)) : m))
+    }));
+    const busyNames = S.filter((x) => x.status !== 'available').map((x) => x.name);
+
+    const manage = {
+      canStations, canItems,
+      roleNote: canStations ? 'Admin — full control of stations, pricing and stock.'
+        : canItems ? 'Manager — food, drinks and stock only. Stations and pricing are locked.'
+        : 'Cashier — no setup rights. Members can be registered from the Members page.',
+      stations: S.map((st) => ({
+        name: st.name, kind: st.kind,
+        statusLabel: st.status === 'available' ? 'Free'
+          : st.status === 'locked' ? 'Time up'
+          : st.running ? 'Playing' : st.noTime ? 'Open' : 'Paused',
+        rate: money(rates[st.kind].hr) + ' / hr',
+        removable: canStations && busyNames.indexOf(st.name) < 0,
+        removeLabel: busyNames.indexOf(st.name) < 0 ? 'Remove' : 'In use',
+        removeStyle: { opacity: canStations && busyNames.indexOf(st.name) < 0 ? 1 : .4,
+          pointerEvents: canStations && busyNames.indexOf(st.name) < 0 ? 'auto' : 'none' },
+        remove: () => this.setState((s) => ({ stationDefs: s.stationDefs.filter((x) => x.name !== st.name) }))
+      })),
+      newStationName: this.state.newStation.name,
+      setStationName: (e) => setNewStation('name', e.target.value),
+      kinds: ['PS5', 'PS4'].map((k) => ({ label: k, on: this.state.newStation.kind === k,
+        go: () => setNewStation('kind', k),
+        style: { padding: '9px 16px', cursor: 'pointer', fontFamily: 'var(--font-heading)', fontWeight: 800, fontSize: '13px',
+          border: '2px solid ' + (this.state.newStation.kind === k ? 'var(--color-accent)' : 'var(--color-divider)'),
+          background: this.state.newStation.kind === k ? 'var(--color-accent)' : 'transparent',
+          color: this.state.newStation.kind === k ? '#fff' : 'var(--color-text)' } })),
+      addStation: () => this.setState((s) => {
+        const nm2 = s.newStation.name.trim() || ('Station ' + (s.stationDefs.length + 1));
+        if (s.stationDefs.some((x) => x.name === nm2)) return {};
+        return {
+          stationDefs: s.stationDefs.concat([{ name: nm2, kind: s.newStation.kind, status: 'available',
+            who: 'Free — ready to start', phone: '—', wallet: '—', points: '—', blocks: 0, elapsed: 0 }]),
+          carts: Object.assign({}, s.carts, { [nm2]: [] }),
+          newStation: { name: '', kind: s.newStation.kind }
+        };
+      }),
+      rates: ['PS5', 'PS4'].map((k) => ({
+        kind: k === 'PS5' ? 'PlayStation 5' : 'PlayStation 4',
+        hr: String(rates[k].hr), half: String(rates[k].half),
+        setHr: (e) => this.setState((s) => ({ rates: Object.assign({}, s.rates, { [k]: Object.assign({}, s.rates[k], { hr: parseInt(e.target.value, 10) || 0 }) }) })),
+        setHalf: (e) => this.setState((s) => ({ rates: Object.assign({}, s.rates, { [k]: Object.assign({}, s.rates[k], { half: parseInt(e.target.value, 10) || 0 }) }) }))
+      })),
+      items: items.map((m) => ({
+        n: m[0], cat: m[1], price: String(m[2]), stock: String(m[3]), min: String(m[4]),
+        setPrice: (e) => editItem(m[0], 2, parseInt(e.target.value, 10) || 0),
+        setStock: (e) => editItem(m[0], 3, parseInt(e.target.value, 10) || 0),
+        setMin: (e) => editItem(m[0], 4, parseInt(e.target.value, 10) || 0),
+        remove: () => this.setState((s) => ({ items: s.items.filter((x) => x[0] !== m[0]) }))
+      })),
+      ni: {
+        n: this.state.newItem.n, price: this.state.newItem.price, stock: this.state.newItem.stock, min: this.state.newItem.min,
+        setN: (e) => setNewItem('n', e.target.value),
+        setPrice: (e) => setNewItem('price', e.target.value),
+        setStock: (e) => setNewItem('stock', e.target.value),
+        setMin: (e) => setNewItem('min', e.target.value),
+        cats: ['Beverage', 'Food', 'Snack', 'Extras'].map((c) => ({ label: c,
+          go: () => setNewItem('cat', c),
+          style: { padding: '8px 12px', cursor: 'pointer', fontFamily: 'var(--font-heading)', fontWeight: 800, fontSize: '12px',
+            border: '2px solid ' + (this.state.newItem.cat === c ? 'var(--color-accent)' : 'var(--color-divider)'),
+            background: this.state.newItem.cat === c ? 'var(--color-accent)' : 'transparent',
+            color: this.state.newItem.cat === c ? '#fff' : 'var(--color-text)' } }))
+      },
+      staff: this.state.staffList.map((p) => ({
+        n: p.n, r: p.r, pin: '••' + p.pin.slice(2),
+        status: p.onShift ? 'On shift' : '—',
+        removeLabel: p.onShift ? 'On shift' : 'Remove',
+        removeStyle: { opacity: canStations && !p.onShift ? 1 : .4, pointerEvents: canStations && !p.onShift ? 'auto' : 'none' },
+        remove: () => this.setState((s) => ({ staffList: s.staffList.filter((x) => x.n !== p.n) }))
+      })),
+      ns: {
+        n: this.state.newStaff.n, pin: this.state.newStaff.pin,
+        setN: (e) => this.setState((s) => ({ newStaff: Object.assign({}, s.newStaff, { n: e.target.value }) })),
+        setPin: (e) => this.setState((s) => ({ newStaff: Object.assign({}, s.newStaff, { pin: e.target.value.replace(/[^0-9]/g, '').slice(0, 4) }) })),
+        roles: ['Cashier', 'Manager'].map((r) => ({
+          label: r, go: () => this.setState((s) => ({ newStaff: Object.assign({}, s.newStaff, { r }) })),
+          style: { padding: '9px 16px', cursor: 'pointer', fontFamily: 'var(--font-heading)', fontWeight: 800, fontSize: '13px',
+            border: '2px solid ' + (this.state.newStaff.r === r ? 'var(--color-accent)' : 'var(--color-divider)'),
+            background: this.state.newStaff.r === r ? 'var(--color-accent)' : 'transparent',
+            color: this.state.newStaff.r === r ? '#fff' : 'var(--color-text)' } }))
+      },
+      addStaff: () => this.setState((s) => {
+        const f = s.newStaff;
+        const nm2 = f.n.trim();
+        if (!nm2 || f.pin.length < 4 || s.staffList.some((x) => x.n === nm2)) return {};
+        return {
+          staffList: s.staffList.concat([{ n: nm2, r: f.r, pin: f.pin, onShift: false }]),
+          newStaff: { n: '', r: f.r, pin: '' }
+        };
+      }),
+      addItem: () => this.setState((s) => {
+        const it = s.newItem;
+        const nm2 = it.n.trim();
+        if (!nm2 || s.items.some((x) => x[0] === nm2)) return {};
+        return {
+          items: s.items.concat([[nm2, it.cat, parseInt(it.price, 10) || 0, parseInt(it.stock, 10) || 0, parseInt(it.min, 10) || 0, 0]]),
+          newItem: { n: '', cat: it.cat, price: '', stock: '', min: '' }
+        };
+      })
+    };
+
+    const canTour = role === 'Admin' || role === 'Manager';
+    const tAll = this.state.tournaments;
+    const tSelT = tAll.find((t) => t.id === this.state.tSel) || tAll[0];
+    const roundLabels = (n) => n === 1 ? ['Final'] : n === 2 ? ['Semi-finals', 'Final'] : n === 3 ? ['Quarter-finals', 'Semi-finals', 'Final'] : ['Round of 16', 'Quarter-finals', 'Semi-finals', 'Final'];
+    let liveKey = null, nextKey = null;
+    if (tSelT && tSelT.bracket) tSelT.bracket.forEach((rd, ri) => rd.forEach((mm, mi) => {
+      if (mm.a && mm.b && !mm.w) { const k = ri + '-' + mi; if (!liveKey) liveKey = k; else if (!nextKey) nextKey = k; }
+    }));
+    const tChip = (label, on) => ({ padding: '8px 12px', cursor: 'pointer', fontFamily: 'var(--font-heading)', fontWeight: 800, fontSize: '12px',
+      border: '2px solid ' + (on ? 'var(--color-accent)' : 'var(--color-divider)'),
+      background: on ? 'var(--color-accent)' : 'transparent', color: on ? '#fff' : 'var(--color-text)' });
+    const tStatusTag = (st2) => st2 === 'LIVE' ? { cls: 'tag tag-accent', label: 'Live' } : st2 === 'OPEN' ? { cls: 'tag tag-outline', label: 'Registration' } : { cls: 'tag tag-neutral', label: 'Done' };
+    const setNewT = (k, v) => this.setState((s) => ({ newT: Object.assign({}, s.newT, { [k]: v }) }));
+    const tour = tSelT ? {
+      canManage: canTour, readOnly: !canTour,
+      tabs: [['live', 'Live & upcoming'], ['history', 'History']].map((tb2) => ({
+        label: tb2[1], go: () => this.setState({ tTab: tb2[0] }), style: tChip(tb2[1], this.state.tTab === tb2[0])
+      })),
+      showLive: this.state.tTab === 'live',
+      showHistory: this.state.tTab === 'history',
+      list: tAll.map((t) => {
+        const tg = tStatusTag(t.status);
+        return {
+          name: t.name, meta: t.game + ' · ' + t.when, tagCls: tg.cls, tagLabel: tg.label,
+          feeStr: money(t.fee) + ' entry', slotStr: t.bracket ? t.players.length + ' players' : t.players.length + ' / ' + (t.cap || 8) + ' registered',
+          pick: () => this.setState({ tSel: t.id }),
+          style: { padding: '13px 14px', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '4px',
+            border: '2px solid ' + (t.id === tSelT.id ? 'var(--color-accent)' : 'var(--color-divider)'),
+            background: t.id === tSelT.id ? 'var(--color-card, #fff)' : 'transparent' }
+        };
+      }),
+      sel: {
+        name: tSelT.name, meta: tSelT.game + ' · ' + tSelT.cadence + ' · ' + tSelT.when,
+        feeStr: money(tSelT.fee), prizeStr: money(tSelT.prize),
+        blockedStr: tSelT.blocked.length ? tSelT.blocked.join(', ') : 'None',
+        statusCls: tStatusTag(tSelT.status).cls, statusLabel: tStatusTag(tSelT.status).label
+      },
+      showBracket: !!tSelT.bracket,
+      showReg: !tSelT.bracket,
+      hasWinner: !!tSelT.winner, winnerName: tSelT.winner || '',
+      regPlayers: tSelT.players.map((p, i) => ({ n: p, seed: '#' + (i + 1) })),
+      slotsLeft: ((tSelT.cap || 8) - tSelT.players.length) + ' of ' + (tSelT.cap || 8) + ' slots open · the bracket generates itself when the last slot sells',
+      canGen: canTour && !tSelT.bracket && tSelT.players.length >= 2,
+      genStyle: { opacity: canTour && tSelT.players.length >= 2 ? 1 : .45, pointerEvents: canTour && tSelT.players.length >= 2 ? 'auto' : 'none' },
+      gen: () => this.genBracket(tSelT.id),
+      rounds: (tSelT.bracket || []).map((rd, ri) => ({
+        label: roundLabels(tSelT.bracket.length)[ri],
+        matches: rd.map((mm, mi) => {
+          const k = ri + '-' + mi;
+          const started = !!mm.st && !mm.w;
+          const isLive = started, isNext = !started && (k === liveKey || k === nextKey);
+          const remainB = started ? ((tSelT.duration || 20) + (mm.ext || 0)) * 60 - (this.state.tick - (mm.at || 0)) : 0;
+          return {
+            tag: started ? (remainB > 0 ? mm.st + ' · ' + clock(remainB) : mm.st + ' · time up') : isNext ? 'Up next' : '·',
+            tagStyle: { display: isLive || isNext ? 'inline-block' : 'none', fontSize: '9px', letterSpacing: '.12em', textTransform: 'uppercase',
+              fontFamily: 'var(--font-heading)', fontWeight: 800, padding: '2px 7px', alignSelf: 'flex-start',
+              color: isLive ? '#fff' : 'var(--color-accent-700)', background: isLive ? 'var(--color-accent)' : 'transparent',
+              border: isNext ? '1px solid var(--color-accent)' : 'none' },
+            style: { border: '2px solid ' + (isLive ? 'var(--color-accent)' : mm.w ? 'var(--color-divider)' : 'var(--color-text)'),
+              padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: '6px',
+              background: isLive ? 'var(--color-card, #fff)' : 'transparent' },
+            rows: ['a', 'b'].map((slot) => {
+              const nm = mm[slot];
+              const isW = !!mm.w && mm.w === nm;
+              const clickable = (canTour || !!mm.st) && !!nm && !!mm.a && !!mm.b && !mm.w;
+              return {
+                name: nm || 'TBD', mark: isW ? 'W' : clickable ? 'Winner ✓' : '',
+                markStyle: isW
+                  ? { fontFamily: 'var(--font-heading)', fontWeight: 800, fontSize: '13px', color: 'var(--color-accent)' }
+                  : clickable
+                    ? { fontFamily: 'var(--font-heading)', fontWeight: 800, fontSize: '9px', letterSpacing: '.08em',
+                        textTransform: 'uppercase', padding: '1px 6px', border: '1px solid var(--color-accent)',
+                        color: 'var(--color-accent-700)', opacity: .9, whiteSpace: 'nowrap' }
+                    : { display: 'none' },
+                style: { display: 'flex', justifyContent: 'space-between', gap: '8px', fontSize: '13px',
+                  fontFamily: isW ? 'var(--font-heading)' : 'inherit', fontWeight: isW ? 800 : 400,
+                  opacity: nm ? (mm.w && !isW ? .4 : 1) : .35, cursor: clickable ? 'pointer' : 'default' },
+                pick: clickable ? () => this.setWinner(tSelT.id, ri, mi, nm) : undefined
+              };
+            })
+          };
+        })
+      })),
+      liveNow: (() => {
+        if (!tSelT.bracket) return [];
+        const out = [];
+        tSelT.bracket.forEach((rd) => rd.forEach((mm) => {
+          if (!mm.st || mm.w) return;
+          const rem = ((tSelT.duration || 20) + (mm.ext || 0)) * 60 - (this.state.tick - (mm.at || 0));
+          out.push({ console: mm.st, who: mm.a + ' vs ' + mm.b, timeStr: rem > 0 ? clock(rem) : 'TIME UP',
+            timeStyle: { fontFamily: 'var(--font-heading)', fontWeight: 800, fontSize: '26px', letterSpacing: '-.03em',
+              fontVariantNumeric: 'tabular-nums', color: rem > 0 ? 'var(--color-text)' : '#fff' },
+            style: { flex: 1, padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: '2px',
+              border: '2px solid ' + (rem > 0 ? 'var(--color-text)' : 'var(--color-accent)'),
+              background: rem > 0 ? 'var(--color-card, #fff)' : 'var(--color-accent)',
+              color: rem > 0 ? 'var(--color-text)' : '#fff' } });
+        }));
+        return out;
+      })(),
+      hasLiveNow: !!tSelT.bracket && tSelT.bracket.some((rd) => rd.some((mm) => mm.st && !mm.w)),
+      hasBoard: !!tSelT.bracket && !tSelT.winner,
+      boardNote: tSelT.blocked.length + ' console' + (tSelT.blocked.length === 1 ? '' : 's') + ' allocated — that many matches run at once. Starting a match assigns a free console; record the winner by clicking their name in the bracket.',
+      board: tSelT.bracket ? (() => {
+        const used = [];
+        tSelT.bracket.forEach((rd) => rd.forEach((m) => { if (m.st && !m.w) used.push(m.st); }));
+        const freeC = tSelT.blocked.filter((b2) => used.indexOf(b2) < 0);
+        const busyNames2 = S.filter((x2) => x2.status === 'active' || x2.status === 'locked').map((x2) => x2.name);
+        const freeAvail = freeC.filter((b2) => busyNames2.indexOf(b2) < 0);
+        const items = [];
+        tSelT.bracket.forEach((rd, ri) => rd.forEach((mm, mi) => {
+          if (!mm.a || !mm.b || mm.w) return;
+          const startedM = !!mm.st;
+          const remainM = startedM ? ((tSelT.duration || 20) + (mm.ext || 0)) * 60 - (this.state.tick - (mm.at || 0)) : 0;
+          items.push({
+            label: roundLabels(tSelT.bracket.length)[ri] + ' · ' + mm.a + ' vs ' + mm.b,
+            status: startedM
+              ? 'On ' + mm.st + ' · ' + (remainM > 0 ? clock(remainM) + ' left' : 'time up — record the winner') + (mm.ext ? ' · +' + mm.ext + ' min added' : '')
+              : freeAvail.length ? 'Next free console: ' + freeAvail[0] : freeC.length ? 'Allocated console busy with a walk-in session' : 'Waiting for a console to free up',
+            btnLabel: startedM ? 'In play' : 'Start match',
+            btnStyle: { opacity: startedM || !freeAvail.length ? .45 : 1, pointerEvents: startedM || !freeAvail.length ? 'none' : 'auto' },
+            extStyle: { display: startedM ? 'inline-flex' : 'none' },
+            ext: () => this.addMatchTime(tSelT.id, ri, mi, 5),
+            start: () => this.startMatch(tSelT.id, ri, mi)
+          });
+        }));
+        return items;
+      })() : [],
+      fin: (() => {
+        const cap3 = tSelT.cap || 8, dur = tSelT.duration || 20;
+        const alloc = S.filter((x2) => tSelT.blocked.indexOf(x2.name) >= 0);
+        const rateAvg = alloc.length ? Math.round(alloc.reduce((a2, x2) => a2 + rates[x2.kind].hr, 0) / alloc.length) : rates.PS5.hr;
+        const rev = tSelT.players.length * tSelT.fee;
+        const net = rev - tSelT.prize;
+        const opp = Math.round((cap3 - 1) * dur / 60 * rateAvg);
+        const extra = net - opp;
+        return {
+          revStr: money(rev), netStr: money(net), oppStr: money(opp),
+          extraStr: (extra >= 0 ? '+' : '−') + money(Math.abs(extra)),
+          extraStyle: { fontFamily: 'var(--font-heading)', fontWeight: 800, fontSize: '22px', letterSpacing: '-.03em',
+            color: extra >= 0 ? 'var(--color-accent-700)' : 'var(--color-text)' },
+          formula: 'Opportunity cost = ' + (cap3 - 1) + ' matches × ' + dur + ' min × ' + money(rateAvg) + '/hr standard rate',
+          line: extra >= 0
+            ? 'This tournament generates ' + money(extra) + ' extra compared to standard hourly rentals.'
+            : 'This tournament earns ' + money(-extra) + ' less than standard hourly rentals would.'
+        };
+      })(),
+      history: this.state.tHistory.concat(tAll.filter((t) => t.status === 'DONE').map((t) => ({
+        name: t.name, date: t.when, cadence: t.cadence, winner: t.winner, prize: money(t.prize), entries: t.players.length
+      }))).sort(() => 0),
+      blockChips: S.map((st2) => ({
+        label: st2.name, style: tChip(st2.name, tSelT.blocked.indexOf(st2.name) >= 0),
+        go: canTour ? () => this.setState((s) => ({
+          tournaments: s.tournaments.map((t) => t.id !== tSelT.id ? t : Object.assign({}, t, {
+            blocked: t.blocked.indexOf(st2.name) >= 0 ? t.blocked.filter((x) => x !== st2.name) : t.blocked.concat([st2.name])
+          }))
+        })) : undefined
+      })),
+      cancelStyle: { opacity: tSelT.status === 'DONE' ? .45 : 1, pointerEvents: tSelT.status === 'DONE' ? 'none' : 'auto' },
+      cancel: () => this.setState((s) => {
+        const rest = s.tournaments.filter((t) => t.id !== tSelT.id);
+        return { tournaments: rest, tSel: rest.length ? rest[0].id : '' };
+      }),
+      form: {
+        name: this.state.newT.name, game: this.state.newT.game, when: this.state.newT.when,
+        fee: this.state.newT.fee, prize: this.state.newT.prize,
+        setName: (e) => setNewT('name', e.target.value), setGame: (e) => setNewT('game', e.target.value),
+        setWhen: (e) => setNewT('when', e.target.value), setFee: (e) => setNewT('fee', e.target.value),
+        setPrize: (e) => setNewT('prize', e.target.value),
+        duration: this.state.newT.duration,
+        setDuration: (e) => setNewT('duration', e.target.value.replace(/[^0-9]/g, '')),
+        caps: [4, 8, 16, 32].map((cp) => ({ label: String(cp), style: tChip(String(cp), this.state.newT.cap === cp), go: () => setNewT('cap', cp) })),
+        cadences: ['Weekly', 'Monthly'].map((cd) => ({ label: cd, style: tChip(cd, this.state.newT.cadence === cd), go: () => setNewT('cadence', cd) })),
+        blocks: S.map((st2) => ({ label: st2.name, style: tChip(st2.name, this.state.newT.blocked.indexOf(st2.name) >= 0),
+          go: () => setNewT('blocked', this.state.newT.blocked.indexOf(st2.name) >= 0 ? this.state.newT.blocked.filter((x) => x !== st2.name) : this.state.newT.blocked.concat([st2.name])) })),
+        create: () => this.setState((s) => {
+          const f = s.newT; const nm2 = f.name.trim();
+          if (!nm2 || s.tournaments.some((t) => t.name === nm2)) return {};
+          const fee2 = parseInt(f.fee, 10) || 0;
+          const t = { id: 't' + Date.now(), name: nm2, game: f.game.trim() || 'FIFA 25', cadence: f.cadence,
+            when: f.when.trim() || 'TBD', fee: fee2, prize: parseInt(f.prize, 10) || fee2 * 6,
+            cap: f.cap, duration: parseInt(f.duration, 10) || 20,
+            blocked: f.blocked, status: 'OPEN', players: [], bracket: null, winner: null };
+          return { tournaments: s.tournaments.concat([t]), tSel: t.id,
+            newT: { name: '', game: '', cadence: f.cadence, when: '', fee: '200', prize: '', cap: f.cap, duration: f.duration, blocked: [] } };
+        })
+      }
+    } : { canManage: canTour, readOnly: !canTour, tabs: [], showLive: false, showHistory: true, list: [], history: this.state.tHistory, rounds: [] };
+
+    const entryCartLines = cart.filter((l) => l.n.indexOf('Entry — ') === 0);
+    const qrCells = [];
+    if (entryCartLines.length) {
+      let hsh = 0; for (let i = 0; i < txnId.length; i++) hsh = (hsh * 31 + txnId.charCodeAt(i)) >>> 0;
+      const rnd = () => { hsh = (hsh * 1103515245 + 12345) >>> 0; return hsh / 4294967296; };
+      for (let r2 = 0; r2 < 17; r2++) for (let c2 = 0; c2 < 17; c2++) {
+        let on, rr = -1, cc = -1;
+        if (r2 < 7 && c2 < 7) { rr = r2; cc = c2; }
+        else if (r2 < 7 && c2 >= 10) { rr = r2; cc = c2 - 10; }
+        else if (r2 >= 10 && c2 < 7) { rr = r2 - 10; cc = c2; }
+        if (rr >= 0) on = rr === 0 || rr === 6 || cc === 0 || cc === 6 || (rr >= 2 && rr <= 4 && cc >= 2 && cc <= 4);
+        else on = rnd() > 0.52;
+        qrCells.push({ style: { width: '5px', height: '5px', background: on ? '#000' : '#fff' } });
+      }
+    }
+    const tourTokens = [];
+    entryCartLines.forEach((l) => {
+      const t2 = this.state.tournaments.find((tt) => 'Entry — ' + tt.name === l.n);
+      if (!t2) return;
+      for (let i2 = 0; i2 < l.q; i2++) tourTokens.push('#' + pad(t2.players.length + i2 + 1));
+    });
+    const tourTicket = {
+      show: entryCartLines.length > 0,
+      names: entryCartLines.map((l) => l.n.slice(8)).join(' · '),
+      player: posM ? posM[0] : (this.state.tPlayerName.trim() || 'Walk-in guest'),
+      tokens: tourTokens.join(', '),
+      cells: qrCells
+    };
+    const tPlayer = {
+      v: this.state.tPlayerName,
+      set: (e) => this.setState({ tPlayerName: e.target.value })
+    };
+
+    const rateCard = ['PS5', 'PS4'].map((k) => ({
+      kind: k === 'PS5' ? 'PlayStation 5' : 'PlayStation 4',
+      half: money(rates[k].half), hr: money(rates[k].hr), two: money(rates[k].hr * 2),
+      morning: money(Math.round(rates[k].hr * 0.75)) + ' / hr'
+    }));
+
+    const titles = { floor: 'Floor', pos: 'Point of sale', inventory: 'Inventory', crm: 'Members', shift: 'Shift close', expenses: 'Expenses', reports: 'Reports', manage: canStations ? 'Setup' : 'Menu & stock', overview: 'Overview', tournaments: 'Tournaments', settings: 'Settings' };
+
+    return {
+      themeClass: (this.state.settings.theme === 'dark') ? 'gd-dark' : '',
+      appStyle: {
+        width: '1440px', height: '900px', position: 'relative', display: 'flex',
+        color: 'var(--color-text)', background: 'var(--color-bg)', border: '2px solid var(--color-text)',
+        boxShadow: 'var(--shadow-lg)', overflow: 'hidden',
+        fontSize: { 'Compact': '13px', 'Default': '14px', 'Large': '16px' }[this.state.settings.fontScale] || '14px',
+        '--color-accent': this.state.settings.accent,
+        '--color-accent-700': this.state.settings.theme === 'dark'
+          ? ({ '#ec3013': '#ff7a5c', '#0f62fe': '#78a9ff', '#198038': '#6fdc8c' }[this.state.settings.accent] || '#ff7a5c')
+          : ({ '#ec3013': '#a52310', '#0f62fe': '#0043ce', '#198038': '#0e6027' }[this.state.settings.accent] || '#a52310'),
+        '--color-accent-100': this.state.settings.theme === 'dark'
+          ? ({ '#ec3013': '#42150e', '#0f62fe': '#101d42', '#198038': '#0d2b17' }[this.state.settings.accent] || '#42150e')
+          : ({ '#ec3013': '#fde8e4', '#0f62fe': '#e2ebff', '#198038': '#e0f3e4' }[this.state.settings.accent] || '#fde8e4')
+      },
+      showLogin: !this.state.signedIn,
+      loginPanelStyle: Object.assign({
+        width: '620px', flex: 'none', color: '#fff', padding: '56px', display: 'flex', flexDirection: 'column', position: 'relative'
+      }, this.state.settings.loginBg
+        ? { backgroundImage: 'linear-gradient(rgba(15,10,8,.55), rgba(15,10,8,.75)), url(' + this.state.settings.loginBg + ')',
+            backgroundSize: 'cover', backgroundPosition: 'center' }
+        : { background: 'var(--color-accent)' }),
+      signIn: () => this.setState((s) => ({ signedIn: true, view: s.role === 'Admin' ? 'overview' : 'floor' })),
+      signOut: () => this.setState({ signedIn: false }),
+      roles,
+      user: { name: roleName, role: this.state.role, initials: roleName.split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase(),
+        avStyle: { width: '30px', height: '30px', flex: 'none', display: 'grid', placeItems: 'center',
+          fontFamily: 'var(--font-heading)', fontWeight: 800, fontSize: '11px',
+          background: this.state.settings.avatars[roleName] || 'var(--color-text)',
+          color: this.state.settings.avatars[roleName] ? '#fff' : 'var(--color-bg)' } },
+
+      nav: (canStations ? [this.navItem('overview', 'Overview', '3')] : []).concat([
+        this.navItem('floor', 'Floor', ''),
+        this.navItem('pos', 'Point of sale', '', { posMode: 'counter' }),
+        this.navItem('inventory', 'Inventory', String(lowStock.length)),
+        this.navItem('crm', 'Members', ''),
+        this.navItem('tournaments', 'Tournaments', tAll.some((t) => t.status === 'LIVE') ? 'LIVE' : ''),
+        this.navItem('shift', 'Shift close', '!'),
+        this.navItem('expenses', 'Expenses', '')
+      ]).concat(role === 'Cashier' ? [] : [this.navItem('reports', 'Reports', '')])
+       .concat(canItems ? [this.navItem('manage', canStations ? 'Setup' : 'Menu & stock', '')] : [])
+       .concat([this.navItem('settings', 'Settings', '')]),
+      title: titles[this.state.view],
+      isFloor: this.state.view === 'floor', isPos: this.state.view === 'pos', isInv: this.state.view === 'inventory',
+      isCrm: this.state.view === 'crm', isShift: this.state.view === 'shift', isExp: this.state.view === 'expenses',
+      isRep: this.state.view === 'reports' && role !== 'Cashier',
+      isManage: this.state.view === 'manage' && canItems,
+      isOverview: this.state.view === 'overview' && canStations,
+      isTour: this.state.view === 'tournaments',
+      isSettings: this.state.view === 'settings',
+      cfg: (() => {
+        const cs = this.state.settings;
+        const setC = (k, v) => this.setState((s) => ({ settings: Object.assign({}, s.settings, { [k]: v }) }));
+        const chip2 = (on) => ({ padding: '9px 16px', cursor: 'pointer', fontFamily: 'var(--font-heading)', fontWeight: 800, fontSize: '13px',
+          border: '2px solid ' + (on ? 'var(--color-accent)' : 'var(--color-divider)'),
+          background: on ? 'var(--color-accent)' : 'transparent', color: on ? '#fff' : 'var(--color-text)' });
+        const av = cs.avatars[roleName] || '';
+        const initials = roleName.split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase();
+        return {
+          themes: [['dark', 'Dark — for the dim floor'], ['light', 'Light — daytime desk']].map((t2) => ({
+            label: t2[1], style: chip2(cs.theme === t2[0]), go: () => setC('theme', t2[0]) })),
+          fonts: ['Compact', 'Default', 'Large'].map((f2) => ({ label: f2, style: chip2(cs.fontScale === f2), go: () => setC('fontScale', f2) })),
+          accents: [['#ec3013', 'Den Red'], ['#0f62fe', 'Blue'], ['#198038', 'Green']].map((a2) => ({
+            label: a2[1], go: () => setC('accent', a2[0]),
+            style: { padding: '9px 14px 9px 10px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px',
+              fontFamily: 'var(--font-heading)', fontWeight: 800, fontSize: '13px', background: 'transparent',
+              border: '2px solid ' + (cs.accent === a2[0] ? a2[0] : 'var(--color-divider)'), color: 'var(--color-text)' },
+            sw: { width: '14px', height: '14px', background: a2[0] } })),
+          avatar: av, hasAvatar: !!av, noAvatar: !av, initials,
+          avatarPreview: { width: '72px', height: '72px', flex: 'none', display: 'grid', placeItems: 'center',
+            fontFamily: 'var(--font-heading)', fontWeight: 800, fontSize: '26px',
+            background: av || 'var(--color-text)', color: av ? '#fff' : 'var(--color-bg)' },
+          swatches: ['#201e1d', '#ec3013', '#0f62fe', '#198038', '#8a3ffc', '#ff832b'].map((c2) => ({
+            go: () => setC('avatars', Object.assign({}, cs.avatars, { [roleName]: c2 })),
+            style: { width: '34px', height: '34px', cursor: 'pointer', background: c2,
+              outline: av === c2 ? '3px solid var(--color-text)' : 'none', outlineOffset: '2px' } })),
+          clearAvatar: () => setC('avatars', Object.assign({}, cs.avatars, { [roleName]: '' })),
+          hasBg: !!cs.loginBg,
+          bgPreview: { height: '110px', border: '2px solid var(--color-divider)', display: 'grid', placeItems: 'center',
+            fontSize: '12px', opacity: cs.loginBg ? 1 : .55, color: cs.loginBg ? '#fff' : 'var(--color-text)',
+            backgroundImage: cs.loginBg ? 'linear-gradient(rgba(15,10,8,.45), rgba(15,10,8,.6)), url(' + cs.loginBg + ')' : 'none',
+            backgroundSize: 'cover', backgroundPosition: 'center', backgroundColor: cs.loginBg ? 'transparent' : 'var(--color-surface)' },
+          bgPreviewLabel: cs.loginBg ? 'Login panel preview' : 'No image — the panel shows the accent color',
+          pickBg: (e) => {
+            const f = e.target.files && e.target.files[0];
+            if (!f) return;
+            const rd = new FileReader();
+            rd.onload = () => setC('loginBg', rd.result);
+            rd.readAsDataURL(f);
+          },
+          clearBg: () => setC('loginBg', ''),
+          clearBgStyle: { alignSelf: 'flex-start', opacity: cs.loginBg ? 1 : .45, pointerEvents: cs.loginBg ? 'auto' : 'none' },
+          soundLabel: cs.sound ? 'On — chime on alerts & time-up' : 'Off',
+          soundStyle: chip2(cs.sound), toggleSound: () => setC('sound', !cs.sound),
+          locks: ['Off', '2 min', '5 min', '10 min'].map((l2) => ({ label: l2, style: chip2(cs.autoLock === l2), go: () => setC('autoLock', l2) })),
+          copies: ['1', '2'].map((c2) => ({ label: c2 + (c2 === '1' ? ' copy' : ' copies'), style: chip2(cs.receiptCopies === c2), go: () => setC('receiptCopies', c2) })),
+          who: roleName + ' · ' + role
+        };
+      })(),
+      tour, tourTicket, tPlayer,
+      alertsOpen: this.state.alertsOpen,
+      alertsClosed: !this.state.alertsOpen,
+      toggleAlerts: () => this.setState((s) => ({ alertsOpen: !s.alertsOpen })),
+      alertCount: String(alerts.filter((a) => a.unread).length),
+      shiftC,
+      manage, rateCard,
+
+      occ: busy + ' / ' + S.length,
+      occPct: (S.length ? Math.round(busy / S.length * 100) : 0) + '%',
+      occFill: { height: '12px', width: (S.length ? busy / S.length * 100 : 0) + '%', background: 'var(--color-accent)' },
+      stationCount: S.length,
+      todayStr: '৳14,610',
+      wallClock: pad(now.getHours()) + ':' + pad(now.getMinutes()),
+
+      stations,
+      sel: {
+        name: sel.name, kind: sel.kind === 'PS5' ? 'PlayStation 5' : 'PlayStation 4', who: sel.who,
+        phone: sel.phone, wallet: sel.wallet, points: sel.points,
+        timeStr: sel.status === 'available' ? '--:--:--' : sel.status === 'reserved' ? (sel.tMatch ? clock(Math.abs(sel.tMatch.remain)) : '--:--:--') : clock(Math.abs(sel.remain)),
+        timeLabel: sel.status === 'available' ? 'No active session' : sel.status === 'reserved' ? (sel.tMatch ? (sel.tMatch.remain > 0 ? 'Match time remaining' : 'Match over — record the winner') : 'Reserved for tournament') : sel.noTime ? 'Open — add a 30 min block' : sel.running ? 'Time remaining' : sel.started ? 'Paused · time remaining' : 'Time bought — not started',
+        clockBox: { background: sel.remain <= 0 && sel.status !== 'available' ? 'var(--color-accent)' : 'var(--color-bg)',
+          color: sel.remain <= 0 && sel.status !== 'available' ? '#fff' : 'var(--color-text)',
+          border: '2px solid var(--color-text)', padding: '14px', display: 'flex', flexDirection: 'column', gap: '4px' },
+        meta: sel.status === 'available' ? 'Start a session to begin billing' : sel.status === 'reserved' ? (sel.tMatch ? sel.tMatch.who + ' · extra time from the Tournaments page' : sel.reservedFor + ' — blocked by the manager') : sel.noTime ? 'No time bought yet · nothing billed' : sel.blocks + ' × 30 min bought · ' + clock(sel.elapsed) + ' played',
+        blocksLabel: sel.paidBlocks > 0 ? (sel.blocks - sel.paidBlocks) + ' × 30 min unbilled' : sel.blocks + ' × 30 min',
+        itemCount: cart.reduce((a, l) => a + l.q, 0) + ' items',
+        gamingStr: money(gaming), foodStr: money(this.foodOf(sel.name)), totalStr: money(total),
+        loyaltyStr: loyalty ? '−' + money(loyalty) : '৳0', dueStr: money(due),
+        pointsEarned: posM ? Math.round(due / 20) : 0,
+        pointsAfter: posM ? ptsAvail - loyalty + Math.round(due / 20) : '—',
+        txn: txnId,
+        hoursLabel: (sel.blocks / 2) + ' h'
+      },
+      pauseLabel: sel.status === 'available' ? 'No session' : sel.running ? 'Pause session' : sel.started ? 'Resume session' : 'Start the clock',
+      togglePause: () => this.setState((s) => {
+        const n = sel.name;
+        if (this.blocksOf(n, s).blocks === 0) return {};
+        const r = this.runOf(n, s);
+        const next = r.at != null ? { acc: r.acc + Math.max(0, s.tick - r.at), at: null } : { acc: r.acc, at: s.tick };
+        return { run: Object.assign({}, s.run, { [n]: next }) };
+      }),
+      extend: () => this.setState((s) => {
+        const n = sel.name;
+        const bl = this.blocksOf(n, s);
+        return { extra: Object.assign({}, s.extra, { [n]: (bl.blocks === 0 ? -bl.baseBlocks : bl.cur) + 1 }) };
+      }),
+      reduce: () => this.setState((s) => {
+        const n = sel.name;
+        const bl = this.blocksOf(n, s);
+        if (bl.baseBlocks + bl.cur <= 0) return {};
+        const next = { extra: Object.assign({}, s.extra, { [n]: bl.cur - 1 }) };
+        if (bl.blocks - 1 <= 0) next.run = Object.assign({}, s.run, { [n]: { acc: 0, at: null } });
+        return next;
+      }),
+      goPosOnly: () => this.setState({ view: 'pos', posMode: 'station' }),
+      goPosCounter: () => this.setState({ view: 'pos', posMode: 'counter', cat: 'Tournament' }),
+      goPos: () => {
+        if (sel.status === 'reserved') return;
+        if (sel.status === 'available') {
+          this.setState((s) => ({
+            started: Object.assign({}, s.started, { [sel.name]: { at: s.tick, blocks: 0, who: 'Walk-in' } }),
+            cleared: Object.assign({}, s.cleared, { [sel.name]: false }),
+            extra: Object.assign({}, s.extra, { [sel.name]: 0 }),
+            run: Object.assign({}, s.run, { [sel.name]: { acc: 0, at: null } }),
+            carts: Object.assign({}, s.carts, { [sel.name]: [] })
+          }));
+        } else this.setState({ view: 'pos', posMode: 'station' });
+      },
+      primaryAction: sel.status === 'available' ? 'Start a session' : sel.status === 'reserved' ? 'Reserved · ' + sel.reservedFor : 'Bill & take payment',
+      canEnd: sel.status !== 'available' && sel.status !== 'reserved',
+      endLabel: sel.cost + this.foodOf(sel.name) > 0
+        ? money(sel.cost + this.foodOf(sel.name)) + ' due — settle before ending'
+        : 'End session & free the station',
+      endStyle: {
+        height: '44px', margin: 0,
+        background: 'var(--color-text)', color: 'var(--color-bg)', borderColor: 'var(--color-text)',
+        opacity: sel.status === 'available' || sel.cost + this.foodOf(sel.name) > 0 ? .45 : 1,
+        cursor: sel.cost + this.foodOf(sel.name) > 0 ? 'not-allowed' : 'pointer',
+        pointerEvents: sel.status === 'available' ? 'none' : 'auto'
+      },
+      endSession: () => this.setState((s) => {
+        if (sel.cost + this.foodOf(sel.name) > 0) return {};
+        const started = Object.assign({}, s.started); delete started[sel.name];
+        const run = Object.assign({}, s.run); delete run[sel.name];
+        const paid = Object.assign({}, s.paid); delete paid[sel.name];
+        return {
+          view: 'floor',
+          started, run, paid,
+          cleared: Object.assign({}, s.cleared, { [sel.name]: true }),
+          extra: Object.assign({}, s.extra, { [sel.name]: 0 }),
+          carts: Object.assign({}, s.carts, { [sel.name]: [] }),
+          posMember: null, posTouched: false, redeem: 0, posQuery: ''
+        };
+      }),
+      settle: () => this.setState((s) => {
+        const mAdj = posM ? bumpAdj(s, posM[0], 0, -loyalty + Math.round(due / 20)) : s.memberAdj;
+        const key2 = s.posMode === 'counter' ? '__counter' : sel.name;
+        const entryLines = (s.carts[key2] || []).filter((l) => l.n.indexOf('Entry — ') === 0);
+        let tourns = s.tournaments, soldAmt = 0, soldCnt = 0;
+        if (entryLines.length) {
+          const playerName = posM ? posM[0] : (s.tPlayerName.trim() || 'Walk-in guest');
+          tourns = s.tournaments.map((t) => {
+            const ln = entryLines.find((l) => l.n === 'Entry — ' + t.name);
+            if (!ln) return t;
+            const cap2 = t.cap || 8;
+            const slots = Math.max(0, cap2 - t.players.length);
+            const add = Math.min(ln.q, slots);
+            soldAmt += ln.p * add; soldCnt += add;
+            const names = []; for (let i = 0; i < add; i++) names.push(add > 1 ? playerName + ' · guest ' + (i + 1) : playerName);
+            const players2 = t.players.concat(names);
+            const full = players2.length >= cap2 && !t.bracket;
+            return Object.assign({}, t, { players: players2, bracket: full ? buildBracket(players2) : t.bracket, status: full ? 'LIVE' : t.status });
+          });
+        }
+        const tourPatch = { tournaments: tourns, tSoldAmt: s.tSoldAmt + soldAmt, tSoldCount: s.tSoldCount + soldCnt, tPlayerName: '' };
+        if (s.posMode === 'counter') {
+          return Object.assign({ carts: Object.assign({}, s.carts, { __counter: [] }), memberAdj: mAdj, posMember: null, posTouched: false, redeem: 0, posQuery: '' }, tourPatch);
+        }
+        return Object.assign({
+          view: 'floor',
+          paid: Object.assign({}, s.paid, { [sel.name]: this.blocksOf(sel.name, s).blocks }),
+          carts: Object.assign({}, s.carts, { [sel.name]: [] }),
+          memberAdj: mAdj, posMember: null, posTouched: false, redeem: 0, posQuery: ''
+        }, tourPatch);
+      }),
+
+      cats, menu: menu.concat(tourMenu), methods, payA, payB, mem,
+      pos: {
+        counter, hasStation: !counter,
+        title: counter ? 'Counter sale' : sel.name,
+        sub: counter ? 'Food, drinks & extras — no station' : sel.who,
+        modes: [
+          { label: 'Counter sale', on: counter, go: () => this.setState({ posMode: 'counter' }) },
+          { label: 'Station · ' + sel.name, on: !counter, go: () => this.setState({ posMode: 'station' }) }
+        ].map((m) => ({ label: m.label, go: m.go,
+          style: { padding: '8px 12px', cursor: 'pointer', fontFamily: 'var(--font-heading)', fontWeight: 800, fontSize: '12px',
+            border: '2px solid ' + (m.on ? 'var(--color-accent)' : 'var(--color-divider)'),
+            background: m.on ? 'var(--color-accent)' : 'transparent', color: m.on ? '#fff' : 'var(--color-text)' } })),
+        settleLabel: counter ? 'Take payment & print' : 'Take payment & print ticket'
+      },
+      cart: cart.map((l) => ({ n: l.n, q: l.q, lineStr: money(l.p * l.q), inc: () => this.bump(l.n, 1), dec: () => this.bump(l.n, -1) })),
+      receiptHead: (counter
+        ? [{ l: 'TXN', v: txnId }, { l: 'TYPE', v: 'Counter sale' }, { l: 'TIME', v: outTime }]
+        : [{ l: 'TXN', v: txnId }, { l: 'STATION', v: sel.name + ' (' + sel.kind + ')' }, { l: 'IN', v: inTime }, { l: 'OUT', v: outTime }]
+      ).concat([{ l: 'CASHIER', v: 'Sabbir A.' }]),
+      receiptLines: (counter ? [] : [{ l: 'GAMING ' + sel.blocks + 'x30M', v: money(gaming) }])
+        .concat(cart.map((l) => ({ l: l.n.toUpperCase().slice(0, 16) + ' x' + l.q, v: money(l.p * l.q) })))
+        .concat(loyalty ? [{ l: 'POINTS ' + loyalty + 'PTS', v: '-' + money(loyalty) }] : []),
+
+      inventory, lowStock, watchlist,
+      equipment: [
+        { n: 'DualSense controllers', v: '6 of 6 · 1 drifting' },
+        { n: 'DualShock 4 controllers', v: '4 of 4' },
+        { n: 'Gaming headsets', v: '3 of 4 · 1 out for repair' },
+        { n: 'HDMI cables (spare)', v: '5' },
+        { n: 'Charging docks', v: '2 of 2' }
+      ],
+
+      members, member, memberVisits,
+      crmQuery: this.state.crmQuery,
+      setCrmQuery: (e) => this.setState({ crmQuery: e.target.value }),
+      memberTopUp: () => this.setState((s) => ({ memberAdj: bumpAdj(s, member.n, 500, 0) })),
+      memberRedeem: () => {
+        const pts = Math.min(parseInt(member.points, 10) || 0, 100);
+        if (pts > 0) this.setState((s) => ({ memberAdj: bumpAdj(s, member.n, pts, -pts) }));
+      },
+      redeemBtnLabel: 'Redeem 100 pts → wallet',
+      memberSince: isNewMember ? 'Registered today' : 'Member since Jan 2025',
+      showNewMember: this.state.newMemberOpen,
+      openNewMember: () => this.setState({ newMemberOpen: true }),
+      closeNewMember: () => this.setState({ newMemberOpen: false }),
+      saveNewMember: () => saveMember(false),
+      saveAndSeat: () => saveMember(true),
+      nm: {
+        name: nmS.name, phone: nmS.phone,
+        setName: (e) => setNm('name', e.target.value),
+        setPhone: (e) => setNm('phone', e.target.value),
+        consoles: ['PS5', 'PS4', 'No preference'].map((c) => ({ label: c, style: chip(nmS.console === c), go: () => setNm('console', c) })),
+        games: ['FIFA 25', 'Call of Duty', 'Tekken 8', 'Gran Turismo', 'God of War', 'Mortal Kombat'].map((g) => ({
+          label: g, style: chip(nmS.games.indexOf(g) >= 0),
+          go: () => setNm('games', nmS.games.indexOf(g) >= 0 ? nmS.games.filter((x) => x !== g) : nmS.games.concat([g]))
+        })),
+        topups: [0, 500, 1000, 2000].map((t) => ({ label: t === 0 ? 'None' : money(t), style: chip(nmS.topup === t), go: () => setNm('topup', t) })),
+        pays: ['Cash', 'bKash', 'Nagad'].map((p) => ({ label: p, style: chip(nmS.pay === p), go: () => setNm('pay', p) })),
+        seatLabel: freeStation ? 'Save & seat on ' + freeStation : 'No free station',
+        walletStr: money(nmS.topup),
+        pointsStr: welcomePts + ' pts',
+        note: nmS.topup > 0 ? 'Session fees deduct from the wallet automatically on every visit.' : 'They can top up any time at the desk.'
+      },
+
+      takings: [
+        { m: 'Cash', g: '৳5,840', f: '৳2,410', t: '৳8,250' },
+        { m: 'bKash', g: '৳2,760', f: '৳1,620', t: '৳4,380' },
+        { m: 'Nagad', g: '৳680', f: '৳420', t: '৳1,100' },
+        { m: 'Wallet credit', g: '৳400', f: '৳480', t: '৳880' }
+      ],
+      staff: [
+        { n: 'Sabbir Ahmed', r: 'Cashier · on shift', h: '16:00 →' },
+        { n: 'Tamim Iqbal', r: 'Cashier · closed 16:00', h: '10:00–16:00' },
+        { n: 'Farhan Reza', r: 'Manager', h: '14:00–22:00' }
+      ],
+      shiftHistory,
+
+      expenses: this.state.expensesAdded.concat([
+        { t: '20:40', n: 'Water delivery (20L × 3)', c: 'Utilities', by: 'Sabbir Ahmed', v: '৳360' },
+        { t: '19:15', n: 'Cleaning supplies', c: 'Supplies', by: 'Sabbir Ahmed', v: '৳240' },
+        { t: '18:02', n: 'Controller thumb grips', c: 'Repairs', by: 'Farhan Reza', v: '৳380' },
+        { t: '17:20', n: 'Staff tea & snacks', c: 'Staff', by: 'Sabbir Ahmed', v: '৳120' },
+        { t: '11:45', n: 'Printer paper rolls ×5', c: 'Supplies', by: 'Tamim Iqbal', v: '৳80' }
+      ]),
+      exp: {
+        n: this.state.expForm.n, amt: this.state.expForm.amt,
+        setN: (e) => this.setState((s) => ({ expForm: Object.assign({}, s.expForm, { n: e.target.value }) })),
+        setAmt: (e) => this.setState((s) => ({ expForm: Object.assign({}, s.expForm, { amt: e.target.value }) })),
+        cats: ['Supplies', 'Utilities', 'Repairs', 'Staff', 'Other'].map((c) => ({
+          label: c, go: () => this.setState((s) => ({ expForm: Object.assign({}, s.expForm, { cat: c }) })),
+          cls: this.state.expForm.cat === c ? 'tag tag-accent' : 'tag tag-neutral',
+          style: { cursor: 'pointer' }
+        })),
+        record: () => this.setState((s) => {
+          const f = s.expForm; const amt = parseInt(f.amt, 10);
+          if (!f.n.trim() || !(amt > 0)) return {};
+          const d = new Date();
+          return {
+            expensesAdded: [{ t: pad(d.getHours()) + ':' + pad(d.getMinutes()), n: f.n.trim(), c: f.cat, by: roleName, v: money(amt), amt }].concat(s.expensesAdded),
+            expForm: { n: '', amt: '', cat: f.cat }
+          };
+        }),
+        todayStr: money(expTotal),
+        netStr: money(9110 + 1180 - expTotal)
+      },
+
+      kpis: [
+        { l: 'Revenue today', v: '৳14,610', s: '+18% on last Friday' },
+        { l: 'Hours sold', v: '31.5', s: 'across ' + S.length + ' stations' },
+        { l: 'Sessions', v: '38', s: 'avg. ৳386 a ticket' },
+        { l: 'Net profit', v: money(9110 + 1180 - expTotal), s: 'after ' + money(expTotal) + ' expenses' }
+      ].map((k, i) => ({ l: k.l, v: k.v, s: k.s,
+        style: { padding: '18px', borderRight: i < 3 ? '2px solid var(--color-divider)' : 'none',
+          background: i === 3 ? 'var(--color-accent)' : 'transparent', color: i === 3 ? '#fff' : 'var(--color-text)' } })),
+      trend, util, hourly, monthly, weekday, alerts,
+      topSellers: [
+        { n: 'Milk Tea', u: '41', v: '৳820' }, { n: 'Sting 250ml', u: '26', v: '৳910' },
+        { n: 'Potato Chips', u: '24', v: '৳960' }, { n: 'French Fries', u: '19', v: '৳2,280' },
+        { n: 'Red Bull 250ml', u: '14', v: '৳2,520' }
+      ],
+      nexusRemain: clock(Math.max(0, S[0].remain))
+    };
+  }
+}
+</script>
+</body>
+</html>
