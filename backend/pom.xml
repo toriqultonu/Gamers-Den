@@ -56,6 +56,12 @@
             <scope>runtime</scope>
         </dependency>
 
+        <!-- BCrypt for staff PINs. Crypto only — the security starter arrives with auth in B03. -->
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-crypto</artifactId>
+        </dependency>
+
         <!-- API docs: FE type-gen consumes /v3/api-docs -->
         <dependency>
             <groupId>org.springdoc</groupId>
