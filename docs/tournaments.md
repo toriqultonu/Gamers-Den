@@ -1,6 +1,6 @@
 # Gamer's Den — Tournament Management Module
 
-Extends the spec set; `api-contract.md` remains the authority. The prototype's Tournaments tab is the visual reference. This file consolidates the base module and the advanced (v2) behavior into one spec.
+Extends the spec set; `api-contract.md` remains the authority. Queue tokens for pre-bookings and play tickets are a separate system (`bookings.md`) — tournament seed tokens below are per-tournament, not the daily counter. The prototype's Tournaments tab is the visual reference. This file consolidates the base module and the advanced (v2) behavior into one spec.
 
 ---
 

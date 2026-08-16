@@ -1,6 +1,6 @@
 # Gamer's Den — API Contract
 
-Authority document: where frontend/backend specs conflict, this file wins. Tournament endpoints are summarized here and detailed in `tournaments.md`.
+Authority document: where frontend/backend specs conflict, this file wins. Tournament endpoints are summarized here and detailed in `tournaments.md`; booking/queue behavior detailed in `bookings.md`.
 Base URL: `/api/v1`. JSON, UTF-8. Times ISO-8601 with offset (`+06:00`). Money in integer BDT.
 
 ---
@@ -26,6 +26,9 @@ Permission matrix (API-enforced; UI hiding cosmetic):
 | Sessions, POS, payments, prints | ✓ | ✓ | ✓ |
 | Members create/top-up/redeem | ✓ | ✓ | ✓ |
 | Expenses, shift open/close | ✓ | ✓ | ✓ (own shift) |
+| Bookings: create (take payment), check-in + token print, seat, cancel-with-refund (outside cutoff) | ✓ | ✓ | ✓ |
+| Play tickets: sell, seat from queue, add time | ✓ | ✓ | ✓ |
+| Pre-booking settings (enable/disable, package fee, cutoff) | ✓ | ✗ | ✗ |
 | Tournament: sell entry, start match, +time, record winner of a *started* match, view bracket/history | ✓ | ✓ | ✓ |
 | Tournament: create/edit/cancel, station blocks, generate bracket, decide un-started matches, finance | ✓ | ✓ | ✗ |
 | Menu & stock CRUD | ✓ | ✓ | ✗ |
@@ -40,7 +43,7 @@ Permission matrix (API-enforced; UI hiding cosmetic):
 
 ### Idempotency
 
-All mutating money/print endpoints (`POST /payments`, `/print-jobs`, `/sessions/*/blocks`, `/wallet/*`, `/tournaments/*/entries`) require `Idempotency-Key: <uuid>`. Stored 48 h with the first response; identical retry returns it with `Idempotency-Replayed: true`; different body under same key → 409. **A retried settle or print can never double-charge, double-register, or double-print.**
+All mutating money/print endpoints (`POST /payments`, `/print-jobs`, `/sessions/*/blocks`, `/wallet/*`, `/tournaments/*/entries`, `/bookings`, `/bookings/*/cancel`, `/play-tickets`) require `Idempotency-Key: <uuid>`. Stored 48 h with the first response; identical retry returns it with `Idempotency-Replayed: true`; different body under same key → 409. **A retried settle, booking, or print can never double-charge, double-register, or double-print.**
 
 ---
 
@@ -59,7 +62,7 @@ All mutating money/print endpoints (`POST /payments`, `/print-jobs`, `/sessions/
 
 | Method | Path | Notes |
 |---|---|---|
-| GET | `/stations` | + live session/match summary |
+| GET | `/stations` | + live session/match/arrival summary |
 | POST | `/stations` | `{name, consoleType: PS5\|PS4}` 409 `DUPLICATE_NAME` |
 | PATCH/DELETE | `/stations/{id}` | Delete: 409 `STATION_IN_USE` |
 | GET/PUT | `/pricing`, `/pricing/{consoleType}` | New blocks only; running sessions keep purchased prices |
@@ -70,11 +73,33 @@ State machine: `OPEN` (no time) → `RUNNING` ⇄ `PAUSED` → `LOCKED` → `CLO
 
 | Method | Path | Notes |
 |---|---|---|
-| POST | `/sessions` | `{stationId, memberId?}` → OPEN, 0 blocks. 409 `STATION_BUSY`, `STATION_RESERVED` (tournament block) |
+| POST | `/sessions` | `{stationId, memberId?, bookingId?\|queueEntryId?}` → OPEN. With `bookingId`/`queueEntryId`: loads the prepaid blocks as paid and consumes the token. 409 `STATION_BUSY`, `STATION_RESERVED`, `CONSOLE_TYPE_MISMATCH` |
 | POST | `/sessions/{id}/blocks` | Idempotent `{delta: ±1}`. −1 below paid/consumed → 409 `BLOCKS_CONSUMED` |
 | POST | `/sessions/{id}/clock` | `{action: START\|PAUSE\|RESUME}`. 409 `NO_BLOCKS` |
-| POST | `/sessions/{id}/end` | 409 `SESSION_HAS_BALANCE` if unsettled > 0 |
+| POST | `/sessions/{id}/end` | 409 `SESSION_HAS_BALANCE` if net unsettled (charges − prepaid) > 0 |
 | GET | `/sessions/{id}`, `/sessions?active=true` | |
+
+### Pre-bookings (detail: bookings.md)
+
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/booking-settings` | `{enabled, packageFee, cancelCutoffHours}` (any role) |
+| PUT | `/booking-settings` | Admin only |
+| GET | `/bookings?tab=upcoming\|history` | upcoming = PAID; history = ARRIVED/USED/CANCELLED |
+| POST | `/bookings` | Idempotent. `{stationId, memberId?, name, phone?, startAt, blocks, method, paymentRef?}` — charges play time (blocks × console rate) + package fee in one transaction; returns booking + `printJobId` (P7). 409 `PREBOOKING_DISABLED`, `SPLIT_MISMATCH` |
+| POST | `/bookings/{id}/check-in` | Assigns next daily queue token, prints P6 stub → `{token, printJobId}`. 409 `ALREADY_CHECKED_IN` |
+| POST | `/bookings/{id}/cancel` | Idempotent. Full refund transaction (negative, same shift rules). 409 `CANCEL_CUTOFF_PASSED`, `ALREADY_CHECKED_IN` |
+
+### Play queue (walk-up prepaid tokens)
+
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/play-queue` | today's WAITING entries in token order (+ SEATED for history) |
+| POST | `/play-tickets` | Sold via `POST /payments` `playTickets[]` (below); this alias exists for standalone sale. Returns `{token, printJobId}` |
+| POST | `/play-queue/{id}/seat` | `{stationId}` → creates the session with prepaid blocks. 409 `CONSOLE_TYPE_MISMATCH`, `STATION_BUSY` |
+| DELETE | `/play-queue/{id}` | Manager+: refund & remove a no-show (refund transaction) |
+
+Token counter resets at day rollover (venue timezone), shared across bookings and play tickets.
 
 ### Cart & menu
 
@@ -88,9 +113,9 @@ State machine: `OPEN` (no time) → `RUNNING` ⇄ `PAUSED` → `LOCKED` → `CLO
 
 | Method | Path | Notes |
 |---|---|---|
-| GET | `/members?q=` | name/phone search |
+| GET | `/members?q=` | name/phone search (also used by the booking form's member attach) |
 | POST | `/members` | 409 `DUPLICATE_PHONE` |
-| GET | `/members/{id}` | + recent visits |
+| GET | `/members/{id}` | + recent visits and bookings |
 | POST | `/members/{id}/wallet/topup` | Idempotent. `{amount, method, paymentRef?}` |
 | POST | `/members/{id}/wallet/redeem-points` | Idempotent. 1pt=৳1 → wallet. 409 `INSUFFICIENT_POINTS` |
 
@@ -100,8 +125,8 @@ Earn on settle: floor(due/20) to the attached member; redemption at settle is a 
 
 | Method | Path | Notes |
 |---|---|---|
-| GET | `/sessions/{id}/bill` | gaming (unbilled blocks only), fnb, tournament lines, pointsRedeemable, total |
-| POST | `/payments` | Idempotent. `{target:{sessionId?\|cartId?}, redeemPoints?, tournamentEntries?:[{tournamentId, playerName?}], splits:[{method, amount, paymentRef?}]}` → `{transactionId, printJobId, entryTokens?}`. Marks blocks paid (session continues), decrements stock, ledgers, registers entries, auto-creates print job. 409 `SPLIT_MISMATCH`, `WALLET_INSUFFICIENT`, `PAYMENT_REF_REQUIRED`, `TOURNAMENT_FULL` |
+| GET | `/sessions/{id}/bill` | gaming (unbilled blocks only), fnb, tournament lines, prepaid credit, pointsRedeemable, netTotal |
+| POST | `/payments` | Idempotent. `{target:{sessionId?\|cartId?}, redeemPoints?, tournamentEntries?:[{tournamentId, playerName?}], playTickets?:[{consoleType, blocks, playerName?}], splits:[{method, amount, paymentRef?}]}` → `{transactionId, printJobId, entryTokens?, queueTokens?}`. Marks blocks paid (session continues), decrements stock, ledgers, registers entries/queue tokens, auto-creates print job(s). 409 `SPLIT_MISMATCH`, `WALLET_INSUFFICIENT`, `PAYMENT_REF_REQUIRED`, `TOURNAMENT_FULL` |
 | POST | `/payments/{id}/void` | Manager+, `{reason}`, same-shift; full reversal |
 | GET | `/transactions` | filters: shift, method, station, dates |
 
@@ -112,13 +137,13 @@ Earn on settle: floor(due/20) to the attached member; redemption at settle is a 
 | Method | Path | Notes |
 |---|---|---|
 | POST | `/shifts` | `{openingFloat}`. 409 `SHIFT_ALREADY_OPEN` per terminal |
-| GET | `/shifts/current/x-report` | takings incl. tournament line; `?print=true` → P3 job |
+| GET | `/shifts/current/x-report` | takings incl. tournament and pre-booking lines; `?print=true` → P3 job |
 | POST | `/shifts/current/close` | `{countedCash, handoverNote?}` → Z + P2 job + logout; discrepancy ≠ 0 writes alert |
 | GET | `/shifts` · POST/GET `/expenses` | expense `?voucher=true` → P4 job |
 
 ### Tournaments (summary — detail in tournaments.md)
 
-`GET /tournaments`, `GET /tournaments/{id}` (+bracket incl. per-match `startedAt`, `extraMinutes`, `remainingSeconds`), `POST /tournaments` (Manager+, cap ∈ {4,8,16,32}, matchDurationMin), `PATCH`, `PUT /{id}/blocks`, `POST /{id}/cancel` (auto-refunds), `POST /{id}/entries` (any role; playerName free-text when no member; returns seed token), `POST /{id}/bracket` (Manager+ manual; auto-generates when cap fills), `POST /{id}/matches/{mid}/start` (any role; assigns free allocated console, skips consoles busy with walk-in sessions; 409 `NO_FREE_CONSOLE`), `POST /{id}/matches/{mid}/extend` (any role, `{minutes}`), `POST /{id}/matches/{mid}/winner` (started: any role; un-started: Manager+), `GET /tournaments/{id}/finance` (Manager+ only, 403 otherwise), `GET /tournaments/history`, `POST /tournament-entries/{id}/check-in` (`{qrToken}`).
+`GET /tournaments`, `GET /tournaments/{id}` (+bracket incl. per-match `startedAt`, `extraMinutes`, `remainingSeconds`), `POST /tournaments` (Manager+, cap ∈ {4,8,16,32}), `PATCH`, `PUT /{id}/blocks`, `POST /{id}/cancel` (auto-refunds), `POST /{id}/entries`, `POST /{id}/bracket` (Manager+), `POST /{id}/matches/{mid}/start`, `POST /{id}/matches/{mid}/extend`, `POST /{id}/matches/{mid}/winner`, `GET /tournaments/{id}/finance` (Manager+ only), `GET /tournaments/history`, `POST /tournament-entries/{id}/check-in`.
 
 ### Settings
 
@@ -132,7 +157,7 @@ Earn on settle: floor(due/20) to the attached member; redemption at settle is a 
 
 | Method | Path | Notes |
 |---|---|---|
-| POST | `/print-jobs` | Idempotent. `{type: RECEIPT\|Z_REPORT\|X_REPORT\|EXPENSE_VOUCHER\|TOURNAMENT_STUB, refId}` |
+| POST | `/print-jobs` | Idempotent. `{type: RECEIPT\|Z_REPORT\|X_REPORT\|EXPENSE_VOUCHER\|TOURNAMENT_STUB\|PLAY_TICKET\|BOOKING_CONFIRMATION, refId}` |
 | GET | `/print-jobs/{id}` | status QUEUED\|PRINTING\|DONE\|FAILED, attempts, device, operator, isReprint, reprintReason?, originalJobId? |
 | GET | `/print-jobs/{id}/render` | stored 48-col text for S11 |
 | POST | `/print-jobs/{id}/reprint` | `{reason: LOST\|DAMAGED\|CUSTOMER_COPY\|DISPUTE}` required → new job, band printed, original linked |
@@ -141,7 +166,7 @@ Earn on settle: floor(due/20) to the attached member; redemption at settle is a 
 
 ### Live updates & sync
 
-`GET /events` — SSE: `station-update` (sessions AND tournament match timers), `tournament-update`, `alert`, `printer-status`, `sync-status`. Polling fallback 10 s.
+`GET /events` — SSE: `station-update` (sessions AND tournament match timers), `queue-update`, `booking-update`, `tournament-update`, `alert`, `printer-status`, `sync-status`. Polling fallback 10 s.
 `GET /sync/status` → `{state, lastSyncedAt, pendingOps}`; cloud-side `POST /sync/push` (ordered, idempotent by op id). One-way venue → cloud in MVP.
 
 ---

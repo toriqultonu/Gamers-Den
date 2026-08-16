@@ -1,6 +1,6 @@
 # Gamer's Den — Backend Architecture
 
-Stack (fixed): Java 21, Spring Boot 3.3+, PostgreSQL 16. Venue instance on the cafe PC; thin cloud instance receives one-way replication. One deployable JAR, modular monolith. `api-contract.md` is the authority; tournament detail in `tournaments.md`.
+Stack (fixed): Java 21, Spring Boot 3.3+, PostgreSQL 16. Venue instance on the cafe PC; thin cloud instance receives one-way replication. One deployable JAR, modular monolith. `api-contract.md` is the authority; tournament detail in `tournaments.md`, booking/queue detail in `bookings.md`.
 
 ---
 
@@ -12,7 +12,7 @@ Stack (fixed): Java 21, Spring Boot 3.3+, PostgreSQL 16. Venue instance on the c
 ```
 dev.gamersden/
   auth/ station/ session/ catalog/ member/ billing/
-  shift/ tournament/ printing/ report/ alert/ settings/ sync/ common/
+  booking/ queue/ shift/ tournament/ printing/ report/ alert/ settings/ sync/ common/
 ```
 
 Each package: `web` (controllers/DTOs), `domain` (entities, services), `repo` (Spring Data JPA). No hexagonal ceremony.
@@ -21,7 +21,7 @@ Libraries: Spring Web, Data JPA, Security, Validation; Flyway; springdoc-openapi
 
 ## 2. PostgreSQL schema (DDL)
 
-Core tables (tournament tables in `tournaments.md` §2/§7):
+Core tables below; tournament tables in `tournaments.md` §2/§7; booking/queue tables in `bookings.md` §5.
 
 ```sql
 CREATE TABLE staff (
@@ -88,6 +88,7 @@ CREATE TABLE sessions (
   station_id BIGINT NOT NULL REFERENCES stations,
   member_id BIGINT REFERENCES members,
   shift_id BIGINT NOT NULL REFERENCES shifts,
+  queue_entry_id BIGINT,                       -- set when seated from a token (booking or play ticket)
   state TEXT NOT NULL DEFAULT 'OPEN' CHECK (state IN ('OPEN','RUNNING','PAUSED','LOCKED','CLOSED')),
   consumed_sec INT NOT NULL DEFAULT 0,
   running_since TIMESTAMPTZ,                   -- set iff RUNNING
@@ -95,15 +96,18 @@ CREATE TABLE sessions (
 );
 CREATE UNIQUE INDEX one_live_session_per_station ON sessions (station_id) WHERE state <> 'CLOSED';
 
-CREATE TABLE session_blocks (                  -- one row per purchased 30-min block
+CREATE TABLE session_blocks (                  -- one row per 30-min block
   id BIGSERIAL PRIMARY KEY,
   session_id BIGINT NOT NULL REFERENCES sessions,
   price INT NOT NULL,                          -- snapshot (morning rate applied at purchase)
-  paid_tx_id BIGINT,                           -- NULL until settled; sessions may continue after payment
+  paid_tx_id BIGINT,                           -- NULL until settled; prepaid blocks reference the
+                                               -- booking/ticket sale tx from creation
   removed BOOLEAN NOT NULL DEFAULT FALSE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE INDEX ON session_blocks (session_id) WHERE NOT removed;
+-- Seating a token inserts its prepaid blocks with paid_tx_id = the original sale tx:
+-- the end-session guard (net outstanding = unpaid blocks + cart − 0) passes without a second payment.
 
 CREATE TABLE items (
   id BIGSERIAL PRIMARY KEY,
@@ -112,6 +116,8 @@ CREATE TABLE items (
   price INT NOT NULL, stock INT NOT NULL DEFAULT 0, reorder_at INT NOT NULL DEFAULT 0,
   active BOOLEAN NOT NULL DEFAULT TRUE
 );
+-- Tournament entries and play tickets are NOT items rows — they are first-class
+-- payment lines (tournamentEntries[] / playTickets[]) priced from their own tables.
 
 CREATE TABLE stock_movements (
   id BIGSERIAL PRIMARY KEY,
@@ -145,8 +151,9 @@ CREATE TABLE transactions (
   gaming_amount INT NOT NULL DEFAULT 0,
   fnb_amount INT NOT NULL DEFAULT 0,
   tournament_amount INT NOT NULL DEFAULT 0,    -- X/Z tournament line
+  booking_amount INT NOT NULL DEFAULT 0,       -- X/Z pre-booking line (bookings + play tickets)
   points_redeemed INT NOT NULL DEFAULT 0, points_earned INT NOT NULL DEFAULT 0,
-  total_due INT NOT NULL,
+  total_due INT NOT NULL,                      -- negative for refunds
   voided BOOLEAN NOT NULL DEFAULT FALSE, void_reason TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
@@ -156,7 +163,7 @@ CREATE TABLE payment_splits (
   id BIGSERIAL PRIMARY KEY,
   tx_id BIGINT NOT NULL REFERENCES transactions,
   method TEXT NOT NULL CHECK (method IN ('CASH','BKASH','NAGAD','WALLET')),
-  amount INT NOT NULL CHECK (amount > 0),
+  amount INT NOT NULL CHECK (amount <> 0),     -- negative on refunds
   payment_ref TEXT,
   verify_state TEXT NOT NULL DEFAULT 'MANUAL' CHECK (verify_state IN ('MANUAL','PENDING','VERIFIED','FAILED'))
 );
@@ -184,7 +191,8 @@ CREATE TABLE expenses (
 
 CREATE TABLE print_jobs (
   id BIGSERIAL PRIMARY KEY,
-  type TEXT NOT NULL CHECK (type IN ('RECEIPT','Z_REPORT','X_REPORT','EXPENSE_VOUCHER','TOURNAMENT_STUB','TEST')),
+  type TEXT NOT NULL CHECK (type IN ('RECEIPT','Z_REPORT','X_REPORT','EXPENSE_VOUCHER',
+                                     'TOURNAMENT_STUB','PLAY_TICKET','BOOKING_CONFIRMATION','TEST')),
   ref_id BIGINT NOT NULL,
   status TEXT NOT NULL DEFAULT 'QUEUED' CHECK (status IN ('QUEUED','PRINTING','DONE','FAILED')),
   attempts INT NOT NULL DEFAULT 0,
@@ -199,6 +207,13 @@ CREATE TABLE print_jobs (
   CONSTRAINT reprint_needs_reason CHECK (NOT is_reprint OR reprint_reason IS NOT NULL)
 );
 CREATE INDEX ON print_jobs (status) WHERE status IN ('QUEUED','FAILED');
+
+CREATE TABLE token_seq (                       -- daily queue-token counter
+  token_date DATE PRIMARY KEY,
+  next_no INT NOT NULL DEFAULT 1
+);
+-- allocate with: UPDATE token_seq SET next_no = next_no + 1 WHERE token_date = $today RETURNING next_no - 1
+-- (upsert the row first); serialized by row lock, resets by keying on date.
 
 CREATE TABLE alerts (
   id BIGSERIAL PRIMARY KEY,
@@ -221,15 +236,15 @@ CREATE TABLE sync_outbox (
 CREATE INDEX ON sync_outbox (id) WHERE pushed_at IS NULL;
 ```
 
-Derived values (bill totals, remaining seconds, expected cash, match countdowns) are computed, never stored redundantly; transaction snapshots are immutable.
+Derived values (bill totals, remaining seconds, expected cash, match countdowns, net outstanding) are computed, never stored redundantly; transaction snapshots are immutable.
 
 ## 3. Migration strategy
 
-Flyway. `V001__baseline.sql` = core schema + seed (Admin, pricing, categories); `V002__tournaments.sql` = tournaments.md DDL; additive-only during MVP. Same set on venue and cloud.
+Flyway. `V001__baseline.sql` = core schema + seed (Admin, pricing, categories); `V002__tournaments.sql` = tournaments.md DDL; `V003__bookings.sql` = bookings.md DDL (+ `transactions.booking_amount`, `sessions.queue_entry_id`, `token_seq`); additive-only during MVP. Same set on venue and cloud.
 
 ## 4. Printable artifact rendering — decision
 
-**Server-side ESC/POS byte stream, rendered at job creation, stored in `print_jobs.rendered`.** Retries and reprints are byte-identical (audit-true); preview (`rendered_text`) matches paper exactly; no browser capability needed. Tournament stubs (P5) render into the same job as the sale receipt. Rejected: server-side PDF (driver raster reflows thermal); client-side (duplicated layout logic, preview≠paper).
+**Server-side ESC/POS byte stream, rendered at job creation, stored in `print_jobs.rendered`.** Retries and reprints are byte-identical (audit-true); preview (`rendered_text`) matches paper exactly; no browser capability needed. Tournament stubs (P5), play tickets (P6) and booking confirmations (P7) render into the same job as their sale receipt; check-in renders P6 standalone. Rejected: server-side PDF (driver raster reflows thermal); client-side (duplicated layout logic, preview≠paper).
 
 ## 5. Print queue & retry model
 
@@ -237,40 +252,49 @@ Flyway. `V001__baseline.sql` = core schema + seed (Admin, pricing, categories); 
 - `QUEUED → PRINTING → DONE | FAILED`. Transport errors: 3 auto-attempts, 2 s backoff. Printer status via DLE EOT polling (paper-out, cover-open, offline) → FAILED with specific error + SSE + alert.
 - **Mid-print failure:** FAILED(`MID_PRINT`); staff retries from S11 — full ticket reprints, attempts++. Paper duplicates acceptable at a staffed counter; silent loss is not.
 - `retry` re-sends stored bytes; `reprint` renders a new job with the reprint band.
-- Settle creates its print job inside the same DB transaction as the payment — a replayed settle returns the same `printJobId`; double-print impossible.
+- Settle / booking create / check-in create their print jobs inside the same DB transaction as the money write — a replayed request returns the same `printJobId`; double-print impossible.
 - `receipt_copies = 2` (terminal setting) emits the copy inside the same job, after the cut.
 
-## 6. Validation, exceptions, logging
+## 6. Domain invariants (service-enforced)
 
-Jakarta `@Valid` + domain checks in services (block math, split sums, wallet floors, bracket transitions); DB CHECKs are the last line. One `@RestControllerAdvice` → error envelope. SLF4J/Logback JSON in prod; every request logs method, path, staffId, traceId. Money mutations, print jobs and winner recordings log INFO with entity ids. PINs never logged; payment refs last-4 only.
+- Session end requires net outstanding = 0: `sum(unpaid session_blocks) + unsettled cart = 0`. Prepaid (booking/ticket) blocks are born paid.
+- Seating a token: one transaction inserts the session, its prepaid blocks (paid), flips the queue entry to SEATED, and (for bookings) flips the booking to USED.
+- Booking cancel checks `now() <= start_at − cutoff_hours` (snapshot value) and status PAID.
+- Token allocation goes through `token_seq` — unique per day even under concurrent sales.
+- Station reserved by a live tournament refuses walk-in sessions; console-type match enforced on seat.
 
-## 7. Environment config & secrets
+## 7. Validation, exceptions, logging
+
+Jakarta `@Valid` + domain checks in services; DB CHECKs are the last line. One `@RestControllerAdvice` → error envelope. SLF4J/Logback JSON in prod; every request logs method, path, staffId, traceId. Money mutations, print jobs, winner recordings, booking state changes log INFO with entity ids. PINs never logged; payment refs last-4 only.
+
+## 8. Environment config & secrets
 
 Profiles: `venue` (USB printing, sync-push), `cloud` (no printing, sync-receive), `dev`, `test`. Secrets via env vars (`JWT_SECRET`, `DB_PASSWORD`, `BKASH_*`, `NAGAD_*`, `SYNC_TOKEN`); venue box uses a `.env` read by the service wrapper (WinSW/systemd, auto-restart); nightly `pg_dump` to cloud bucket in addition to outbox sync.
 
-## 8. Sync (venue → cloud)
+## 9. Sync (venue → cloud)
 
-Transactional outbox: every committed money/inventory/tournament mutation inserts a `sync_outbox` row in the same transaction. A 30 s pusher batches unpushed ops to cloud `POST /sync/push` (idempotent by op id). One-way; single writer, no conflicts.
+Transactional outbox: every committed money/inventory/tournament/booking mutation inserts a `sync_outbox` row in the same transaction. A 30 s pusher batches unpushed ops to cloud `POST /sync/push` (idempotent by op id). One-way; single writer, no conflicts.
 
-## 9. Testing
+## 10. Testing
 
-- **Unit:** session state machine; block pricing incl. morning-window boundary; split validation; points math; bracket generation (2ⁿ caps → exactly N−1 matches, auto-generate on cap fill, byes on manual generate); winner propagation + console assignment (skips walk-in-busy consoles); finance formulas; ESC/POS golden files (bytes + text) incl. P5 token/QR.
-- **Integration (Testcontainers):** settle end-to-end in one transaction (blocks paid, stock moved, ledgers, entry registered, job created); idempotent replay; void reversal; tournament cancel auto-refunds; shift close totals incl. tournament line; outbox push.
+- **Unit:** session state machine incl. prepaid blocks; block pricing incl. morning-window boundary; net-outstanding end guard; split validation; points math; booking cutoff math (boundary: exactly cutoff hours); token_seq day rollover; bracket generation and winner propagation; finance formulas; ESC/POS golden files (bytes + text) incl. P5/P6 token + QR/barcode.
+- **Integration (Testcontainers):** settle end-to-end in one transaction; idempotent replay (payments, bookings, check-in); booking create → cancel refund → check-in → seat → end without payment; play-ticket sale → seat with type mismatch rejected; void reversal; tournament cancel auto-refunds; shift close totals incl. tournament + booking lines; outbox push.
 - **Printer:** hardware smoke script + fake `PrinterPort` in CI (offline / paper-out / mid-print).
 
-## 10. Cross-cutting test matrix
+## 11. Cross-cutting test matrix
 
 | Case | Expected |
 |---|---|
 | Successful print | DONE ≤ 3 s; paper matches preview; audit complete |
-| Printer offline at settle | Payment succeeds; job FAILED after retries; alert; S11 retry prints original bytes |
+| Printer offline at settle / check-in | Money write succeeds; job FAILED after retries; alert; S11 retry prints original bytes |
 | Out of paper mid-print | FAILED(`PAPER_OUT`/`MID_PRINT`); retry prints full ticket; attempts++ |
-| Duplicate request | Same Idempotency-Key → one transaction, one job, one tournament entry; replay header |
+| Duplicate request | Same Idempotency-Key → one transaction, one job, one booking/entry/token; replay header |
 | Reprint | New job, reason stored, band printed, original linked; 400 without reason |
-| Cloud down a day | Venue fully operational incl. tournaments; outbox drains on reconnect |
+| Concurrent token sales | Distinct sequential tokens (row-locked token_seq) |
+| Cloud down a day | Venue fully operational incl. bookings and tournaments; outbox drains on reconnect |
 
-## 11. Open flags
+## 12. Open flags
 
 - bKash/Nagad merchant onboarding unscheduled — phase-2 specced, not built; manual TrxID is MVP truth.
 - Printer model unconfirmed (80mm ESC/POS assumed; 58mm config).
-- 1 engineer / 1 month is tight. Cut line if needed: Reports charts (keep summary numbers), alerts feed (keep discrepancy alert), cloud sync (nightly dump only), tournament finance panel (formulas are trivial to add later).
+- Cut line if the timeline is tight: Reports charts (keep summary numbers), alerts feed (keep discrepancy alert), cloud sync (nightly dump only), tournament finance panel, booking overlap warnings (keep create + cancel + check-in).
