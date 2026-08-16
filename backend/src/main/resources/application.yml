@@ -1,0 +1,73 @@
+spring:
+  application:
+    name: gamersden-backend
+  profiles:
+    default: dev
+  jackson:
+    default-property-inclusion: non_null
+    serialization:
+      write-dates-as-timestamps: false
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/gamersden}
+    username: ${DB_USER:gamersden}
+    password: ${DB_PASSWORD:gamersden}
+  jpa:
+    open-in-view: false
+    hibernate:
+      # Schema is owned by Flyway. Never go beyond validate (ARCHITECTURE.md §4.2).
+      ddl-auto: validate
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: Asia/Dhaka
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: false
+  threads:
+    virtual:
+      enabled: true
+
+server:
+  port: ${SERVER_PORT:8080}
+  error:
+    whitelabel:
+      enabled: false
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: when_authorized
+  info:
+    env:
+      enabled: true
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+  writer-with-order-by-keys: true
+
+logging:
+  structured:
+    format:
+      console: ecs
+  level:
+    root: INFO
+    dev.gamersden: INFO
+
+gamersden:
+  timezone: Asia/Dhaka
+  currency: BDT
+  # OPEN FLAG (ARCHITECTURE.md §8): documented default until the venue confirms.
+  morning-discount:
+    from: "10:00"
+    to: "14:00"
+    percent: 25

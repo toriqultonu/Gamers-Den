@@ -1,0 +1,22 @@
+# Local development: fake printer port, seeded data, human-readable logs.
+spring:
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/gamersden}
+
+logging:
+  structured:
+    format:
+      console: ""
+  level:
+    dev.gamersden: DEBUG
+
+management:
+  endpoint:
+    health:
+      show-details: always
+
+gamersden:
+  printing:
+    enabled: false
+  sync:
+    push-enabled: false

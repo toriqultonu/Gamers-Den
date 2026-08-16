@@ -1,0 +1,22 @@
+# Test profile: Postgres comes from Testcontainers, printing is a fake port, logs stay readable.
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true
+
+logging:
+  structured:
+    format:
+      console: ""
+  level:
+    root: WARN
+    dev.gamersden: INFO
+
+gamersden:
+  printing:
+    enabled: false
+  sync:
+    push-enabled: false
+    receive-enabled: false
