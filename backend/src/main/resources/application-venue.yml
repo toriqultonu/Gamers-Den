@@ -1,0 +1,8 @@
+# Cafe PC: owns the USB thermal printer, pushes sync to the cloud (ARCHITECTURE.md §6).
+gamersden:
+  printing:
+    enabled: true
+  sync:
+    push-enabled: true
+    receive-enabled: false
+    push-interval-seconds: 30

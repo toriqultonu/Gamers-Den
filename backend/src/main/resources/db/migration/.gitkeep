@@ -1,0 +1,2 @@
+Flyway migrations land here: V001__baseline.sql (B02), V002__tournaments.sql (B12),
+V003__bookings.sql (B15). Additive-only during MVP (ARCHITECTURE.md §4.2).
