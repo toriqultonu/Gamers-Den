@@ -5,7 +5,10 @@ import dev.gamersden.common.config.VenueTime;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.ZoneId;
+import java.time.ZonedDateTime;
 
 /**
  * A venue clock a test can push forward. Everything server-side reads time through the
@@ -47,5 +50,15 @@ public class MutableClock extends Clock {
 
     public void resetToNow() {
         instant = Instant.now();
+    }
+
+    /** Parks the whole application on a chosen wall-clock moment — how the morning window is tested. */
+    public void setTo(Instant moment) {
+        instant = moment;
+    }
+
+    /** The same, expressed in venue-local terms: "today at 13:59:59 in Dhaka". */
+    public void setToVenueTime(LocalDate day, LocalTime timeOfDay) {
+        instant = ZonedDateTime.of(day, timeOfDay, VenueTime.ZONE).toInstant();
     }
 }

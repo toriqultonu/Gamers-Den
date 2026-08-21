@@ -5,7 +5,9 @@ import org.junit.jupiter.api.Test;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.time.temporal.ChronoUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -28,6 +30,19 @@ class VenueTimeTest {
         Instant justBeforeDhakaMidnight = Instant.parse("2026-08-16T17:59:59Z");
 
         assertThat(VenueTime.businessDay(justBeforeDhakaMidnight)).isEqualTo(LocalDate.of(2026, 8, 16));
+    }
+
+    @Test
+    void nowIsTruncatedToWhatTimestamptzCanHoldExactly() {
+        // Postgres rounds to the nearest microsecond. A stamp carrying nanoseconds could come back
+        // out of the column later than it went in, and a countdown measured against it would lose
+        // a whole second to truncation.
+        Clock nanos = Clock.fixed(Instant.parse("2026-08-16T04:00:00.123456789Z"), ZoneOffset.UTC);
+
+        OffsetDateTime now = VenueTime.now(nanos);
+
+        assertThat(now.getNano()).isEqualTo(123_456_000);
+        assertThat(now).isEqualTo(now.truncatedTo(ChronoUnit.MICROS));
     }
 
     @Test
