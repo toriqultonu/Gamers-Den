@@ -15,6 +15,9 @@ logging:
     dev.gamersden: INFO
 
 gamersden:
+  # Tests drive the session expiry sweep by hand — a background timer would race the assertions.
+  sessions:
+    lock-sweeper-enabled: false
   printing:
     enabled: false
   sync:

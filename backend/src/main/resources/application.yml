@@ -65,6 +65,9 @@ logging:
 
 gamersden:
   timezone: Asia/Dhaka
+  sessions:
+    # Persists the LOCKED flip on an idle floor; reads derive it either way (ARCHITECTURE.md §5.1).
+    lock-sweeper-enabled: true
   currency: BDT
   # OPEN FLAG (ARCHITECTURE.md §8): documented default until the venue confirms.
   morning-discount:

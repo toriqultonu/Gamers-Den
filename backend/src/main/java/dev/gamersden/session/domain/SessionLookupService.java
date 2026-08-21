@@ -9,7 +9,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
 import java.time.OffsetDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -21,10 +20,11 @@ import java.util.stream.Collectors;
  * uses into {@code sessions} / {@code session_blocks} (ARCHITECTURE.md, package layout: call the
  * owning package's service, never a foreign repository).
  *
- * <p>Read-only and derived: {@code remainingSeconds} is computed here from the paid-for blocks
- * minus consumed time, plus the stretch the clock has been running since it was last resumed
- * (invariants: server-side time, derived values are never stored). The state machine, the ±block
- * endpoint and the clock endpoint arrive with B06.
+ * <p>Read-only and derived: the state, the countdown and the paid-block count all come out of
+ * {@link SessionClock} at read time, the same arithmetic {@code SessionService} writes with. A
+ * card therefore shows LOCKED the instant a countdown reaches zero, without waiting for the
+ * expiry sweeper to persist the flip (invariants: server-side time, derived values are never
+ * stored).
  */
 @Service
 public class SessionLookupService implements SessionLookup {
@@ -78,18 +78,9 @@ public class SessionLookupService implements SessionLookup {
 
     private static LiveSession summarise(Session session, List<SessionBlock> live, OffsetDateTime at) {
         int paid = (int) live.stream().filter(block -> block.getPaidTxId() != null).count();
-        return new LiveSession(session.getId(), session.getState().name(), session.getMemberId(),
-                live.size(), paid, remainingSeconds(session, live.size(), at), session.getStartedAt());
-    }
-
-    /**
-     * Bought time minus time already burned. {@code running_since} is only set while RUNNING, so a
-     * paused session freezes exactly where the last tick left it.
-     */
-    private static long remainingSeconds(Session session, int blockCount, OffsetDateTime at) {
-        long elapsedNow = session.getRunningSince() == null
-                ? 0L
-                : Math.max(0L, session.getRunningSince().until(at, ChronoUnit.SECONDS));
-        return Math.max(0L, blockCount * SessionBlock.SECONDS - session.getConsumedSec() - elapsedNow);
+        return new LiveSession(session.getId(),
+                SessionClock.effectiveState(session, live.size(), at).name(),
+                session.getMemberId(), live.size(), paid,
+                SessionClock.remainingSeconds(session, live.size(), at), session.getStartedAt());
     }
 }

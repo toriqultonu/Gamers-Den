@@ -20,7 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * HTTP-level base for the auth suite: a real filter chain, a real Postgres, no mocks. Every test
  * starts from the V001 seed — one Admin with PIN 1234, no extra staff, no shifts, no live
- * tokens, an empty floor and the seeded rate card.
+ * tokens, an empty floor, an empty menu and the seeded rate card.
  */
 public abstract class AbstractApiIntegrationTest extends AbstractIntegrationTest {
 
@@ -42,7 +42,12 @@ public abstract class AbstractApiIntegrationTest extends AbstractIntegrationTest
     @BeforeEach
     void resetAuthState() {
         jdbc.update("DELETE FROM refresh_tokens");
-        // Floor state first: sessions reference shifts and stations, so they go before both.
+        // Floor state first, deepest reference last: cart lines -> carts -> sessions -> stations
+        // -> shifts. Carts point at sessions, sessions at both stations and shifts.
+        jdbc.update("DELETE FROM cart_lines");
+        jdbc.update("DELETE FROM carts");
+        jdbc.update("DELETE FROM stock_movements");
+        jdbc.update("DELETE FROM items");
         jdbc.update("DELETE FROM session_blocks");
         jdbc.update("DELETE FROM sessions");
         jdbc.update("DELETE FROM stations");
