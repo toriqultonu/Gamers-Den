@@ -2,6 +2,7 @@ package dev.gamersden.session.repo;
 
 import dev.gamersden.session.domain.Session;
 import dev.gamersden.session.domain.SessionState;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Collection;
@@ -20,4 +21,7 @@ public interface SessionRepository extends JpaRepository<Session, Long> {
     List<Session> findByStateOrderByEndedAtDesc(SessionState state);
 
     boolean existsByStationId(Long stationId);
+
+    /** The member detail's recent-visits strip (B08), newest first — see {@code MemberVisitLookup}. */
+    List<Session> findByMemberIdOrderByStartedAtDescIdDesc(Long memberId, Pageable pageable);
 }
