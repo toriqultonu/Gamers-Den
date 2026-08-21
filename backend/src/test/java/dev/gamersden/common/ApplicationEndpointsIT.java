@@ -37,12 +37,16 @@ class ApplicationEndpointsIT extends AbstractIntegrationTest {
         assertThat(body.get("servers").get(0).get("url").asText()).isEqualTo("/api/v1");
     }
 
+    /**
+     * B03 put the API behind the JWT filter chain, so an anonymous caller is turned away before
+     * routing ever runs — an unknown path is indistinguishable from a real one, by design.
+     */
     @Test
-    void unknownPathReturnsTheErrorEnvelope() {
+    void anUnauthenticatedApiCallReturnsThe401Envelope() {
         ResponseEntity<JsonNode> response = rest.getForEntity("/api/v1/nope", JsonNode.class);
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
-        assertThat(response.getBody().get("error").get("code").asText()).isEqualTo("NOT_FOUND");
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+        assertThat(response.getBody().get("error").get("code").asText()).isEqualTo("UNAUTHORIZED");
         assertThat(response.getBody().get("error").get("traceId").asText()).isNotBlank();
     }
 }

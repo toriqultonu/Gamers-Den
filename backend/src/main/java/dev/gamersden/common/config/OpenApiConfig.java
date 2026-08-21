@@ -3,6 +3,7 @@ package dev.gamersden.common.config;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
+import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 import io.swagger.v3.oas.models.servers.Server;
 import org.springframework.beans.factory.annotation.Value;
@@ -29,6 +30,9 @@ public class OpenApiConfig {
                                 Money is integer BDT; times are ISO-8601 with offset (+06:00).
                                 Every non-2xx response uses the ErrorResponse envelope."""))
                 .servers(List.of(new Server().url(WebMvcConfig.API_BASE_PATH).description(appName)))
+                // Every route needs the bearer token except the three /auth ones, which opt out
+                // with @SecurityRequirements — so the FE client generates the header by default.
+                .addSecurityItem(new SecurityRequirement().addList("bearerAuth"))
                 .components(new Components().addSecuritySchemes("bearerAuth",
                         new SecurityScheme()
                                 .type(SecurityScheme.Type.HTTP)

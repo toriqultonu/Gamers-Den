@@ -1,5 +1,9 @@
 # Cloud mirror: no printing, receives sync pushes from the venue (ARCHITECTURE.md §6).
 gamersden:
+  auth:
+    refresh-cookie:
+      # Served over HTTPS: the refresh cookie must never travel in the clear.
+      secure: ${AUTH_COOKIE_SECURE:true}
   printing:
     enabled: false
   sync:

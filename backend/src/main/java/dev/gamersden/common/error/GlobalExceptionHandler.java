@@ -9,6 +9,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -47,6 +49,23 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                 .forEach(v -> fields.put(v.getPropertyPath().toString(), v.getMessage()));
         return render(HttpStatus.BAD_REQUEST, ErrorCode.VALIDATION_FAILED, "Request validation failed",
                 fields.isEmpty() ? Map.of() : Map.of("fields", fields));
+    }
+
+    /**
+     * {@code @PreAuthorize} denials surface inside the dispatcher, past the security filter chain's
+     * own handler — without this they would fall into {@link #handleUnexpected} as a 500.
+     */
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ErrorResponse> handleAccessDenied(AccessDeniedException ex) {
+        log.debug("FORBIDDEN -> {}", ex.getMessage());
+        return render(HttpStatus.FORBIDDEN, ErrorCode.FORBIDDEN,
+                "Your role does not allow this action", Map.of());
+    }
+
+    @ExceptionHandler(AuthenticationException.class)
+    public ResponseEntity<ErrorResponse> handleAuthentication(AuthenticationException ex) {
+        log.debug("UNAUTHORIZED -> {}", ex.getMessage());
+        return render(HttpStatus.UNAUTHORIZED, ErrorCode.UNAUTHORIZED, "Authentication required", Map.of());
     }
 
     /** Last resort: an unexpected bug still renders the envelope, never a Spring default body. */
