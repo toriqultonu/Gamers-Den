@@ -20,6 +20,11 @@ import java.time.OffsetDateTime;
 @Table(name = "session_blocks")
 public class SessionBlock {
 
+    /** Every block is 30 minutes of play (docs/backend-architecture.md, section 2). */
+    public static final int MINUTES = 30;
+
+    public static final long SECONDS = MINUTES * 60L;
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

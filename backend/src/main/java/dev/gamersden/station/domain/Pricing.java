@@ -1,5 +1,6 @@
 package dev.gamersden.station.domain;
 
+import dev.gamersden.common.util.Money;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -7,8 +8,6 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
-import org.hibernate.annotations.Generated;
-import org.hibernate.generator.EventType;
 
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
@@ -42,8 +41,11 @@ public class Pricing {
     @Column(name = "morning_end", nullable = false)
     private LocalTime morningEnd = LocalTime.of(14, 0);
 
-    /** DB default stamps the insert; {@link #touch()} keeps later edits honest. */
-    @Generated(event = EventType.INSERT)
+    /**
+     * The DB default stamps the seed insert (the app never inserts a rate row — V001 does), and
+     * {@link #touch()} stamps every edit. Deliberately not {@code @Generated}: Hibernate treats a
+     * generated property as immutable and would silently drop the new value from the UPDATE.
+     */
     @Column(name = "updated_at", nullable = false, insertable = false)
     private OffsetDateTime updatedAt;
 
@@ -59,6 +61,23 @@ public class Pricing {
         this.consoleType = consoleType;
         this.perHour = perHour;
         this.perHalfHour = perHalfHour;
+    }
+
+    /**
+     * What one 30-minute block costs when bought at this venue-local time. The morning window is
+     * half-open — [morningStart, morningEnd) — and discounted; every other hour pays the standard
+     * half-hour rate. Callers snapshot the answer onto {@code session_blocks.price}, which is why
+     * a later rate edit only ever reaches new blocks.
+     */
+    public int blockPriceAt(LocalTime venueLocalTime) {
+        return isMorning(venueLocalTime)
+                ? Money.applyPercentDiscount(perHalfHour, morningDiscountPct)
+                : perHalfHour;
+    }
+
+    /** OPEN FLAG (ARCHITECTURE.md, open flags): 10:00-14:00 stands until the venue confirms. */
+    public boolean isMorning(LocalTime venueLocalTime) {
+        return !venueLocalTime.isBefore(morningStart) && venueLocalTime.isBefore(morningEnd);
     }
 
     public ConsoleType getConsoleType() {

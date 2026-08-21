@@ -12,4 +12,6 @@ public interface SessionRepository extends JpaRepository<Session, Long> {
     Optional<Session> findByStationIdAndStateNot(Long stationId, SessionState state);
 
     List<Session> findByStateNot(SessionState state);
+
+    boolean existsByStationId(Long stationId);
 }
