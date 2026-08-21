@@ -1,5 +1,9 @@
 # Cafe PC: owns the USB thermal printer, pushes sync to the cloud (ARCHITECTURE.md §6).
 gamersden:
+  auth:
+    refresh-cookie:
+      # Served over HTTPS: the refresh cookie must never travel in the clear.
+      secure: ${AUTH_COOKIE_SECURE:true}
   printing:
     enabled: true
   sync:

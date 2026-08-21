@@ -71,3 +71,17 @@ gamersden:
     from: "10:00"
     to: "14:00"
     percent: 25
+  # Auth numbers are fixed by api-contract.md §1 — do not tune them per environment.
+  auth:
+    # DEV PLACEHOLDER. Set JWT_SECRET (>= 32 bytes) in every real deployment; the venue and cloud
+    # profiles refuse to start while this default is in place (ARCHITECTURE.md §6).
+    jwt-secret: ${JWT_SECRET:dev-only-insecure-jwt-secret-change-me-before-any-real-deployment}
+    access-ttl: 15m
+    refresh-ttl: 12h
+    max-pin-attempts: 5
+    lock-duration: 15m
+    refresh-cookie:
+      name: gd_refresh
+      path: /api/v1/auth
+      secure: ${AUTH_COOKIE_SECURE:false}
+      same-site: Strict

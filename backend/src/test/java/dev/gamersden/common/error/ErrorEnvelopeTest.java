@@ -7,6 +7,8 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
+import org.springframework.boot.autoconfigure.security.servlet.SecurityFilterAutoConfiguration;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
@@ -29,8 +31,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 /**
  * The error envelope is a published contract (api-contract.md §1) — these assertions are the
  * guard rail for every later feature.
+ *
+ * <p>The slice is pinned to the probe controller and runs with the filter chain off: this is a
+ * test of the {@code @RestControllerAdvice}, not of the auth guards B03 put in front of it —
+ * those have their own coverage in {@code auth/web}.
  */
-@WebMvcTest
+@WebMvcTest(controllers = ErrorEnvelopeTest.ProbeController.class,
+        excludeAutoConfiguration = {SecurityAutoConfiguration.class, SecurityFilterAutoConfiguration.class})
 @ActiveProfiles("test")
 @Import({WebMvcConfig.class, ErrorEnvelopeTest.ProbeController.class})
 class ErrorEnvelopeTest {

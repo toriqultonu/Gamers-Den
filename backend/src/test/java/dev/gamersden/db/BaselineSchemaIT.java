@@ -40,12 +40,18 @@ class BaselineSchemaIT extends AbstractIntegrationTest {
     @Autowired
     PricingRepository pricing;
 
+    /**
+     * The baseline runs first and in order. Later tasks append their own migrations, so this
+     * asserts the head of the sequence rather than the whole of it — B03 already added
+     * {@code V001_1__auth_refresh_tokens}, which ARCHITECTURE.md §4.2 slots between the baseline
+     * and the V002 reserved for tournaments.
+     */
     @Test
-    void flywayAppliedTheBaselineMigration() {
+    void flywayAppliedTheBaselineMigrationFirst() {
         List<String> applied = jdbc.queryForList(
                 "SELECT version FROM flyway_schema_history WHERE success ORDER BY installed_rank", String.class);
 
-        assertThat(applied).containsExactly("001");
+        assertThat(applied).startsWith("001").isSorted();
     }
 
     @Test
