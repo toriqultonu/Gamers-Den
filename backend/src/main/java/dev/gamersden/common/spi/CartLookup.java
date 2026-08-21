@@ -5,8 +5,8 @@ package dev.gamersden.common.spi;
  * net-outstanding end guard (ARCHITECTURE.md §5.9: a session ends only when unpaid blocks plus an
  * unsettled cart come to zero).
  *
- * <p>Implemented by {@code catalog/domain/CartLookupService}. Carts, lines and stock land in B07;
- * everything published here is read-only.
+ * <p>Implemented by {@code catalog/domain/CartLookupService}; everything published here is
+ * read-only.
  */
 public interface CartLookup {
 

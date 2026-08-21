@@ -67,6 +67,16 @@ public class SessionLookupService implements SessionLookup {
 
     @Override
     @Transactional(readOnly = true)
+    public Optional<LiveSession> liveSession(long sessionId) {
+        return sessions.findById(sessionId)
+                .filter(session -> session.getState().isLive())
+                .map(session -> summarise(session,
+                        blocks.findBySessionIdAndRemovedFalseOrderByIdAsc(session.getId()),
+                        VenueTime.now(clock)));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public boolean hasSessionHistory(long stationId) {
         return sessions.existsByStationId(stationId);
     }

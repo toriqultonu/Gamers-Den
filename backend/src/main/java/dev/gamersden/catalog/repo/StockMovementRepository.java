@@ -8,4 +8,6 @@ import java.util.List;
 public interface StockMovementRepository extends JpaRepository<StockMovement, Long> {
 
     List<StockMovement> findByItemIdOrderByIdDesc(Long itemId);
+
+    boolean existsByItemId(Long itemId);
 }

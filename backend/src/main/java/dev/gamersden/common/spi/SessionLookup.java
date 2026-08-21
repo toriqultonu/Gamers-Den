@@ -21,6 +21,13 @@ public interface SessionLookup {
     /** The live session occupying a station, or empty when the seat is free. */
     Optional<LiveSession> liveSessionOn(long stationId);
 
+    /**
+     * One session by id while it is live, empty when it is unknown or already CLOSED — what
+     * {@code catalog} asks before hanging a cart off a seat (B07): a settled, closed session must
+     * never grow a new F&amp;B line.
+     */
+    Optional<LiveSession> liveSession(long sessionId);
+
     /** True when any session row — live or closed — still points at the station. */
     boolean hasSessionHistory(long stationId);
 

@@ -10,7 +10,8 @@ import org.springframework.transaction.annotation.Transactional;
  * The {@code catalog} package's answer to {@link CartLookup} — the only door {@code session} uses
  * into {@code carts} / {@code cart_lines}, for the F&amp;B half of the net-outstanding end guard.
  *
- * <p>Cart writes, stock and the {@code OUT_OF_STOCK} guard arrive with B07; this is read-only.
+ * <p>Cart writes, stock and the {@code OUT_OF_STOCK} guard live in {@link CartService} and
+ * {@link ItemService}; this door stays read-only.
  */
 @Service
 public class CartLookupService implements CartLookup {
