@@ -49,6 +49,7 @@ Tell Claude: *"build fails: <paste error>. Fix without changing scope."* Don't m
 Read backend/ARCHITECTURE.md (esp. §3–§5) and docs/api-contract.md §1.
 Implement TASK B01 from TASKLIST.md: scaffold + common kernel.
 Follow the GLOBAL RULES in TASKLIST.md.
+Don't write test code.
 Done when: mvn verify is green AND /actuator/health + /v3/api-docs return 200 AND a thrown ApiException renders the error envelope (unit test).
 Show me the build output before saying you're finished.
 ```
@@ -61,6 +62,7 @@ Show me the build output before saying you're finished.
 Read backend/ARCHITECTURE.md §4.1–4.2 and docs/backend-architecture.md §2 (copy DDL verbatim).
 Implement TASK B02 from TASKLIST.md: Flyway baseline + seed + JPA entities.
 Follow the GLOBAL RULES in TASKLIST.md.
+Don't write test code.
 Done when: mvn verify green AND a Testcontainers test boots the app against migrated PG (ddl validate passes) and reads the seeded Admin + pricing rows.
 Show me the build output before saying you're finished.
 ```
@@ -73,6 +75,7 @@ Show me the build output before saying you're finished.
 Read backend/ARCHITECTURE.md §4.3–4.6 and docs/api-contract.md (Auth & staff).
 Implement TASK B03 from TASKLIST.md: auth + JWT + staff CRUD + /me/prefs.
 Follow the GLOBAL RULES in TASKLIST.md.
+Don't write test code.
 Done when: mvn verify green AND tests cover: happy login, wrong PIN ×5 → 423, refresh rotation, logout revocation, cashier hitting an admin endpoint → 403 envelope.
 Show me the build output before saying you're finished.
 ```
@@ -85,6 +88,7 @@ Show me the build output before saying you're finished.
 Read backend/ARCHITECTURE.md §5.2 and docs/api-contract.md §1 (Idempotency).
 Implement TASK B04 from TASKLIST.md: idempotency filter + idempotency_keys storage.
 Follow the GLOBAL RULES in TASKLIST.md.
+Don't write test code.
 Done when: mvn verify green AND Testcontainers test proves: first call stored, identical retry replayed with header, mutated body under same key → 409, key expires after 48h (clock-shifted test).
 Show me the build output before saying you're finished.
 ```
@@ -99,6 +103,7 @@ Show me the build output before saying you're finished.
 Read backend/ARCHITECTURE.md §4 and docs/api-contract.md (Stations & pricing).
 Implement TASK B05 from TASKLIST.md: stations + pricing endpoints.
 Follow the GLOBAL RULES in TASKLIST.md.
+Don't write test code.
 Done when: mvn verify green AND tests cover duplicate-name 409, delete-in-use 409, non-admin write 403, pricing update not affecting an existing session's block price.
 Show me the build output before saying you're finished.
 ```
@@ -111,6 +116,7 @@ Show me the build output before saying you're finished.
 Read backend/ARCHITECTURE.md §5.1, §5.9 and docs/api-contract.md (Sessions).
 Implement TASK B06 from TASKLIST.md: session state machine + blocks + clock.
 Follow the GLOBAL RULES in TASKLIST.md.
+Don't write test code.
 Done when: mvn verify green AND unit tests cover every state transition + illegal ones, block math across pause/resume, morning-window boundary pricing, net-outstanding end guard, and Testcontainers proves the one-live-session index.
 Show me the build output before saying you're finished.
 ```
@@ -123,6 +129,7 @@ Show me the build output before saying you're finished.
 Read backend/ARCHITECTURE.md §4 and docs/api-contract.md (Cart & menu).
 Implement TASK B07 from TASKLIST.md: items + stock movements + carts/lines.
 Follow the GLOBAL RULES in TASKLIST.md.
+Don't write test code.
 Done when: mvn verify green AND tests cover stock audit rows on manual adjust, out-of-stock 409, line upsert/remove, cashier item-write 403.
 Show me the build output before saying you're finished.
 ```
@@ -135,6 +142,7 @@ Show me the build output before saying you're finished.
 Read backend/ARCHITECTURE.md §4 and docs/api-contract.md (Members, wallet, points).
 Implement TASK B08 from TASKLIST.md: members + wallet/points ledgers.
 Follow the GLOBAL RULES in TASKLIST.md.
+Don't write test code.
 Done when: mvn verify green AND tests cover duplicate-phone 409, topup idempotent replay, redeem below balance 409, ledger + column consistency in one TX.
 Show me the build output before saying you're finished.
 ```
@@ -149,6 +157,7 @@ Show me the build output before saying you're finished.
 Read backend/ARCHITECTURE.md §5.4, §5.9 and docs/api-contract.md (Billing & payments).
 Implement TASK B09 from TASKLIST.md: bill computation endpoint.
 Follow the GLOBAL RULES in TASKLIST.md.
+Don't write test code.
 Done when: mvn verify green AND unit tests cover: unbilled-blocks-only after a mid-session settle, prepaid blocks excluded from due, fnb math, points cap, empty bill.
 Show me the build output before saying you're finished.
 ```
@@ -161,6 +170,7 @@ Show me the build output before saying you're finished.
 Read backend/ARCHITECTURE.md §5.2–5.4, §5.7 and docs/api-contract.md (Billing & payments).
 Implement TASK B10 from TASKLIST.md: settle in one TX + void.
 Follow the GLOBAL RULES in TASKLIST.md.
+Don't write test code.
 Done when: mvn verify green AND Testcontainers proves: one settle writes payment+blocks+stock+ledgers+print job atomically; idempotent replay returns the same transactionId/printJobId; split mismatch 409 leaves zero writes; void fully reverses.
 Show me the build output before saying you're finished.
 ```
@@ -173,6 +183,7 @@ Show me the build output before saying you're finished.
 Read backend/ARCHITECTURE.md §5.7 and docs/api-contract.md (Shifts & expenses).
 Implement TASK B11 from TASKLIST.md: shifts, X/Z computation, expenses.
 Follow the GLOBAL RULES in TASKLIST.md.
+Don't write test code.
 Done when: mvn verify green AND Testcontainers covers: expected-cash math from mixed-method transactions + expenses (incl. negative refund rows), discrepancy alert row, second open shift 409, close produces Z job.
 Show me the build output before saying you're finished.
 ```
@@ -187,6 +198,7 @@ Show me the build output before saying you're finished.
 Read docs/tournaments.md §1–2, §5 and backend/ARCHITECTURE.md §5.6–5.7.
 Implement TASK B12 from TASKLIST.md: tournament schema + CRUD + entries + reserved stations + cancel/refund.
 Follow the GLOBAL RULES in TASKLIST.md.
+Don't write test code.
 Done when: mvn verify green AND Testcontainers covers: entry sold through settle (seed + token returned, tournament_amount set), full 409, session on reserved station 409, cancel refunds every entry, cashier create-tournament 403.
 Show me the build output before saying you're finished.
 ```
@@ -199,6 +211,7 @@ Show me the build output before saying you're finished.
 Read docs/tournaments.md §3 and backend/ARCHITECTURE.md §5.6.
 Implement TASK B13 from TASKLIST.md: bracket generation + winner propagation.
 Follow the GLOBAL RULES in TASKLIST.md.
+Don't write test code.
 Done when: mvn verify green AND unit tests cover all caps (4/8/16/32 → N−1 matches), auto-generate on cap fill inside the sale TX, byes on manual generate, propagation to the final + DONE + block release, cashier deciding an un-started match 403.
 Show me the build output before saying you're finished.
 ```
@@ -211,6 +224,7 @@ Show me the build output before saying you're finished.
 Read docs/tournaments.md §4, §6 and backend/ARCHITECTURE.md §5.1, §5.6.
 Implement TASK B14 from TASKLIST.md: match start/extend/winner + finance + history.
 Follow the GLOBAL RULES in TASKLIST.md.
+Don't write test code.
 Done when: mvn verify green AND tests cover: console assignment skipping walk-in-busy and match-busy stations, NO_FREE_CONSOLE 409, extend re-basing remainingSeconds, finance formulas, cashier finance 403.
 Show me the build output before saying you're finished.
 ```
@@ -225,6 +239,7 @@ Show me the build output before saying you're finished.
 Read docs/bookings.md (all) and backend/ARCHITECTURE.md §4, §5.9–5.11.
 Implement TASK B15 from TASKLIST.md: booking settings + booking lifecycle (create/check-in/cancel) + V003.
 Follow the GLOBAL RULES in TASKLIST.md.
+Don't write test code.
 Done when: mvn verify green AND Testcontainers covers: create charges play+fee in one TX with booking_amount set; idempotent replay of create and cancel; cancel at exactly the cutoff boundary OK and inside the window 409; check-in issues sequential tokens under concurrent requests; disabled flag blocks create but existing booking still checks in; cashier PUT /booking-settings 403.
 Show me the build output before saying you're finished.
 ```
@@ -237,6 +252,7 @@ Show me the build output before saying you're finished.
 Read docs/bookings.md §3–§4, §7 and backend/ARCHITECTURE.md §5.9–5.11.
 Implement TASK B16 from TASKLIST.md: play tickets in settle + queue endpoints + seat-from-token + no-show removal.
 Follow the GLOBAL RULES in TASKLIST.md.
+Don't write test code.
 Done when: mvn verify green AND Testcontainers covers: ticket sale while every console busy (token + queue row + booking_amount); seat creates session with prepaid blocks and session ends without further payment; PS5 ticket on PS4 console 409; booking seat flips booking to USED; no-show removal writes the refund; day-rollover test (counter restarts, old token still seatable).
 Show me the build output before saying you're finished.
 ```
@@ -251,6 +267,7 @@ Show me the build output before saying you're finished.
 Read docs/design.md §5 (all templates + barcode/QR specs) and backend/ARCHITECTURE.md §5.5.
 Implement TASK B17 from TASKLIST.md: ESC/POS render for P1–P7 + golden files.
 Follow the GLOBAL RULES in TASKLIST.md.
+Don't write test code.
 Done when: mvn verify green AND golden-file tests exist per template (bytes + rendered_text) incl. P5 token/QR, P6 token/barcode both variants, P7 policy line and the reprint band; settle, booking create and check-in now store real renders.
 Show me the build output before saying you're finished.
 ```
@@ -263,6 +280,7 @@ Show me the build output before saying you're finished.
 Read backend/ARCHITECTURE.md §5.5 and docs/api-contract.md (Print jobs) and docs/backend-architecture.md §5.
 Implement TASK B18 from TASKLIST.md: print queue worker + device port + retry/reprint endpoints.
 Follow the GLOBAL RULES in TASKLIST.md.
+Don't write test code.
 Done when: mvn verify green AND fake-port tests cover: happy print DONE, offline → FAILED after 3 attempts + alert, mid-print failure → retry re-sends identical bytes, reprint without reason 400.
 Show me the build output before saying you're finished.
 ```
@@ -277,6 +295,7 @@ Show me the build output before saying you're finished.
 Read backend/ARCHITECTURE.md §4.5 and docs/api-contract.md (Live updates & sync).
 Implement TASK B19 from TASKLIST.md: SSE hub + alert feed.
 Follow the GLOBAL RULES in TASKLIST.md.
+Don't write test code.
 Done when: mvn verify green AND an integration test subscribes to /events and receives station-update on block change, queue-update on ticket sale/seat, booking-update on check-in, tournament-update on extend; alert rows created on discrepancy + printer failure.
 Show me the build output before saying you're finished.
 ```
@@ -289,6 +308,7 @@ Show me the build output before saying you're finished.
 Read docs/design.md (S2, S9), docs/bookings.md §6 and backend/ARCHITECTURE.md §4.3, §4.6.
 Implement TASK B20 from TASKLIST.md: report + overview endpoints.
 Follow the GLOBAL RULES in TASKLIST.md.
+Don't write test code.
 Done when: mvn verify green AND Testcontainers seeds transactions/expenses/bookings across days and asserts each aggregate incl. the tournament + booking revenue splits, pre-sold stat and show-rate; cashier 403.
 Show me the build output before saying you're finished.
 ```
@@ -301,6 +321,7 @@ Show me the build output before saying you're finished.
 Read docs/design.md §6 and docs/api-contract.md (Settings).
 Implement TASK B21 from TASKLIST.md: terminal settings + login-bg upload.
 Follow the GLOBAL RULES in TASKLIST.md.
+Don't write test code.
 Done when: mvn verify green AND tests cover: non-admin write 403, any-role read, image upload + retrieval, receiptCopies constraint.
 Show me the build output before saying you're finished.
 ```
@@ -313,6 +334,7 @@ Show me the build output before saying you're finished.
 Read backend/ARCHITECTURE.md §5.8, §7 and docs/backend-architecture.md §9–§11.
 Implement TASK B22 from TASKLIST.md: sync outbox + pusher + the full e2e money-path test.
 Follow the GLOBAL RULES in TASKLIST.md.
+Don't write test code.
 Done when: mvn verify green AND the single e2e test drives the whole flow above; killing the fake cloud for a while loses nothing (outbox drains on reconnect).
 Show me the build output before saying you're finished.
 ```
@@ -331,6 +353,7 @@ Show me the build output before saying you're finished.
 Read frontend/ARCHITECTURE.md (esp. §3, §5.9) and docs/design.md §3.
 Implement TASK F01 from TASKLIST.md: scaffold + full token system.
 Follow the GLOBAL RULES in TASKLIST.md.
+Don't write test code.
 Done when: npm run build && npm test green AND a token demo page renders both themes + 3 accents with correct values (unit test asserts CSS vars).
 Show me the build output before saying you're finished.
 ```
@@ -343,6 +366,7 @@ Show me the build output before saying you're finished.
 Read docs/design.md §2–3 and frontend/ARCHITECTURE.md §5.9.
 Implement TASK F02 from TASKLIST.md: ui primitives per the component inventory.
 Follow the GLOBAL RULES in TASKLIST.md.
+Don't write test code.
 Done when: npm run build && npm test green AND each primitive has a rendering test per variant/state from the design.md table.
 Show me the build output before saying you're finished.
 ```
@@ -355,6 +379,7 @@ Show me the build output before saying you're finished.
 Read frontend/ARCHITECTURE.md §4–5 and docs/api-contract.md §1.
 Implement TASK F03 from TASKLIST.md: api wrapper + OpenAPI type-gen + query setup + time/money libs.
 Follow the GLOBAL RULES in TASKLIST.md.
+Don't write test code.
 Done when: npm run build && npm test green AND unit tests cover: error-code mapping (incl. CANCEL_CUTOFF_PASSED, PREBOOKING_DISABLED, CONSOLE_TYPE_MISMATCH), idempotency-key reuse on retry, 401 refresh-then-logout, server-offset countdown math, BDT formatting.
 Show me the build output before saying you're finished.
 ```
@@ -367,6 +392,7 @@ Show me the build output before saying you're finished.
 Read docs/design.md (S1 + shell) and frontend/ARCHITECTURE.md §4.3.
 Implement TASK F04 from TASKLIST.md: login screen + shell + role guards.
 Follow the GLOBAL RULES in TASKLIST.md.
+Don't write test code.
 Done when: npm run build && npm test green AND tests cover NAV[role] visibility for all 3 roles, Bookings item hidden when the feature flag is off, lockout state rendering, middleware redirect, auto-lock trigger.
 Show me the build output before saying you're finished.
 ```
@@ -379,6 +405,7 @@ Show me the build output before saying you're finished.
 Read frontend/ARCHITECTURE.md §4.1, §5.2 and docs/api-contract.md (Live updates & sync).
 Implement TASK F05 from TASKLIST.md: SSE wiring + sync chip.
 Follow the GLOBAL RULES in TASKLIST.md.
+Don't write test code.
 Done when: npm run build && npm test green AND tests prove SSE station-update and queue-update mutate the query cache, fallback polling activates when SSE drops, chip states render.
 Show me the build output before saying you're finished.
 ```
@@ -393,6 +420,7 @@ Show me the build output before saying you're finished.
 Read docs/design.md (S3, StationCard/SessionPanel/CountdownClock/QueueRail rows), docs/bookings.md §2–3 and docs/tournaments.md §4 (floor integration).
 Implement TASK F06 from TASKLIST.md: Floor screen incl. queue rail + seat prompts.
 Follow the GLOBAL RULES in TASKLIST.md.
+Don't write test code.
 Done when: npm run build && npm test green AND tests cover countdown from remainingSeconds+offset, optimistic block rollback on 409, reserved-station render, seat-prompt render + non-optimistic seat, queue-rail seat disabled with no free console of type, CONSOLE_TYPE_MISMATCH notice, end-blocked state.
 Show me the build output before saying you're finished.
 ```
@@ -405,6 +433,7 @@ Show me the build output before saying you're finished.
 Read docs/design.md (S4 + component rows), docs/tournaments.md §5 and docs/bookings.md §3.
 Implement TASK F07 from TASKLIST.md: POS screen (menu, cart, member, tournament + play-ticket categories).
 Follow the GLOBAL RULES in TASKLIST.md.
+Don't write test code.
 Done when: npm run build && npm test green AND tests cover cart optimistic add/remove with server reconciliation, redeem cap math, tournament card disabled when full, play-ticket line while consoles busy, player-name field logic.
 Show me the build output before saying you're finished.
 ```
@@ -417,6 +446,7 @@ Show me the build output before saying you're finished.
 Read docs/design.md (S4 settle + P1/P5/P6) and docs/api-contract.md (Billing & payments).
 Implement TASK F08 from TASKLIST.md: split payment + settle + ticket preview.
 Follow the GLOBAL RULES in TASKLIST.md.
+Don't write test code.
 Done when: npm run build && npm test green AND tests cover split-sum validation, SPLIT_MISMATCH keeps bill intact, PAYMENT_REF_REQUIRED gating, settle → preview render fetch, entry/queue token display, no optimistic write anywhere in the path.
 Show me the build output before saying you're finished.
 ```
@@ -429,6 +459,7 @@ Show me the build output before saying you're finished.
 Read docs/design.md (S6, S6a).
 Implement TASK F09 from TASKLIST.md: members screen + new-member dialog.
 Follow the GLOBAL RULES in TASKLIST.md.
+Don't write test code.
 Done when: npm run build && npm test green AND tests cover search debounce, DUPLICATE_PHONE inline error, redeem 409, save-and-seat flow invalidating sessions+stations.
 Show me the build output before saying you're finished.
 ```
@@ -443,6 +474,7 @@ Show me the build output before saying you're finished.
 Read docs/bookings.md (all) and docs/design.md (S14 row + state table + BookingTable/BookingDetail/BookingForm/TimeStepper/TokenBadge rows).
 Implement TASK F10 from TASKLIST.md: bookings screen (tabs, table, detail rail, pay-first form).
 Follow the GLOBAL RULES in TASKLIST.md.
+Don't write test code.
 Done when: npm run build && npm test green AND tests cover tab filtering, bill-box math (blocks × rate + fee) + server-total drift notice, cutoff lock note rendering, check-in token confirmation flow, cancel-refund never optimistic, empty states for both tabs, PREBOOKING_DISABLED notice.
 Show me the build output before saying you're finished.
 ```
@@ -455,6 +487,7 @@ Show me the build output before saying you're finished.
 Read docs/tournaments.md §8 (+§4) and docs/design.md (S12 component rows).
 Implement TASK F11 from TASKLIST.md: tournaments screen incl. bracket, match board, role rails.
 Follow the GLOBAL RULES in TASKLIST.md.
+Don't write test code.
 Done when: npm run build && npm test green AND tests cover bracket rendering for all caps (N−1 boxes, propagation display), extend re-basing the countdown, manager-rail absent for cashier, finance query not mounted for cashier.
 Show me the build output before saying you're finished.
 ```
@@ -467,6 +500,7 @@ Show me the build output before saying you're finished.
 Read docs/design.md (S7, S8) and docs/bookings.md §6.
 Implement TASK F12 from TASKLIST.md: shift close + expenses screens.
 Follow the GLOBAL RULES in TASKLIST.md.
+Don't write test code.
 Done when: npm run build && npm test green AND tests cover live discrepancy math, pre-booking strip rendering, close flow → logout redirect, expense form validation + voucher job trigger; shift close never optimistic.
 Show me the build output before saying you're finished.
 ```
@@ -479,6 +513,7 @@ Show me the build output before saying you're finished.
 Read docs/design.md (S5, S10), docs/bookings.md §1 and frontend/ARCHITECTURE.md §4.3.
 Implement TASK F13 from TASKLIST.md: inventory + setup screens.
 Follow the GLOBAL RULES in TASKLIST.md.
+Don't write test code.
 Done when: npm run build && npm test green AND tests cover role-sectioning (manager vs admin vs cashier-hidden), booking controls admin-only + nav-hide on disable, staff-on-shift 409 notice, printer default persistence.
 Show me the build output before saying you're finished.
 ```
@@ -491,6 +526,7 @@ Show me the build output before saying you're finished.
 Read docs/design.md (S2, S9) and docs/bookings.md §6.
 Implement TASK F14 from TASKLIST.md: overview + reports screens.
 Follow the GLOBAL RULES in TASKLIST.md.
+Don't write test code.
 Done when: npm run build && npm test green AND tests cover admin-only redirect for S2, pre-sold stat rendering, empty-chart states, alerts rail unread badge from the alerts query.
 Show me the build output before saying you're finished.
 ```
@@ -503,6 +539,7 @@ Show me the build output before saying you're finished.
 Read docs/design.md §6 + §5 (S11 states) and frontend/ARCHITECTURE.md §5.5–5.6.
 Implement TASK F15 from TASKLIST.md: settings + print preview screens.
 Follow the GLOBAL RULES in TASKLIST.md.
+Don't write test code.
 Done when: npm run build && npm test green AND tests cover instant theme apply + persistence, no-flash inline script presence, reprint blocked without reason, failed-job retry flow.
 Show me the build output before saying you're finished.
 ```
@@ -517,6 +554,7 @@ Show me the build output before saying you're finished.
 Read docs/design.md §1 (state coverage table) + §4 and frontend/ARCHITECTURE.md §5.10.
 Implement TASK F16 from TASKLIST.md: state-coverage + responsive audit across all screens.
 Follow the GLOBAL RULES in TASKLIST.md.
+Don't write test code.
 Done when: npm run build && npm test green AND every screen has state-table tests passing; list each gap you fixed.
 Show me the build output before saying you're finished.
 ```
@@ -529,6 +567,7 @@ Show me the build output before saying you're finished.
 Read frontend/ARCHITECTURE.md §6 and TASKLIST.md B22 (seeded backend).
 Implement TASK F17 from TASKLIST.md: Playwright money-path suite + CI wiring.
 Follow the GLOBAL RULES in TASKLIST.md.
+Don't write test code.
 Done when: npm run build && npm test green AND all listed Playwright scenarios pass against the seeded backend; CI fails on OpenAPI type drift.
 Show me the build output before saying you're finished.
 ```
