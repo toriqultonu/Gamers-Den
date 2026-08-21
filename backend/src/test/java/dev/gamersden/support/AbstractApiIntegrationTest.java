@@ -19,7 +19,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * HTTP-level base for the auth suite: a real filter chain, a real Postgres, no mocks. Every test
- * starts from the V001 seed — one Admin with PIN 1234, no extra staff, no shifts, no live tokens.
+ * starts from the V001 seed — one Admin with PIN 1234, no extra staff, no shifts, no live
+ * tokens, an empty floor and the seeded rate card.
  */
 public abstract class AbstractApiIntegrationTest extends AbstractIntegrationTest {
 
@@ -41,11 +42,28 @@ public abstract class AbstractApiIntegrationTest extends AbstractIntegrationTest
     @BeforeEach
     void resetAuthState() {
         jdbc.update("DELETE FROM refresh_tokens");
+        // Floor state first: sessions reference shifts and stations, so they go before both.
+        jdbc.update("DELETE FROM session_blocks");
+        jdbc.update("DELETE FROM sessions");
+        jdbc.update("DELETE FROM stations");
         jdbc.update("DELETE FROM shifts");
         jdbc.update("DELETE FROM staff WHERE name <> 'Admin'");
         jdbc.update("UPDATE staff SET failed_pins = 0, locked_until = NULL, active = TRUE, "
                 + "avatar_color = '#ec3013', pin_hash = ? WHERE name = 'Admin'", pins.encode(ADMIN_PIN));
         adminId = jdbc.queryForObject("SELECT id FROM staff WHERE name = 'Admin'", Long.class);
+        resetSeededPricing();
+    }
+
+    /** Back to the V001 rate card: PS5 120/80, PS4 80/50, morning -25% from 10:00 to 14:00. */
+    private void resetSeededPricing() {
+        jdbc.update("UPDATE pricing SET per_hour = 120, per_half_hour = 80, "
+                + "morning_discount_pct = 25, morning_start = '10:00', morning_end = '14:00', "
+                + "updated_at = now() "
+                + "WHERE console_type = 'PS5'");
+        jdbc.update("UPDATE pricing SET per_hour = 80, per_half_hour = 50, "
+                + "morning_discount_pct = 25, morning_start = '10:00', morning_end = '14:00', "
+                + "updated_at = now() "
+                + "WHERE console_type = 'PS4'");
     }
 
     // ---- requests -------------------------------------------------------------------------
