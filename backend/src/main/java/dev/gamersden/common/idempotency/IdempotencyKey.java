@@ -15,7 +15,11 @@ import java.util.UUID;
 /**
  * {@code idempotency_keys} — the stored first response for a guarded POST (invariant §5.2).
  * An identical retry replays {@code responseBody}; the same key with a different
- * {@code requestHash} is a 409. Rows live 48 h. The filter itself lands in B04.
+ * {@code requestHash} is a 409. Rows live 48 h.
+ *
+ * <p>{@link #getStatusCode()} {@code == 0} is not an HTTP status: it marks a key
+ * {@link IdempotencyStore#begin claimed} by a request that has not answered yet, which is how two
+ * simultaneous retries are kept from both reaching the controller.
  */
 @Entity
 @Table(name = "idempotency_keys")
