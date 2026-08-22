@@ -61,7 +61,10 @@ public abstract class AbstractApiIntegrationTest extends AbstractIntegrationTest
         jdbc.update("DELETE FROM points_ledger");
         jdbc.update("DELETE FROM members");
         jdbc.update("DELETE FROM stations");
+        // Petty cash points at both the shift that paid it and the staff who recorded it (B11).
+        jdbc.update("DELETE FROM expenses");
         jdbc.update("DELETE FROM shifts");
+        jdbc.update("DELETE FROM alerts");
         jdbc.update("DELETE FROM staff WHERE name <> 'Admin'");
         jdbc.update("UPDATE staff SET failed_pins = 0, locked_until = NULL, active = TRUE, "
                 + "avatar_color = '#ec3013', pin_hash = ? WHERE name = 'Admin'", pins.encode(ADMIN_PIN));

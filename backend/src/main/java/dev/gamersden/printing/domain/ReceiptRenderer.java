@@ -1,11 +1,13 @@
 package dev.gamersden.printing.domain;
 
+import dev.gamersden.common.spi.ExpenseVoucherPrinting;
 import dev.gamersden.common.spi.SaleReceiptPrinting;
+import dev.gamersden.common.spi.ShiftReportPrinting;
 
 /**
- * Turns a sale into paper. The seam B17 replaces: {@link PrintJobService} renders through this
- * interface and stores whatever comes back, so swapping the placeholder for the real ESC/POS P1
- * template changes no caller, no table and no response shape.
+ * Turns an artifact into paper. The seam B17 replaces: {@link PrintJobService} renders through
+ * this interface and stores whatever comes back, so swapping the placeholder for the real ESC/POS
+ * templates changes no caller, no table and no response shape.
  *
  * <p>Called exactly once per job, inside the money transaction that created it — the bytes are
  * rendered at job creation and never recomputed, which is what makes a retry byte-identical to
@@ -15,4 +17,10 @@ public interface ReceiptRenderer {
 
     /** P1 — the sale ticket (design.md §5). */
     RenderedDocument renderSale(SaleReceiptPrinting.SaleReceipt receipt);
+
+    /** P2 / P3 — the Z and X reports; one template, two headings (design.md §5). */
+    RenderedDocument renderShiftReport(ShiftReportPrinting.ShiftReport report);
+
+    /** P4 — the petty-cash voucher (design.md §5). */
+    RenderedDocument renderExpenseVoucher(ExpenseVoucherPrinting.ExpenseVoucher voucher);
 }

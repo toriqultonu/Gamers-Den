@@ -1,16 +1,18 @@
 package dev.gamersden.printing.domain;
 
+import dev.gamersden.common.spi.ExpenseVoucherPrinting;
 import dev.gamersden.common.spi.SaleReceiptPrinting;
+import dev.gamersden.common.spi.ShiftReportPrinting;
 import dev.gamersden.common.util.Money;
 
 import java.time.format.DateTimeFormatter;
 import java.util.StringJoiner;
 
 /**
- * The stand-in for P1 until B17 (TASKLIST B10: "render stubbed until B17 — store placeholder bytes
- * behind the same interface").
+ * The stand-in for P1–P4 until B17 (TASKLIST B10: "render stubbed until B17 — store placeholder
+ * bytes behind the same interface"; B11 says the same of the X, Z and voucher templates).
  *
- * <p>It lays the real receipt content out at the real paper width and emits it as plain text, so
+ * <p>It lays the real content out at the real paper width and emits it as plain text, so
  * everything downstream of the renderer is already exercised end to end: the job is created inside
  * the money transaction, the bytes are stored once, {@code rendered_text} previews, a retry
  * re-sends what was stored. What is deliberately missing is only the ESC/POS itself — the
@@ -57,6 +59,92 @@ public class PlaceholderReceiptRenderer implements ReceiptRenderer {
         paper.add(rule());
         paper.add(centred(receipt.publicId()));
         return RenderedDocument.plainText(paper.toString());
+    }
+
+    /**
+     * P2 / P3. One template, two headings: the X is the Z minus the drawer, the discrepancy and
+     * the signature line (design.md §5), which is why every drawer figure here is nullable and
+     * simply absent on an interim read.
+     */
+    @Override
+    public RenderedDocument renderShiftReport(ShiftReportPrinting.ShiftReport report) {
+        boolean interim = report.kind() == ShiftReportPrinting.Kind.X;
+        StringJoiner paper = new StringJoiner("\n");
+        paper.add(centred("GAMER'S DEN"));
+        paper.add(centred(interim ? "X REPORT - INTERIM" : "Z REPORT"));
+        paper.add(centred("- placeholder render, P2/P3 land in B17 -"));
+        paper.add(rule());
+        paper.add(meta("SHIFT", "#" + report.shiftId()));
+        paper.add(meta("TERMINAL", report.terminal()));
+        paper.add(meta("OPERATOR", "#" + report.shiftStaffId()));
+        paper.add(meta("OPENED", STAMP.format(report.openedAt())));
+        paper.add(meta(interim ? "AS OF" : "CLOSED",
+                STAMP.format(report.closedAt() == null ? report.at() : report.closedAt())));
+        paper.add(rule());
+        paper.add(amountRow("OPENING FLOAT", report.openingFloat()));
+        paper.add(rule());
+        paper.add(centred("TAKINGS BY METHOD"));
+        report.byMethod().forEach(line -> paper.add(takingsRows(line)));
+        paper.add(rule());
+        paper.add(takingsRows(report.totals()));
+        paper.add(rule());
+        paper.add(amountRow("POINTS REDEEMED", -report.pointsRedeemed()));
+        paper.add(meta("POINTS EARNED", String.valueOf(report.pointsEarned())));
+        paper.add(meta("SALES", String.valueOf(report.saleCount())));
+        paper.add(meta("REFUNDS", String.valueOf(report.refundCount())));
+        paper.add(rule());
+        paper.add(centred("EXPENSES"));
+        report.expenses().forEach(expense -> paper.add(amountRow(
+                "%s (%s)".formatted(expense.description(), expense.category()), -expense.amount())));
+        paper.add(amountRow("EXPENSES TOTAL", -report.expensesTotal()));
+        if (!interim) {
+            paper.add(rule());
+            paper.add(amountRow("EXPECTED CASH", nullSafe(report.expectedCash())));
+            paper.add(amountRow("COUNTED CASH", nullSafe(report.countedCash())));
+            paper.add(amountRow("DISCREPANCY", nullSafe(report.discrepancy())));
+            if (report.handoverNote() != null && !report.handoverNote().isBlank()) {
+                paper.add(rule());
+                paper.add(meta("HANDOVER", report.handoverNote()));
+            }
+            paper.add(rule());
+            paper.add("SIGNATURE " + "_".repeat(RenderedDocument.COLUMNS - "SIGNATURE ".length()));
+            paper.add(centred("SHIFT-" + report.shiftId()));
+        }
+        return RenderedDocument.plainText(paper.toString());
+    }
+
+    /** P4 — what someone signs for the money they took out of the drawer (design.md §5). */
+    @Override
+    public RenderedDocument renderExpenseVoucher(ExpenseVoucherPrinting.ExpenseVoucher voucher) {
+        StringJoiner paper = new StringJoiner("\n");
+        paper.add(centred("GAMER'S DEN"));
+        paper.add(centred("EXPENSE VOUCHER"));
+        paper.add(centred("- placeholder render, P4 lands in B17 -"));
+        paper.add(rule());
+        paper.add(meta("AT", STAMP.format(voucher.at())));
+        paper.add(meta("SHIFT", "#" + voucher.shiftId()));
+        paper.add(meta("CATEGORY", voucher.category()));
+        paper.add(meta("DETAIL", voucher.description()));
+        paper.add(rule());
+        paper.add(amountRow("AMOUNT", voucher.amount()));
+        paper.add(rule());
+        paper.add(meta("RECORDED BY", "#" + voucher.operatorId()));
+        paper.add("SIGNATURE " + "_".repeat(RenderedDocument.COLUMNS - "SIGNATURE ".length()));
+        return RenderedDocument.plainText(paper.toString());
+    }
+
+    /**
+     * A method's row of the takings matrix. Two printed lines rather than a five-column grid: at
+     * 48 characters the real P2 wraps the categories under their method too (design.md §5).
+     */
+    private static String takingsRows(ShiftReportPrinting.MethodLine line) {
+        return amountRow(line.method(), line.total()) + "\n"
+                + "  gaming %d - fnb %d - tournament %d - pre-booking %d"
+                        .formatted(line.gaming(), line.fnb(), line.tournament(), line.booking());
+    }
+
+    private static int nullSafe(Integer amount) {
+        return amount == null ? 0 : amount;
     }
 
     /** bKash/Nagad print the tail of the TrxID, never the whole reference (design.md P1). */

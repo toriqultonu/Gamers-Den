@@ -5,6 +5,7 @@ import dev.gamersden.auth.repo.RefreshTokenRepository;
 import dev.gamersden.common.config.VenueTime;
 import dev.gamersden.common.error.ApiException;
 import dev.gamersden.common.error.UnauthorizedException;
+import dev.gamersden.common.spi.OperatorSignOut;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -30,7 +31,7 @@ import java.util.List;
  * staff+terminal is revoked and the caller has to sign in with a PIN again.
  */
 @Service
-public class RefreshTokenService {
+public class RefreshTokenService implements OperatorSignOut {
 
     private static final Logger log = LoggerFactory.getLogger(RefreshTokenService.class);
     private static final int TOKEN_BYTES = 32;
@@ -114,6 +115,24 @@ public class RefreshTokenService {
     public void revoke(String rawValue) {
         OffsetDateTime now = VenueTime.now(clock);
         tokens.findByTokenHash(hash(rawValue)).ifPresent(token -> token.revoke(now));
+    }
+
+    /**
+     * Closing a shift signs its operator out of that till (api-contract.md, "Shifts &amp;
+     * expenses"). Terminal-scoped rather than account-wide: the same cashier may legitimately be
+     * signed in elsewhere, and a manager closing someone else's shift must not be signed out with
+     * them.
+     */
+    @Override
+    @Transactional
+    public void signOutOfTerminal(long staffId, String terminal) {
+        OffsetDateTime now = VenueTime.now(clock);
+        List<RefreshToken> live = tokens.findByStaffIdAndTerminalAndRevokedAtIsNull(staffId, terminal);
+        live.forEach(token -> token.revoke(now));
+        if (!live.isEmpty()) {
+            log.info("staff {} signed out of {} — {} refresh token(s) revoked",
+                    staffId, terminal, live.size());
+        }
     }
 
     /** Cuts every live session for a staff member — used when the account is disabled or deleted. */

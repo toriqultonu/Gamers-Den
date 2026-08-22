@@ -14,6 +14,9 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
 
     List<Transaction> findByShiftId(Long shiftId);
 
+    /** A shift's postings in the order they were taken — the X/Z report's input (B11). */
+    List<Transaction> findByShiftIdOrderByIdAsc(Long shiftId);
+
     /**
      * How many public ids the venue day has already handed out. Counted over {@code public_id}
      * rather than {@code created_at} on purpose: the id <em>is</em> the sequence, so the number is
