@@ -39,8 +39,9 @@ public class StationController {
     @PreAuthorize(Roles.ANY_STAFF)
     @Operation(summary = "The Floor grid",
             description = "Each station with its live session summary. A console held by a "
-                    + "running tournament reads RESERVED. The match half arrives with B13 and the "
-                    + "checked-in arrival half with B16; both are null until then.")
+                    + "running tournament reads RESERVED, and carries its match countdown while "
+                    + "one is being played on it. The checked-in arrival half arrives with B16 "
+                    + "and is null until then.")
     public List<StationView> list() {
         return stations.floor().stream().map(StationView::of).toList();
     }

@@ -25,6 +25,14 @@ public interface StationLookup {
     int blockPriceAt(long stationId, OffsetDateTime at);
 
     /**
+     * The rate card's plain hourly price for this station's console type — no morning window, no
+     * snapshot. It is the "what this seat would have earned as an ordinary rental" number the
+     * tournament finance panel averages over the consoles an event is holding
+     * (docs/tournaments.md §6), and nothing is ever charged from it.
+     */
+    int hourlyRate(long stationId);
+
+    /**
      * @param consoleType {@code PS5|PS4} — a string here so {@code common} stays free of the
      *                    {@code station} package's enum; callers compare, they do not switch
      * @param underMaintenance true while an Admin has taken the seat off the floor
