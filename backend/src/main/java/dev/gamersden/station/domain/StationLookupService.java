@@ -43,6 +43,14 @@ public class StationLookupService implements StationLookup {
         return pricing.blockPrice(station.getConsoleType(), at);
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public int hourlyRate(long stationId) {
+        Station station = stations.findById(stationId)
+                .orElseThrow(() -> new NotFoundException("Station", stationId));
+        return pricing.get(station.getConsoleType()).getPerHour();
+    }
+
     private static StationInfo info(Station station) {
         return new StationInfo(station.getId(), station.getName(), station.getConsoleType().name(),
                 station.getStatus() == StationStatus.MAINTENANCE);
