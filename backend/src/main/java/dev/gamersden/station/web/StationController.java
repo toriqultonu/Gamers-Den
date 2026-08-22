@@ -38,9 +38,9 @@ public class StationController {
     @GetMapping
     @PreAuthorize(Roles.ANY_STAFF)
     @Operation(summary = "The Floor grid",
-            description = "Each station with its live session summary. The tournament match half "
-                    + "arrives with B12 and the checked-in arrival half with B16; both are null "
-                    + "until then.")
+            description = "Each station with its live session summary. A console held by a "
+                    + "running tournament reads RESERVED. The match half arrives with B13 and the "
+                    + "checked-in arrival half with B16; both are null until then.")
     public List<StationView> list() {
         return stations.floor().stream().map(StationView::of).toList();
     }

@@ -56,14 +56,16 @@ public class PaymentController {
                     + "receipt print job. The session keeps running — paid blocks simply stop "
                     + "being billable. 409 SPLIT_MISMATCH when the tenders do not equal what is "
                     + "due, WALLET_INSUFFICIENT past the member's balance, PAYMENT_REF_REQUIRED "
-                    + "on a bKash/Nagad row with no TrxID; each of them leaves nothing written.")
+                    + "on a bKash/Nagad row with no TrxID, TOURNAMENT_FULL / TOURNAMENT_NOT_OPEN "
+                    + "on an entry that cannot be registered; each of them leaves nothing "
+                    + "written. tournamentEntries[] come back as entryTokens[], one QR per entry, "
+                    + "printed as P5 stubs on the same receipt.")
     public SettleView settle(@Valid @RequestBody SettleRequest request) {
-        requireNotYetBuilt("tournamentEntries", request.tournamentEntries(),
-                "selling tournament entries lands in B12");
         requireNotYetBuilt("playTickets", request.playTickets(),
                 "selling play tickets lands in B16");
         return SettleView.of(payments.settle(request.target().sessionId(),
-                request.target().cartId(), request.redeemPoints(), request.tenders()));
+                request.target().cartId(), request.redeemPoints(), request.entrySales(),
+                request.tenders()));
     }
 
     @PostMapping("/{id}/void")
@@ -79,9 +81,9 @@ public class PaymentController {
     }
 
     /**
-     * The two contract fields whose behaviour has not been built yet. Refusing beats accepting: a
-     * settle that quietly dropped {@code tournamentEntries} would take the customer's money for a
-     * registration no table has ever heard of.
+     * The one contract field whose behaviour has not been built yet. Refusing beats accepting: a
+     * settle that quietly dropped {@code playTickets} would take the customer's money for prepaid
+     * time no table has ever heard of.
      */
     private static void requireNotYetBuilt(String field, List<?> value, String when) {
         if (value != null && !value.isEmpty()) {

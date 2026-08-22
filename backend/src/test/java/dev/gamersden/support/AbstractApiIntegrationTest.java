@@ -20,7 +20,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * HTTP-level base for the auth suite: a real filter chain, a real Postgres, no mocks. Every test
  * starts from the V001 seed — one Admin with PIN 1234, no extra staff, no shifts, no live
- * tokens, an empty floor, an empty menu, an empty member directory and the seeded rate card.
+ * tokens, an empty floor, an empty menu, an empty member directory, no tournaments and the
+ * seeded rate card.
  */
 public abstract class AbstractApiIntegrationTest extends AbstractIntegrationTest {
 
@@ -43,6 +44,13 @@ public abstract class AbstractApiIntegrationTest extends AbstractIntegrationTest
     void resetAuthState() {
         jdbc.update("DELETE FROM refresh_tokens");
         jdbc.update("DELETE FROM idempotency_keys");
+        // Tournaments first: an entry references the transaction that sold it and the tournament
+        // it is in, a match references both, and the winner FK points back the other way (B12).
+        jdbc.update("UPDATE tournaments SET winner_entry_id = NULL");
+        jdbc.update("DELETE FROM tournament_matches");
+        jdbc.update("DELETE FROM tournament_entries");
+        jdbc.update("DELETE FROM tournament_station_blocks");
+        jdbc.update("DELETE FROM tournaments");
         // Money next, because a transaction references the session, cart, member, shift and staff
         // it belongs to, and a print job references its operator (B10).
         jdbc.update("DELETE FROM payment_splits");

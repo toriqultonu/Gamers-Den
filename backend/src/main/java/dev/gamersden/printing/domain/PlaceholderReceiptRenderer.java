@@ -9,7 +9,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.StringJoiner;
 
 /**
- * The stand-in for P1–P4 until B17 (TASKLIST B10: "render stubbed until B17 — store placeholder
+ * The stand-in for P1–P5 until B17 (TASKLIST B10: "render stubbed until B17 — store placeholder
  * bytes behind the same interface"; B11 says the same of the X, Z and voucher templates).
  *
  * <p>It lays the real content out at the real paper width and emits it as plain text, so
@@ -58,7 +58,25 @@ public class PlaceholderReceiptRenderer implements ReceiptRenderer {
         }
         paper.add(rule());
         paper.add(centred(receipt.publicId()));
+        receipt.entryStubs().forEach(stub -> paper.add(entryStub(stub)));
         return RenderedDocument.plainText(paper.toString());
+    }
+
+    /**
+     * P5, appended to the sale receipt in the same job (docs/tournaments.md §7). The real template
+     * gives this an inverted band, a double-height {@code TOKEN #NN} and a native {@code GS ( k}
+     * QR; here the same content is laid out flat, with the token spelled out so a preview can be
+     * read and the QR payload printed as text so the scan path is testable before B17.
+     */
+    private static String entryStub(SaleReceiptPrinting.EntryStub stub) {
+        StringJoiner ticket = new StringJoiner("\n");
+        ticket.add(rule());
+        ticket.add(centred("TOURNAMENT ENTRY"));
+        ticket.add(centred(stub.tournamentName()));
+        ticket.add(centred(stub.playerName()));
+        ticket.add(centred("TOKEN #%02d".formatted(stub.seed())));
+        ticket.add(centred("[QR] " + stub.qrToken()));
+        return ticket.toString();
     }
 
     /**

@@ -5,9 +5,8 @@ package dev.gamersden.station.domain;
  * read — never stored: {@code stations.status} only knows AVAILABLE vs MAINTENANCE, everything
  * else follows from the live session, a tournament block or a checked-in arrival.
  *
- * <p>{@link #RESERVED} (tournament station block) is filled in by B12 and {@link #BOOKED}
- * (checked-in arrival waiting to be seated) by B16; until then a station with no live session
- * reads {@link #FREE}.
+ * <p>{@link #BOOKED} (checked-in arrival waiting to be seated) is filled in by B16; until then a
+ * station with no live session and no tournament block reads {@link #FREE}.
  */
 public enum StationFloorState {
 
@@ -25,7 +24,7 @@ public enum StationFloorState {
     /** Time is up and the bill is owed; the seat cannot be re-let until the session ends. */
     LOCKED,
 
-    /** Held by a tournament station block (B12). */
+    /** Held by a station block of a tournament that is still OPEN or LIVE. */
     RESERVED,
 
     /** A checked-in booking is waiting to be seated here (B16). */

@@ -4,6 +4,7 @@ import dev.gamersden.common.error.ConflictException;
 import dev.gamersden.common.error.ErrorCode;
 import dev.gamersden.common.error.NotFoundException;
 import dev.gamersden.common.spi.SessionLookup;
+import dev.gamersden.common.spi.StationReservation;
 import dev.gamersden.station.repo.StationRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,16 +14,18 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Stations CRUD (api-contract.md, "Stations &amp; pricing" — Admin writes) plus the Floor read:
  * {@code GET /stations} carries the live session summary so one call fills every card.
  *
- * <p>The match half of that summary lands with B12 (tournament station blocks) and the arrival
- * half with B16 (checked-in bookings); both are already shaped in {@link StationSummary}.
+ * <p>The arrival half of that summary lands with B16 (checked-in bookings); it is already shaped
+ * in {@link StationSummary}.
  *
  * <p>A station is never touched while it is occupied: the live session is read through
- * {@link SessionLookup}, not through {@code SessionRepository} (ARCHITECTURE.md, package layout).
+ * {@link SessionLookup} and the tournament hold through {@link StationReservation}, never through
+ * a foreign repository (ARCHITECTURE.md, package layout).
  */
 @Service
 public class StationService {
@@ -32,25 +35,34 @@ public class StationService {
 
     private final StationRepository stations;
     private final SessionLookup sessions;
+    private final StationReservation reservations;
 
-    public StationService(StationRepository stations, SessionLookup sessions) {
+    public StationService(StationRepository stations, SessionLookup sessions,
+                          StationReservation reservations) {
         this.stations = stations;
         this.sessions = sessions;
+        this.reservations = reservations;
     }
 
-    /** One query for the stations, one for the live sessions — the Floor grid is a single read. */
+    /**
+     * One query for the stations, one for the live sessions and one for the tournament holds — the
+     * Floor grid stays a single read however many cards it draws.
+     */
     @Transactional(readOnly = true)
     public List<StationSummary> floor() {
         Map<Long, SessionLookup.LiveSession> live = sessions.liveSessionsByStation();
+        Set<Long> reserved = reservations.reservedStationIds();
         return stations.findAll(BY_ID).stream()
-                .map(station -> StationSummary.of(station, live.get(station.getId())))
+                .map(station -> StationSummary.of(station, live.get(station.getId()),
+                        reserved.contains(station.getId())))
                 .toList();
     }
 
     @Transactional(readOnly = true)
     public StationSummary summary(Long id) {
         Station station = get(id);
-        return StationSummary.of(station, sessions.liveSessionOn(station.getId()).orElse(null));
+        return StationSummary.of(station, sessions.liveSessionOn(station.getId()).orElse(null),
+                reservations.reservedStationIds().contains(station.getId()));
     }
 
     @Transactional(readOnly = true)
@@ -100,8 +112,9 @@ public class StationService {
 
     /**
      * A real delete — {@code stations} has no active flag, so the row goes only while nothing
-     * points at it. A live session or any past one keeps it: sessions, and later bookings and
-     * tournament blocks, are the audit trail (409 {@code STATION_IN_USE}).
+     * points at it. A live session or any past one keeps it, and so does any tournament that ever
+     * blocked it: sessions and blocks, and later bookings, are the audit trail (409
+     * {@code STATION_IN_USE}).
      */
     @Transactional
     public void delete(Long id) {
@@ -111,6 +124,12 @@ public class StationService {
             throw new ConflictException(ErrorCode.STATION_IN_USE,
                     "%s has session history and cannot be removed — put it under maintenance instead"
                             .formatted(station.getName()),
+                    Map.of("stationId", station.getId()));
+        }
+        if (reservations.isBlockedByAnyTournament(station.getId())) {
+            throw new ConflictException(ErrorCode.STATION_IN_USE,
+                    "%s is blocked for a tournament and cannot be removed — put it under "
+                            + "maintenance instead".formatted(station.getName()),
                     Map.of("stationId", station.getId()));
         }
         stations.delete(station);

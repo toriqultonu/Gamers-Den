@@ -34,7 +34,11 @@ class ApplicationEndpointsIT extends AbstractIntegrationTest {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         JsonNode body = response.getBody();
         assertThat(body.get("info").get("title").asText()).isEqualTo("Gamer's Den API");
-        assertThat(body.get("servers").get(0).get("url").asText()).isEqualTo("/api/v1");
+        // The /api/v1 prefix lives in the paths (springdoc resolves WebMvcConfig's path prefix),
+        // so the server URL must NOT repeat it — a server of /api/v1 makes every Swagger UI
+        // "Try it out" call /api/v1/api/v1/... and 401 on the unmatched path.
+        assertThat(body.get("paths").has("/api/v1/auth/login")).isTrue();
+        assertThat(body.get("servers").get(0).get("url").asText()).doesNotContain("/api/v1");
     }
 
     /**
