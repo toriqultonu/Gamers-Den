@@ -3,6 +3,7 @@ package dev.gamersden.station.domain;
 import dev.gamersden.common.error.ConflictException;
 import dev.gamersden.common.error.ErrorCode;
 import dev.gamersden.common.error.NotFoundException;
+import dev.gamersden.common.spi.MatchLookup;
 import dev.gamersden.common.spi.SessionLookup;
 import dev.gamersden.common.spi.StationReservation;
 import dev.gamersden.station.repo.StationRepository;
@@ -36,12 +37,14 @@ public class StationService {
     private final StationRepository stations;
     private final SessionLookup sessions;
     private final StationReservation reservations;
+    private final MatchLookup matches;
 
     public StationService(StationRepository stations, SessionLookup sessions,
-                          StationReservation reservations) {
+                          StationReservation reservations, MatchLookup matches) {
         this.stations = stations;
         this.sessions = sessions;
         this.reservations = reservations;
+        this.matches = matches;
     }
 
     /**
@@ -52,9 +55,10 @@ public class StationService {
     public List<StationSummary> floor() {
         Map<Long, SessionLookup.LiveSession> live = sessions.liveSessionsByStation();
         Set<Long> reserved = reservations.reservedStationIds();
+        Map<Long, MatchLookup.LiveMatch> onNow = matches.liveMatchesByStation();
         return stations.findAll(BY_ID).stream()
                 .map(station -> StationSummary.of(station, live.get(station.getId()),
-                        reserved.contains(station.getId())))
+                        reserved.contains(station.getId()), onNow.get(station.getId())))
                 .toList();
     }
 
@@ -62,7 +66,8 @@ public class StationService {
     public StationSummary summary(Long id) {
         Station station = get(id);
         return StationSummary.of(station, sessions.liveSessionOn(station.getId()).orElse(null),
-                reservations.reservedStationIds().contains(station.getId()));
+                reservations.reservedStationIds().contains(station.getId()),
+                matches.liveMatchOn(station.getId()).orElse(null));
     }
 
     @Transactional(readOnly = true)
