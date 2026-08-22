@@ -2,6 +2,7 @@ package dev.gamersden.tournament.web;
 
 import dev.gamersden.common.security.Roles;
 import dev.gamersden.common.spi.TournamentEntrySale;
+import dev.gamersden.tournament.domain.BracketService;
 import dev.gamersden.tournament.domain.Tournament;
 import dev.gamersden.tournament.domain.TournamentEntryService;
 import dev.gamersden.tournament.domain.TournamentService;
@@ -37,8 +38,12 @@ import java.util.List;
  *       running the counter has to be able to take a player's fee.</li>
  * </ul>
  *
- * <p>The bracket, the matches and the finance panel are B13/B14; nothing here pretends to have
- * them.
+ * <p>The bracket splits the same way. Drawing one is configuration — Manager+ — and so is
+ * deciding a match nobody started; recording the result of a match that <em>is</em> being played
+ * is execution, and the route lets any role through so the guard can look at the match instead of
+ * the URL (docs/tournaments.md §1, §4).
+ *
+ * <p>Match start, added time and the finance panel are B14; nothing here pretends to have them.
  */
 @RestController
 @RequestMapping("/tournaments")
@@ -47,12 +52,14 @@ public class TournamentController {
 
     private final TournamentService tournaments;
     private final TournamentEntryService entries;
+    private final BracketService brackets;
     private final TournamentEntrySale sales;
 
     public TournamentController(TournamentService tournaments, TournamentEntryService entries,
-                                TournamentEntrySale sales) {
+                                BracketService brackets, TournamentEntrySale sales) {
         this.tournaments = tournaments;
         this.entries = entries;
+        this.brackets = brackets;
         this.sales = sales;
     }
 
@@ -76,8 +83,9 @@ public class TournamentController {
 
     @GetMapping("/{id}")
     @PreAuthorize(Roles.ANY_STAFF)
-    @Operation(summary = "One event with its entries and blocked consoles",
-            description = "The bracket joins this payload in B13.")
+    @Operation(summary = "One event with its entries, blocked consoles and bracket",
+            description = "bracket is empty until the event is drawn — before that the screen is "
+                    + "the registered-player list.")
     public TournamentDetailView get(@PathVariable Long id) {
         return detail(tournaments.get(id));
     }
@@ -153,6 +161,35 @@ public class TournamentController {
         return EntrySoldView.of(sales.sell(id, request.playerName(), tenders));
     }
 
+    // ---- the bracket ------------------------------------------------------------------------------
+
+    @PostMapping("/{id}/bracket")
+    @PreAuthorize(Roles.MANAGER_PLUS)
+    @Operation(summary = "Draw the bracket now (Manager+)",
+            description = "For an event that never filled: the smallest power-of-two bracket that "
+                    + "seats everybody who bought in, byes advancing the earliest seeds, and the "
+                    + "event goes LIVE. An event that fills is drawn automatically by the sale "
+                    + "that takes the last slot, so this is the undersubscribed case. 409 "
+                    + "NOT_ENOUGH_PLAYERS under two players, 409 TOURNAMENT_NOT_OPEN once it is "
+                    + "already live, done or called off.")
+    public TournamentDetailView generateBracket(@PathVariable Long id) {
+        brackets.generate(id);
+        return detail(tournaments.get(id));
+    }
+
+    @PostMapping("/{id}/matches/{mid}/winner")
+    @PreAuthorize(Roles.ANY_STAFF)
+    @Operation(summary = "Record the winner of a match",
+            description = "Any role for a match that has been started — that is execution. A match "
+                    + "nobody started is a ruling and needs Manager+: a cashier gets the 403 "
+                    + "envelope. The winner advances along next_match_id; winning the final makes "
+                    + "the champion, turns the event DONE and releases every console it held.")
+    public TournamentDetailView recordWinner(@PathVariable Long id, @PathVariable Long mid,
+                                             @Valid @RequestBody RecordWinnerRequest request) {
+        brackets.recordWinner(id, mid, request.winnerEntryId());
+        return detail(tournaments.get(id));
+    }
+
     // ---- assembly -------------------------------------------------------------------------------
 
     private TournamentView view(Tournament tournament) {
@@ -161,6 +198,6 @@ public class TournamentController {
 
     private TournamentDetailView detail(Tournament tournament) {
         return TournamentDetailView.of(tournament, entries.of(tournament.getId()),
-                tournaments.stationIdsOf(tournament.getId()));
+                tournaments.stationIdsOf(tournament.getId()), brackets.of(tournament.getId()));
     }
 }
