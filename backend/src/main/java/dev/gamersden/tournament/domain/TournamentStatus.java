@@ -14,7 +14,7 @@ public enum TournamentStatus {
     /** Selling entries. Seeds are handed out in sale order. */
     OPEN,
 
-    /** The cap filled or a manager generated the bracket (B13); matches are being played. */
+    /** The cap filled or a manager generated the bracket; matches are being played. */
     LIVE,
 
     /** The final has a winner. */

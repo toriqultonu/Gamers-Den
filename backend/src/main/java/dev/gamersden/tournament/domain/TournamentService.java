@@ -170,8 +170,8 @@ public class TournamentService {
      *
      * <p>Overlapping allocations are allowed on purpose: two events scheduled weeks apart are both
      * OPEN, and both legitimately name the same consoles. The schema's promise is that each event
-     * only ever draws from its own rows (§2), which the bracket engine keeps in B13 — it is not a
-     * promise that a console belongs to one event at a time.
+     * only ever draws from its own rows (§2), which the bracket engine keeps — it is not a promise
+     * that a console belongs to one event at a time.
      *
      * <p>A live walk-in session is likewise no obstacle. Blocking says "hold this seat for the
      * event"; whether it happens to be occupied right now is a question for match start (§4), and

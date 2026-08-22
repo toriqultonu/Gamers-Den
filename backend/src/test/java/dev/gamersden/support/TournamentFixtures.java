@@ -48,6 +48,24 @@ public final class TournamentFixtures {
                 + "ORDER BY seed", tournamentId);
     }
 
+    /** The whole bracket in drawing order, raw (B13). */
+    public List<Map<String, Object>> matchesOf(Long tournamentId) {
+        return jdbc.queryForList("SELECT id, round, slot, entry_a, entry_b, winner_entry, "
+                + "next_match_id, station_id, started_at, extra_min, decided_by, decided_at "
+                + "FROM tournament_matches WHERE tournament_id = ? ORDER BY round, slot",
+                tournamentId);
+    }
+
+    /** What match start (B14) will stamp — the flag that makes a result execution, not a ruling. */
+    public void startMatch(Long matchId) {
+        jdbc.update("UPDATE tournament_matches SET started_at = now() WHERE id = ?", matchId);
+    }
+
+    public Long winnerEntryOf(Long tournamentId) {
+        return jdbc.queryForObject("SELECT winner_entry_id FROM tournaments WHERE id = ?",
+                Long.class, tournamentId);
+    }
+
     public List<Map<String, Object>> refundsOf(Long shiftId) {
         return jdbc.queryForList("SELECT id, public_id, total_due, tournament_amount, member_id "
                 + "FROM transactions WHERE shift_id = ? AND total_due < 0 ORDER BY id", shiftId);

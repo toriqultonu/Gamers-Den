@@ -86,7 +86,7 @@ class TournamentReservedStationIT extends AbstractApiIntegrationTest {
         assertThat(floorStateOf(cards, free)).isEqualTo("FREE");
         assertThat(get("/api/v1/stations/" + reserved, staff).getBody()
                 .get("floorState").asText()).isEqualTo("RESERVED");
-        // Matches, and their countdowns, arrive with B13.
+        // The match tag and its countdown arrive with B14's console assignment.
         assertThat(get("/api/v1/stations/" + reserved, staff).getBody().has("match")).isFalse();
     }
 

@@ -15,8 +15,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Entries: the {@code tournament} package's answer to {@link TournamentEntrySettlement}, plus the
@@ -40,11 +42,14 @@ public class TournamentEntryService implements TournamentEntrySettlement {
 
     private final TournamentRepository tournaments;
     private final TournamentEntryRepository entries;
+    private final BracketService brackets;
 
     public TournamentEntryService(TournamentRepository tournaments,
-                                  TournamentEntryRepository entries) {
+                                  TournamentEntryRepository entries,
+                                  BracketService brackets) {
         this.tournaments = tournaments;
         this.entries = entries;
+        this.brackets = brackets;
     }
 
     // ---- the settle path ----------------------------------------------------------------------
@@ -82,6 +87,15 @@ public class TournamentEntryService implements TournamentEntrySettlement {
         return List.copyOf(quoted);
     }
 
+    /**
+     * Writes the entries, then draws the bracket if this sale was the one that filled the field.
+     *
+     * <p>The draw belongs here rather than to a listener or a scheduled sweep because
+     * docs/tournaments.md §3 asks for it in <em>the same transaction</em> as the sale: the ticket
+     * that completed the field and the bracket it completed commit together or not at all. The
+     * tournament row is already locked from {@link #quote}, so no second sale can slip a player in
+     * between the count and the draw, and no second draw can start from another terminal.
+     */
     @Override
     @Transactional(propagation = Propagation.MANDATORY)
     public List<RegisteredEntry> register(long txId, Long memberId, List<QuotedEntry> quotes) {
@@ -89,6 +103,7 @@ public class TournamentEntryService implements TournamentEntrySettlement {
             return List.of();
         }
         List<RegisteredEntry> registered = new ArrayList<>(quotes.size());
+        Set<Long> touched = new LinkedHashSet<>();
         for (QuotedEntry quote : quotes) {
             TournamentEntry entry = entries.save(new TournamentEntry(quote.tournamentId(), memberId,
                     quote.playerName(), txId, quote.seed()));
@@ -98,7 +113,9 @@ public class TournamentEntryService implements TournamentEntrySettlement {
             registered.add(new RegisteredEntry(entry.getId(), quote.tournamentId(),
                     quote.tournamentName(), entry.getPlayerName(), entry.getSeed(),
                     entry.getQrToken()));
+            touched.add(quote.tournamentId());
         }
+        touched.forEach(brackets::generateIfFull);
         return List.copyOf(registered);
     }
 

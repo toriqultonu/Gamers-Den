@@ -196,16 +196,45 @@ class TournamentEntrySaleIT extends AbstractApiIntegrationTest {
 
     // ---- refusals leave nothing behind ------------------------------------------------------------
 
+    /**
+     * The two ways a sale runs out of room, which are not the same 409.
+     *
+     * <p>Overshooting a batch is {@code TOURNAMENT_FULL}: the event is still OPEN and still
+     * selling, this order is simply bigger than what is left. Coming back <em>after</em> the field
+     * filled is {@code TOURNAMENT_NOT_OPEN}, because the sale that took the last slot also drew
+     * the bracket and turned the event LIVE in the same transaction (B13, docs/tournaments.md §3)
+     * — by the time anyone asks for a fifth ticket the event has stopped selling altogether.
+     */
     @Test
-    @DisplayName("the sale past the cap is 409 TOURNAMENT_FULL and registers nobody")
+    @DisplayName("a sale bigger than the slots left is 409 TOURNAMENT_FULL and registers nobody")
     void fullIsRefused() {
-        for (int i = 0; i < 4; i++) {
+        for (int i = 0; i < 3; i++) {
             settle(Map.of("target", Map.of(),
                     "tournamentEntries", List.of(Map.of("tournamentId", tournamentId)),
                     "splits", List.of(Map.of("method", "CASH", "amount", FEE))));
         }
-        assertThat(fixtures.entriesOf(tournamentId)).hasSize(4);
+        assertThat(fixtures.entriesOf(tournamentId)).hasSize(3);
+        assertThat(fixtures.statusOf(tournamentId)).isEqualTo("OPEN");
         int before = countOf("transactions");
+
+        // One slot left, two tickets asked for: the whole order is refused.
+        ResponseEntity<JsonNode> overshoot = post("/api/v1/payments",
+                Map.of("target", Map.of(),
+                        "tournamentEntries", List.of(Map.of("tournamentId", tournamentId),
+                                Map.of("tournamentId", tournamentId)),
+                        "splits", List.of(Map.of("method", "CASH", "amount", 2 * FEE))),
+                withKey(UUID.randomUUID().toString()));
+
+        assertErrorEnvelope(overshoot, 409, "TOURNAMENT_FULL");
+        assertThat(fixtures.entriesOf(tournamentId)).hasSize(3);
+        assertThat(countOf("transactions")).isEqualTo(before);
+        assertThat(countOf("print_jobs")).isEqualTo(before);
+
+        // The last slot sells, and with it the event stops selling.
+        settle(Map.of("target", Map.of(),
+                "tournamentEntries", List.of(Map.of("tournamentId", tournamentId)),
+                "splits", List.of(Map.of("method", "CASH", "amount", FEE))));
+        assertThat(fixtures.statusOf(tournamentId)).isEqualTo("LIVE");
 
         ResponseEntity<JsonNode> fifth = post("/api/v1/payments",
                 Map.of("target", Map.of(),
@@ -213,10 +242,8 @@ class TournamentEntrySaleIT extends AbstractApiIntegrationTest {
                         "splits", List.of(Map.of("method", "CASH", "amount", FEE))),
                 withKey(UUID.randomUUID().toString()));
 
-        assertErrorEnvelope(fifth, 409, "TOURNAMENT_FULL");
+        assertErrorEnvelope(fifth, 409, "TOURNAMENT_NOT_OPEN");
         assertThat(fixtures.entriesOf(tournamentId)).hasSize(4);
-        assertThat(countOf("transactions")).isEqualTo(before);
-        assertThat(countOf("print_jobs")).isEqualTo(before);
     }
 
     @Test
