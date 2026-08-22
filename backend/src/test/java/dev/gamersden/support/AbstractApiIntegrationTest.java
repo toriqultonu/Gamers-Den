@@ -42,7 +42,13 @@ public abstract class AbstractApiIntegrationTest extends AbstractIntegrationTest
     @BeforeEach
     void resetAuthState() {
         jdbc.update("DELETE FROM refresh_tokens");
-        // Floor state first, deepest reference last: cart lines -> carts -> sessions -> stations
+        jdbc.update("DELETE FROM idempotency_keys");
+        // Money next, because a transaction references the session, cart, member, shift and staff
+        // it belongs to, and a print job references its operator (B10).
+        jdbc.update("DELETE FROM payment_splits");
+        jdbc.update("DELETE FROM print_jobs");
+        jdbc.update("DELETE FROM transactions");
+        // Then floor state, deepest reference last: cart lines -> carts -> sessions -> stations
         // -> shifts. Carts point at sessions, sessions at both stations and shifts.
         jdbc.update("DELETE FROM cart_lines");
         jdbc.update("DELETE FROM carts");
