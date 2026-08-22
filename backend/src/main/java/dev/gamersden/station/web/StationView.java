@@ -36,7 +36,7 @@ public record StationView(
                 summary.station().getStatus(),
                 summary.floorState(),
                 StationSessionView.of(summary.session()),
-                null,   // B12 — tournament match
+                null,   // B13 — tournament match
                 null,   // B16 — checked-in arrival
                 summary.station().getCreatedAt());
     }

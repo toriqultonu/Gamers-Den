@@ -17,13 +17,17 @@ import dev.gamersden.common.spi.SaleReceiptPrinting;
 import dev.gamersden.common.spi.SessionSettlement;
 import dev.gamersden.common.spi.ShiftLookup;
 import dev.gamersden.common.spi.StationLookup;
+import dev.gamersden.common.spi.TournamentEntrySale;
+import dev.gamersden.common.spi.TournamentEntrySettlement;
+import dev.gamersden.common.spi.TournamentEntrySettlement.EntrySale;
+import dev.gamersden.common.spi.TournamentEntrySettlement.QuotedEntry;
+import dev.gamersden.common.spi.TournamentEntrySettlement.RegisteredEntry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
-import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
@@ -63,17 +67,14 @@ import java.util.Map;
  * same doors that applied it.
  */
 @Service
-public class PaymentService {
+public class PaymentService implements TournamentEntrySale {
 
     private static final Logger log = LoggerFactory.getLogger(PaymentService.class);
 
-    /**
-     * The advisory-lock key public-id allocation serialises on. An arbitrary constant — all that
-     * matters is that every terminal in the venue picks the same one.
-     */
-    private static final long PUBLIC_ID_LOCK = 0x6764_7478L; // "gdtx"
-
     private static final String COUNTER_SALE = "Counter sale";
+
+    /** The receipt heading of a sale that is nothing but tournament entries. */
+    private static final String ENTRY_SALE = "Tournament entries";
 
     private final TransactionRepository transactions;
     private final PaymentSplitRepository splits;
@@ -85,6 +86,8 @@ public class PaymentService {
     private final SaleReceiptPrinting receipts;
     private final StationLookup stations;
     private final ShiftLookup shifts;
+    private final TournamentEntrySettlement tournamentEntries;
+    private final PublicIdSequence publicIds;
     private final Clock clock;
 
     public PaymentService(TransactionRepository transactions,
@@ -97,6 +100,8 @@ public class PaymentService {
                           SaleReceiptPrinting receipts,
                           StationLookup stations,
                           ShiftLookup shifts,
+                          TournamentEntrySettlement tournamentEntries,
+                          PublicIdSequence publicIds,
                           Clock clock) {
         this.transactions = transactions;
         this.splits = splits;
@@ -108,27 +113,67 @@ public class PaymentService {
         this.receipts = receipts;
         this.stations = stations;
         this.shifts = shifts;
+        this.tournamentEntries = tournamentEntries;
+        this.publicIds = publicIds;
         this.clock = clock;
     }
 
     // ---- POST /payments --------------------------------------------------------------------
 
     /**
-     * Settles a seat or a counter cart.
+     * Settles a seat, a counter cart, or a handful of tournament entries on their own.
      *
-     * @param sessionId    {@code target.sessionId} — the whole bill: unbilled blocks, the open
-     *                     cart, tournament entries
-     * @param cartId       {@code target.cartId} — a counter sale; exactly one target is given
+     * @param sessionId    {@code target.sessionId} — the whole bill: unbilled blocks, the open cart
+     * @param cartId       {@code target.cartId} — a counter sale
      * @param redeemPoints points to spend against the bill, capped at what is owed
+     * @param entrySales   {@code tournamentEntries[]} — registered in this same transaction, at
+     *                     the fee quoted under the tournament's row lock (docs/tournaments.md §5)
      * @param tenders      the split panel's rows; they must sum to what is left after the discount
      */
     @Transactional
-    public SettleResult settle(Long sessionId, Long cartId, Integer redeemPoints, List<Tender> tenders) {
+    public SettleResult settle(Long sessionId, Long cartId, Integer redeemPoints,
+                               List<EntrySale> entrySales, List<Tender> tenders) {
+        Settled settled = write(sessionId, cartId, redeemPoints, entrySales, tenders);
+        return new SettleResult(settled.tx().getId(), settled.tx().getPublicId(),
+                settled.printJobId(),
+                settled.entries().isEmpty() ? null : settled.entries().stream()
+                        .map(RegisteredEntry::qrToken).toList(),
+                null);
+    }
+
+    /**
+     * {@code POST /tournaments/{id}/entries} — the {@code tournament} package's counter route into
+     * exactly the same settle (api-contract.md, Tournaments). No session, no cart and no member:
+     * one entry, its fee, and the receipt carrying its P5 stub, written in the one transaction
+     * {@link #write} always writes.
+     */
+    @Override
+    @Transactional
+    public Sold sell(long tournamentId, String playerName, List<TenderLine> tenders) {
+        List<Tender> tendered = tenders == null ? List.of() : tenders.stream()
+                .map(line -> new Tender(PaymentMethod.parse(line.method()), line.amount(),
+                        line.paymentRef()))
+                .toList();
+        Settled settled = write(null, null, null,
+                List.of(new EntrySale(tournamentId, playerName)), tendered);
+        RegisteredEntry entry = settled.entries().get(0);
+        return new Sold(settled.tx().getId(), settled.tx().getPublicId(), settled.printJobId(),
+                entry.entryId(), entry.seed(), entry.qrToken());
+    }
+
+    /**
+     * The one transaction (invariant §5.3): the snapshot and its tenders, the blocks it pays for,
+     * the cart it closes, the entries it registers, the loyalty it moves and the receipt it
+     * queues. Nothing is written before {@link Settlement} has accepted the request, so a 409
+     * leaves the database exactly as it found it.
+     */
+    private Settled write(Long sessionId, Long cartId, Integer redeemPoints,
+                          List<EntrySale> entrySales, List<Tender> tenders) {
         StaffPrincipal staff = CurrentStaff.require();
         long shiftId = requireOpenShift(staff);
         OffsetDateTime at = VenueTime.now(clock);
 
-        Target target = resolve(sessionId, cartId);
+        Target target = resolve(sessionId, cartId, entrySales);
         Settlement settlement = Settlement.of(target.charges(), target.member(), redeemPoints, tenders);
 
         Transaction tx = snapshot(target, settlement, shiftId, staff);
@@ -144,17 +189,24 @@ public class PaymentService {
             requireUnmoved("F&B", target.charges().fnb(),
                     carts.settle(target.cart().cartId(), tx.getId()));
         }
+        List<RegisteredEntry> registered =
+                tournamentEntries.register(tx.getId(), settlement.memberId(), target.entries());
         if (settlement.memberId() != null) {
             memberWrites.applySale(settlement.memberId(), tx.getId(), settlement.loyalty());
         }
 
-        long printJobId = receipts.issueSaleReceipt(receiptOf(tx, target, settlement, staff, at));
+        long printJobId = receipts.issueSaleReceipt(
+                receiptOf(tx, target, settlement, staff, at, registered));
         log.info("transaction {} ({}) settled {} BDT on shift {} by staff {} — gaming {}, fnb {}, "
-                        + "tournament {}, points -{}/+{}; print job {}",
+                        + "tournament {} ({} entries), points -{}/+{}; print job {}",
                 tx.getId(), tx.getPublicId(), tx.getTotalDue(), shiftId, staff.id(),
                 tx.getGamingAmount(), tx.getFnbAmount(), tx.getTournamentAmount(),
-                tx.getPointsRedeemed(), tx.getPointsEarned(), printJobId);
-        return SettleResult.of(tx.getId(), tx.getPublicId(), printJobId);
+                registered.size(), tx.getPointsRedeemed(), tx.getPointsEarned(), printJobId);
+        return new Settled(tx, printJobId, registered);
+    }
+
+    /** What one settle wrote, before it is narrowed to whichever response shape asked for it. */
+    private record Settled(Transaction tx, long printJobId, List<RegisteredEntry> entries) {
     }
 
     /**
@@ -162,7 +214,7 @@ public class PaymentService {
      * splits, blocks, stock movements, ledger rows, the print job — references its id.
      */
     private Transaction snapshot(Target target, Settlement settlement, long shiftId, StaffPrincipal staff) {
-        Transaction tx = new Transaction(nextPublicId(VenueTime.now(clock)), shiftId, staff.id(),
+        Transaction tx = new Transaction(publicIds.next(VenueTime.now(clock)), shiftId, staff.id(),
                 settlement.totalDue());
         tx.setSessionId(target.sessionId());
         tx.setCartId(target.chargesCart() ? target.cart().cartId() : null);
@@ -231,7 +283,7 @@ public class PaymentService {
      * same answer whether or not anything was voided in it.
      */
     private Transaction reversalOf(Transaction original, long shiftId, StaffPrincipal staff) {
-        Transaction reversal = new Transaction(nextPublicId(VenueTime.now(clock)), shiftId,
+        Transaction reversal = new Transaction(publicIds.next(VenueTime.now(clock)), shiftId,
                 staff.id(), -original.getTotalDue());
         reversal.setSessionId(original.getSessionId());
         reversal.setCartId(original.getCartId());
@@ -277,13 +329,40 @@ public class PaymentService {
     /**
      * {@code target} carries exactly one of {@code sessionId} / {@code cartId} (api-contract.md).
      * A seat settles its whole bill; a counter cart settles itself.
+     *
+     * <p>Tournament entries are the one thing that can be sold with no target at all: a walk-up
+     * buying nothing but a ticket has no seat and no basket, and refusing them a sale because the
+     * request has no {@code cartId} would only teach the floor to open an empty cart first. Every
+     * other combination is still 400 — including a bare {@code target: {}} with nothing to sell.
+     *
+     * <p>The entries are quoted here, before anything is written, so 409 {@code TOURNAMENT_FULL}
+     * and {@code TOURNAMENT_NOT_OPEN} land with the rest of the refusals and leave nothing behind.
      */
-    private Target resolve(Long sessionId, Long cartId) {
-        if ((sessionId == null) == (cartId == null)) {
+    private Target resolve(Long sessionId, Long cartId, List<EntrySale> entrySales) {
+        if (sessionId != null && cartId != null) {
             throw ValidationFailedException.onField("target",
                     "A payment settles exactly one of sessionId or cartId");
         }
-        return sessionId != null ? seat(sessionId) : counter(cartId);
+        List<EntrySale> sales = entrySales == null ? List.of() : entrySales;
+        if (sessionId == null && cartId == null && sales.isEmpty()) {
+            throw ValidationFailedException.onField("target",
+                    "A payment settles exactly one of sessionId or cartId");
+        }
+        Target target = sessionId != null ? seat(sessionId)
+                : cartId != null ? counter(cartId)
+                : entriesOnly();
+        Target withEntries = target.with(tournamentEntries.quote(sales, target.member().name()));
+        if (withEntries.charges().gross() == 0) {
+            throw ValidationFailedException.onField("target",
+                    "There is nothing to settle — nothing on this bill is owed");
+        }
+        return withEntries;
+    }
+
+    /** A walk-up buying only a ticket: no seat, no basket, no member, no loyalty. */
+    private static Target entriesOnly() {
+        return new Target(null, null, new Charges(0, 0, 0, 0), Bill.Member.NONE, ENTRY_SALE,
+                List.of(), List.of());
     }
 
     /**
@@ -294,10 +373,6 @@ public class PaymentService {
      */
     private Target seat(long sessionId) {
         Bill bill = bills.of(sessionId);
-        if (bill.netTotal() == 0) {
-            throw ValidationFailedException.onField("target",
-                    "Session %d owes nothing — there is nothing to settle".formatted(sessionId));
-        }
         CartSettlement.SettleableCart cart = carts.findForSession(sessionId)
                 .filter(open -> !open.settled())
                 .orElse(null);
@@ -306,7 +381,7 @@ public class PaymentService {
                 .toList();
         return new Target(sessionId, cart,
                 new Charges(bill.gamingDue(), bill.fnbDue(), bill.tournamentDue(), 0),
-                bill.member(), stationName(bill.stationId()), lines);
+                bill.member(), stationName(bill.stationId()), lines, List.of());
     }
 
     /**
@@ -325,14 +400,11 @@ public class PaymentService {
                     "Cart %d belongs to session %d — settle the session so its time is charged too"
                             .formatted(cartId, cart.sessionId()));
         }
-        if (cart.total() == 0) {
-            throw ValidationFailedException.onField("target",
-                    "Cart %d is empty — there is nothing to settle".formatted(cartId));
-        }
         List<SaleReceiptPrinting.Line> lines = cart.lines().stream()
                 .map(line -> new SaleReceiptPrinting.Line(line.name(), line.qty(), line.lineTotal()))
                 .toList();
-        return new Target(null, cart, Charges.fnb(cart.total()), Bill.Member.NONE, COUNTER_SALE, lines);
+        return new Target(null, cart, Charges.fnb(cart.total()), Bill.Member.NONE, COUNTER_SALE,
+                lines, List.of());
     }
 
     /**
@@ -350,18 +422,6 @@ public class PaymentService {
     }
 
     // ---- helpers -----------------------------------------------------------------------------
-
-    /**
-     * The next {@code GD-ddMM-NNN} for the venue day. The advisory lock is taken first and held to
-     * commit, so the count and the insert that follows it cannot be interleaved by a second
-     * terminal (see {@link TransactionRepository#lockPublicIdSequence}).
-     */
-    private String nextPublicId(OffsetDateTime at) {
-        transactions.lockPublicIdSequence(PUBLIC_ID_LOCK);
-        LocalDate day = at.atZoneSameInstant(VenueTime.ZONE).toLocalDate();
-        String prefix = TransactionPublicId.dayPrefix(day);
-        return TransactionPublicId.of(day, transactions.countWithPublicIdPrefix(prefix + "%") + 1);
-    }
 
     /** Every transaction belongs to a shift — that is how it reconciles later (invariant §5.7). */
     private long requireOpenShift(StaffPrincipal staff) {
@@ -385,7 +445,8 @@ public class PaymentService {
      */
     private SaleReceiptPrinting.SaleReceipt receiptOf(Transaction tx, Target target,
                                                       Settlement settlement, StaffPrincipal staff,
-                                                      OffsetDateTime at) {
+                                                      OffsetDateTime at,
+                                                      List<RegisteredEntry> registered) {
         List<SaleReceiptPrinting.Tender> tenders = settlement.tenders().stream()
                 .map(tender -> new SaleReceiptPrinting.Tender(tender.method().name(),
                         tender.amount(), tender.paymentRef()))
@@ -395,22 +456,48 @@ public class PaymentService {
                 : memberReads.loyaltyOf(settlement.memberId())
                         .map(MemberPointsLookup.Loyalty::points)
                         .orElse(null);
+        List<SaleReceiptPrinting.EntryStub> stubs = registered.stream()
+                .map(entry -> new SaleReceiptPrinting.EntryStub(entry.entryId(),
+                        entry.tournamentName(), entry.playerName(), entry.seed(), entry.qrToken()))
+                .toList();
         return new SaleReceiptPrinting.SaleReceipt(tx.getId(), tx.getPublicId(), target.heading(),
                 staff.terminal(), staff.id(), at, target.receiptLines(), tx.getTotalDue(), tenders,
-                tx.getPointsRedeemed(), tx.getPointsEarned(), balance);
+                tx.getPointsRedeemed(), tx.getPointsEarned(), balance, stubs);
     }
 
     /**
      * What is being settled, resolved once. {@code cart} is the seat's or the counter's open cart;
      * it is only <em>charged</em> when the bill actually has an F&amp;B figure, so a settle for
      * time alone never closes a cart the customer is still adding to.
+     *
+     * @param entries the tournament entries this sale will register, already priced and seeded
      */
     private record Target(Long sessionId,
                           CartSettlement.SettleableCart cart,
                           Charges charges,
                           Bill.Member member,
                           String heading,
-                          List<SaleReceiptPrinting.Line> receiptLines) {
+                          List<SaleReceiptPrinting.Line> receiptLines,
+                          List<QuotedEntry> entries) {
+
+        /**
+         * The same target with the quoted entries folded in — their fees into the tournament
+         * bucket, their names onto the receipt as {@code «event» · TOKEN #NN}.
+         */
+        Target with(List<QuotedEntry> quoted) {
+            if (quoted.isEmpty()) {
+                return this;
+            }
+            List<SaleReceiptPrinting.Line> lines = new java.util.ArrayList<>(receiptLines);
+            quoted.forEach(entry -> lines.add(new SaleReceiptPrinting.Line(
+                    "%s · TOKEN #%02d".formatted(entry.tournamentName(), entry.seed()), 1,
+                    entry.fee())));
+            int fees = quoted.stream().mapToInt(QuotedEntry::fee).sum();
+            return new Target(sessionId, cart,
+                    new Charges(charges.gaming(), charges.fnb(), charges.tournament() + fees,
+                            charges.booking()),
+                    member, heading, List.copyOf(lines), quoted);
+        }
 
         boolean chargesCart() {
             return cart != null && charges.fnb() > 0;

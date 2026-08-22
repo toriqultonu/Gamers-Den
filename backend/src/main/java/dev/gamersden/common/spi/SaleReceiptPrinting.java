@@ -29,6 +29,8 @@ public interface SaleReceiptPrinting {
      * @param deviceId   which printer the job is queued for — the terminal owns its USB printer
      * @param operatorId the cashier, for the CASHIER meta row and the print-job audit
      * @param total      what the tenders come to: charges minus any points discount
+     * @param entryStubs the P5 tournament stubs this sale registered, appended to the same job
+     *                   (docs/tournaments.md §7); empty on an ordinary sale
      */
     record SaleReceipt(long transactionId,
                        String publicId,
@@ -41,7 +43,22 @@ public interface SaleReceiptPrinting {
                        List<Tender> tenders,
                        int pointsRedeemed,
                        int pointsEarned,
-                       Integer pointsBalance) {
+                       Integer pointsBalance,
+                       List<EntryStub> entryStubs) {
+
+        public SaleReceipt {
+            entryStubs = entryStubs == null ? List.of() : List.copyOf(entryStubs);
+        }
+    }
+
+    /**
+     * One P5 tournament stub (design.md §5 P5, docs/tournaments.md §7) — the inverted band, the
+     * event and player names, {@code TOKEN #NN} double-height and the QR.
+     *
+     * @param qrToken the opaque QR payload; it is the ticket, so it is never logged or abbreviated
+     *                the way a payment reference is
+     */
+    record EntryStub(long entryId, String tournamentName, String playerName, int seed, String qrToken) {
     }
 
     /** One printed line — {@code GAMING 3x30M}, {@code PEPSI 250ML x2}. */
