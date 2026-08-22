@@ -8,8 +8,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Optional;
 
 /**
- * The {@code shift} package's answer to {@link ShiftLookup} — the only door {@code auth} uses into
- * the {@code shifts} table. Open/close, X/Z math and expenses arrive with B11.
+ * The {@code shift} package's answer to {@link ShiftLookup} — the only door {@code auth} and
+ * {@code billing} use into the {@code shifts} table (ARCHITECTURE.md §3). The lifecycle itself
+ * lives in {@link ShiftService}; this is the read every other package needs from it.
  */
 @Service
 public class ShiftLookupService implements ShiftLookup {
