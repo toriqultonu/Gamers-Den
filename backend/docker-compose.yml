@@ -1,0 +1,23 @@
+# Local development database. Prod/venue Postgres is provisioned separately.
+#   docker compose up -d
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: gamersden-postgres
+    environment:
+      POSTGRES_DB: gamersden
+      POSTGRES_USER: gamersden
+      POSTGRES_PASSWORD: gamersden
+      TZ: Asia/Dhaka
+    ports:
+      - "5432:5432"
+    volumes:
+      - gamersden-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U gamersden -d gamersden"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  gamersden-pgdata:
