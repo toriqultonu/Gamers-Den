@@ -20,6 +20,12 @@ gamersden:
     lock-sweeper-enabled: false
   printing:
     enabled: false
+    # Suites drain the queue by hand for the same reason they drive the lock sweeper by hand: a
+    # background trigger would race the assertions about attempts and status.
+    worker-enabled: false
+    # Three attempts 2 s apart is the venue's number, not a test's — the failure paths would
+    # otherwise cost four real seconds each.
+    retry-backoff: 5ms
   sync:
     push-enabled: false
     receive-enabled: false
