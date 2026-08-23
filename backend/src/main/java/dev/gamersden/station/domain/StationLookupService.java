@@ -4,10 +4,12 @@ import dev.gamersden.common.error.NotFoundException;
 import dev.gamersden.common.error.ValidationFailedException;
 import dev.gamersden.common.spi.StationLookup;
 import dev.gamersden.station.repo.StationRepository;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -38,6 +40,14 @@ public class StationLookupService implements StationLookup {
     @Transactional(readOnly = true)
     public Optional<StationInfo> find(long stationId) {
         return stations.findById(stationId).map(StationLookupService::info);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<StationInfo> all() {
+        return stations.findAll(Sort.by(Sort.Direction.ASC, "name")).stream()
+                .map(StationLookupService::info)
+                .toList();
     }
 
     @Override
