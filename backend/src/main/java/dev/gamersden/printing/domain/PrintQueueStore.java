@@ -1,6 +1,7 @@
 package dev.gamersden.printing.domain;
 
 import dev.gamersden.common.config.VenueTime;
+import dev.gamersden.common.events.LiveEvents;
 import dev.gamersden.common.spi.AlertPublisher;
 import dev.gamersden.printing.repo.PrintJobRepository;
 import org.slf4j.Logger;
@@ -32,11 +33,14 @@ public class PrintQueueStore {
 
     private final PrintJobRepository jobs;
     private final AlertPublisher alerts;
+    private final LiveEvents live;
     private final Clock clock;
 
-    public PrintQueueStore(PrintJobRepository jobs, AlertPublisher alerts, Clock clock) {
+    public PrintQueueStore(PrintJobRepository jobs, AlertPublisher alerts, LiveEvents live,
+                           Clock clock) {
         this.jobs = jobs;
         this.alerts = alerts;
+        this.live = live;
         this.clock = clock;
     }
 
@@ -68,6 +72,9 @@ public class PrintQueueStore {
         job.markDone(attempts, VenueTime.now(clock));
         log.info("print job {} printed on {} after {} attempt(s) ({} {})",
                 claim.jobId(), claim.deviceId(), attempts, claim.type(), claim.refId());
+        // The worker has just been at the device, so this is one of the two moments its status can
+        // have changed — a printer that was out of paper and is now printing again says so here.
+        live.printerStatusChanged();
     }
 
     /**
@@ -89,5 +96,6 @@ public class PrintQueueStore {
                         .formatted(claim.type(), claim.refId(), attempts, claim.deviceId()));
         log.warn("print job {} FAILED ({}) after {} attempt(s) on {}",
                 claim.jobId(), failure, attempts, claim.deviceId());
+        live.printerStatusChanged();
     }
 }

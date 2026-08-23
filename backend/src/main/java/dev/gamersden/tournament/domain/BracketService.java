@@ -6,6 +6,7 @@ import dev.gamersden.common.error.ConflictException;
 import dev.gamersden.common.error.ErrorCode;
 import dev.gamersden.common.error.ForbiddenException;
 import dev.gamersden.common.error.NotFoundException;
+import dev.gamersden.common.events.LiveEvents;
 import dev.gamersden.common.security.CurrentStaff;
 import dev.gamersden.common.security.StaffPrincipal;
 import dev.gamersden.tournament.repo.TournamentEntryRepository;
@@ -60,13 +61,15 @@ public class BracketService {
     private final TournamentRepository tournaments;
     private final TournamentEntryRepository entries;
     private final TournamentMatchRepository matches;
+    private final LiveEvents live;
     private final Clock clock;
 
     public BracketService(TournamentRepository tournaments, TournamentEntryRepository entries,
-                          TournamentMatchRepository matches, Clock clock) {
+                          TournamentMatchRepository matches, LiveEvents live, Clock clock) {
         this.tournaments = tournaments;
         this.entries = entries;
         this.matches = matches;
+        this.live = live;
         this.clock = clock;
     }
 
@@ -170,6 +173,7 @@ public class BracketService {
                         + "bracket — {} matches, {} bye(s), status LIVE", tournamentId,
                 tournament.getName(), CurrentStaff.require().id(), players.size(), plan.size(),
                 bracket.size(), plan.byes());
+        live.tournamentChanged(tournamentId);
         return List.copyOf(bracket);
     }
 
@@ -247,6 +251,12 @@ public class BracketService {
                 winnerEntryId, staff.id(),
                 champion ? " — the final: tournament DONE, consoles released"
                         : " — advances to match " + next.getId());
+        live.tournamentChanged(tournamentId);
+        if (match.getStationId() != null) {
+            // The console the match was on is free again — and on the final, so is every other one
+            // the event was holding, which the DONE status releases (docs/tournaments.md §2).
+            live.stationChanged(match.getStationId());
+        }
         return new Decision(tournament, match, next, champion);
     }
 

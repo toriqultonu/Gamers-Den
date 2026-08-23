@@ -80,6 +80,12 @@ gamersden:
     max-attempts: 3
     retry-backoff: 2s
     usb-timeout: 5s
+  # GET /events (B19). Neither number is load-bearing: the frontend reconnects on its own and
+  # polls every 10 s as a fallback (ARCHITECTURE.md §4.5). The timeout ends a stream nobody is
+  # reading; the heartbeat comment finds a dead one while the venue is quiet.
+  events:
+    timeout: 30m
+    heartbeat: 20s
   # OPEN FLAG (ARCHITECTURE.md §8): documented default until the venue confirms.
   morning-discount:
     from: "10:00"

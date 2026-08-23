@@ -1,6 +1,7 @@
 package dev.gamersden.printing.domain;
 
 import dev.gamersden.common.config.GamersDenProperties;
+import dev.gamersden.common.events.LiveEvents;
 import dev.gamersden.common.error.ErrorCode;
 import dev.gamersden.common.error.NotFoundException;
 import dev.gamersden.common.error.ServiceUnavailableException;
@@ -40,13 +41,16 @@ public class PrinterDirectory {
     private static final Logger log = LoggerFactory.getLogger(PrinterDirectory.class);
 
     private final PrinterPortProvider provider;
+    private final LiveEvents live;
     private final String configuredDefault;
 
     /** The operator's override for this run, if {@code PUT /printers/default} has been called. */
     private volatile String chosenDefault;
 
-    public PrinterDirectory(PrinterPortProvider provider, GamersDenProperties properties) {
+    public PrinterDirectory(PrinterPortProvider provider, GamersDenProperties properties,
+                            LiveEvents live) {
         this.provider = provider;
+        this.live = live;
         String declared = properties.printing().defaultDevice();
         this.configuredDefault = declared == null || declared.isBlank() ? null : declared.trim();
     }
@@ -116,6 +120,10 @@ public class PrinterDirectory {
         PrinterPort port = port(printerId);
         this.chosenDefault = printerId;
         log.info("default printer set to {} ({})", port.id(), port.name());
+        // Which device the venue prints on is part of what GET /printers answers, so every screen
+        // showing the printer banner is told (§4.5). No transaction is involved — this is a
+        // process-level choice — which is why the emitter runs with fallbackExecution.
+        live.printerStatusChanged();
         return new Printer(port.id(), port.name(), port.status(), true);
     }
 

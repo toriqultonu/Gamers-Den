@@ -3,6 +3,7 @@ package dev.gamersden.queue.domain;
 import dev.gamersden.common.error.ConflictException;
 import dev.gamersden.common.error.ErrorCode;
 import dev.gamersden.common.error.NotFoundException;
+import dev.gamersden.common.events.LiveEvents;
 import dev.gamersden.common.spi.PlayTicketSale;
 import dev.gamersden.common.spi.SaleRefunding;
 import dev.gamersden.common.spi.SessionSeating;
@@ -57,19 +58,22 @@ public class PlayQueueService {
     private final SaleRefunding refunds;
     private final SessionSeating seats;
     private final StationLookup stations;
+    private final LiveEvents live;
 
     public PlayQueueService(QueueEntryRepository entries,
                             QueueTokenService tokens,
                             PlayTicketSale sales,
                             SaleRefunding refunds,
                             SessionSeating seats,
-                            StationLookup stations) {
+                            StationLookup stations,
+                            LiveEvents live) {
         this.entries = entries;
         this.tokens = tokens;
         this.sales = sales;
         this.refunds = refunds;
         this.seats = seats;
         this.stations = stations;
+        this.live = live;
     }
 
     // ---- GET /play-queue ----------------------------------------------------------------------
@@ -176,6 +180,7 @@ public class PlayQueueService {
         log.info("queue entry {} (TOKEN #{} of {}) removed as a no-show ({}) — {} BDT returned on {}",
                 entry.getId(), entry.getTokenNo(), entry.getTokenDate(), why, entry.getPlayAmount(),
                 refund == null ? "nothing (it was sold for 0)" : refund.publicId());
+        live.queueChanged();
         return new Removed(entry, refund);
     }
 

@@ -4,6 +4,7 @@ import dev.gamersden.common.config.VenueTime;
 import dev.gamersden.common.error.ConflictException;
 import dev.gamersden.common.error.ErrorCode;
 import dev.gamersden.common.error.NotFoundException;
+import dev.gamersden.common.events.LiveEvents;
 import dev.gamersden.common.error.ValidationFailedException;
 import dev.gamersden.common.security.CurrentStaff;
 import dev.gamersden.common.spi.MatchLookup;
@@ -72,6 +73,7 @@ public class MatchExecutionService implements MatchLookup {
     private final TournamentStationBlockRepository blocks;
     private final StationLookup stations;
     private final SessionLookup sessions;
+    private final LiveEvents live;
     private final Clock clock;
 
     public MatchExecutionService(TournamentRepository tournaments,
@@ -80,6 +82,7 @@ public class MatchExecutionService implements MatchLookup {
                                  TournamentStationBlockRepository blocks,
                                  StationLookup stations,
                                  SessionLookup sessions,
+                                 LiveEvents live,
                                  Clock clock) {
         this.tournaments = tournaments;
         this.matches = matches;
@@ -87,6 +90,7 @@ public class MatchExecutionService implements MatchLookup {
         this.blocks = blocks;
         this.stations = stations;
         this.sessions = sessions;
+        this.live = live;
         this.clock = clock;
     }
 
@@ -245,6 +249,7 @@ public class MatchExecutionService implements MatchLookup {
                         + "(\"{}\") for {} min", tournamentId, matchId, match.getRound(),
                 match.getSlot(), CurrentStaff.require().id(), seat.stationId(), seat.stationName(),
                 tournament.getMatchDurationMin());
+        announce(tournamentId, match.getStationId());
         return view(match, seat.stationName(), tournament.getMatchDurationMin(), at);
     }
 
@@ -283,8 +288,21 @@ public class MatchExecutionService implements MatchLookup {
                 tournamentId, matchId, minutes,
                 tournament.getMatchDurationMin() + match.getExtraMin(),
                 CurrentStaff.require().id());
+        announce(tournamentId, match.getStationId());
         return view(match, stationNameOf(match.getStationId()),
                 tournament.getMatchDurationMin(), at);
+    }
+
+    /**
+     * One match moving is two live surfaces: the event's own board and the Floor card of the
+     * console it is being played on — §4.5 puts match timers on {@code station-update} for exactly
+     * this reason. Both are sent after this transaction commits.
+     */
+    private void announce(long tournamentId, Long stationId) {
+        live.tournamentChanged(tournamentId);
+        if (stationId != null) {
+            live.stationChanged(stationId);
+        }
     }
 
     // ---- shapes -------------------------------------------------------------------------------

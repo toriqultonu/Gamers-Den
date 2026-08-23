@@ -1,6 +1,7 @@
 package dev.gamersden.queue.domain;
 
 import dev.gamersden.common.config.VenueTime;
+import dev.gamersden.common.events.LiveEvents;
 import dev.gamersden.common.spi.QueueTokenIssuing;
 import dev.gamersden.common.spi.QueueTokenLookup;
 import dev.gamersden.queue.repo.QueueEntryRepository;
@@ -49,11 +50,14 @@ public class QueueTokenService implements QueueTokenIssuing, QueueTokenLookup {
 
     private final QueueEntryRepository entries;
     private final TokenSeqRepository tokens;
+    private final LiveEvents live;
     private final Clock clock;
 
-    public QueueTokenService(QueueEntryRepository entries, TokenSeqRepository tokens, Clock clock) {
+    public QueueTokenService(QueueEntryRepository entries, TokenSeqRepository tokens,
+                             LiveEvents live, Clock clock) {
         this.entries = entries;
         this.tokens = tokens;
+        this.live = live;
         this.clock = clock;
     }
 
@@ -69,6 +73,9 @@ public class QueueTokenService implements QueueTokenIssuing, QueueTokenLookup {
                         + "{} BDT) against transaction {}", entry.getId(), tokenNo, day,
                 request.source(), request.playerName(), request.blocks(), request.consoleType(),
                 request.playAmount(), request.txId());
+        // One announcement covers both counters: a walk-up sale and a booking check-in land here,
+        // so the rail is re-sent from one place after the paying transaction commits (§4.5).
+        live.queueChanged();
         return new IssuedToken(entry.getId(), tokenNo, day);
     }
 

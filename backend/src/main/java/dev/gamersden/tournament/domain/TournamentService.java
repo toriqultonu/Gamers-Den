@@ -3,6 +3,7 @@ package dev.gamersden.tournament.domain;
 import dev.gamersden.common.error.ConflictException;
 import dev.gamersden.common.error.ErrorCode;
 import dev.gamersden.common.error.NotFoundException;
+import dev.gamersden.common.events.LiveEvents;
 import dev.gamersden.common.error.ValidationFailedException;
 import dev.gamersden.common.security.CurrentStaff;
 import dev.gamersden.common.spi.SaleRefunding;
@@ -54,17 +55,20 @@ public class TournamentService {
     private final TournamentStationBlockRepository blocks;
     private final StationLookup stations;
     private final SaleRefunding refunds;
+    private final LiveEvents live;
 
     public TournamentService(TournamentRepository tournaments,
                              TournamentEntryRepository entries,
                              TournamentStationBlockRepository blocks,
                              StationLookup stations,
-                             SaleRefunding refunds) {
+                             SaleRefunding refunds,
+                             LiveEvents live) {
         this.tournaments = tournaments;
         this.entries = entries;
         this.blocks = blocks;
         this.stations = stations;
         this.refunds = refunds;
+        this.live = live;
     }
 
     // ---- reads --------------------------------------------------------------------------------
@@ -110,6 +114,7 @@ public class TournamentService {
         log.info("tournament {} created: \"{}\" {} on {}, cap {}, fee {} BDT, prize {} BDT",
                 created.getId(), created.getName(), created.getGame(), created.getScheduledAt(),
                 created.getMaxPlayers(), created.getEntryFee(), created.getPrizePool());
+        live.tournamentChanged(created.getId());
         return created;
     }
 
@@ -162,6 +167,7 @@ public class TournamentService {
             tournament.setMatchDurationMin(matchDurationMin);
         }
         log.info("tournament {} updated", id);
+        live.tournamentChanged(id);
         return tournament;
     }
 
@@ -189,6 +195,10 @@ public class TournamentService {
         blocks.flush();
         wanted.forEach(stationId -> blocks.save(new TournamentStationBlock(id, stationId)));
         log.info("tournament {} now blocks {} console(s): {}", id, wanted.size(), wanted);
+        live.tournamentChanged(id);
+        // A blocked console reads RESERVED on the Floor and an unblocked one goes back to free,
+        // so both sides of the change are cards that have to move.
+        wanted.forEach(live::stationChanged);
         return List.copyOf(wanted);
     }
 
@@ -234,6 +244,9 @@ public class TournamentService {
         log.info("tournament {} (\"{}\") cancelled by staff {}: \"{}\" — {} entries refunded across "
                         + "{} sale(s)", id, tournament.getName(), CurrentStaff.require().id(), why,
                 refunded, issued.size());
+        live.tournamentChanged(id);
+        // CANCELLED releases every console the event was holding (§2) — those cards are free now.
+        stationIdsOf(id).forEach(live::stationChanged);
         return new Cancellation(tournament, refunded, List.copyOf(issued));
     }
 

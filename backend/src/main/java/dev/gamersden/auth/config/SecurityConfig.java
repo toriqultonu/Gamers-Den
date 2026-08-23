@@ -10,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import jakarta.servlet.DispatcherType;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -70,6 +71,12 @@ public class SecurityConfig {
                 .logout(logout -> logout.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
+                        // The continuation of a request that was already authorized on its way in.
+                        // GET /events answers with an SseEmitter, so the container dispatches the
+                        // request a second time when the stream ends — with no SecurityContext,
+                        // because the token was on the original dispatch. Re-authorizing that
+                        // continuation would deny every SSE subscription as it closed.
+                        .dispatcherTypeMatchers(DispatcherType.ASYNC, DispatcherType.ERROR).permitAll()
                         .requestMatchers(PUBLIC_PATHS).permitAll()
                         .requestMatchers(HttpMethod.POST, PUBLIC_AUTH_ROUTES).permitAll()
                         .anyRequest().authenticated())

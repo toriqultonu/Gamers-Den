@@ -14,6 +14,9 @@ public interface AlertPublisher {
     /** Cash counted at close did not match what the shift's takings expect (B11). */
     String CASH_DISCREPANCY = "CASH_DISCREPANCY";
 
+    /** An item crossed its reorder point on a sale — the stock watchlist's own alert (B19). */
+    String LOW_STOCK = "LOW_STOCK";
+
     /**
      * Records one alert, in the caller's transaction.
      *
