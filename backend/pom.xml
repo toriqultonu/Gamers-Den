@@ -21,6 +21,7 @@
         <java.version>21</java.version>
         <springdoc.version>2.9.0</springdoc.version>
         <jjwt.version>0.12.6</jjwt.version>
+        <usb4java.version>1.3.0</usb4java.version>
     </properties>
 
     <dependencies>
@@ -78,6 +79,17 @@
             <artifactId>jjwt-jackson</artifactId>
             <version>${jjwt.version}</version>
             <scope>runtime</scope>
+        </dependency>
+
+        <!--
+            Printing transport (B18): raw USB, never the OS spooler (ARCHITECTURE.md §2). Only the
+            venue profile instantiates it — the bean is conditional on gamersden.printing.enabled,
+            so CI and the cloud mirror never load the native library.
+        -->
+        <dependency>
+            <groupId>org.usb4java</groupId>
+            <artifactId>usb4java</artifactId>
+            <version>${usb4java.version}</version>
         </dependency>
 
         <!-- API docs: FE type-gen consumes /v3/api-docs -->

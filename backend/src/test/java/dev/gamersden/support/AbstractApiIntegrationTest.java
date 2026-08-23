@@ -80,6 +80,9 @@ public abstract class AbstractApiIntegrationTest extends AbstractIntegrationTest
         jdbc.update("DELETE FROM expenses");
         jdbc.update("DELETE FROM shifts");
         jdbc.update("DELETE FROM alerts");
+        // Per-terminal preferences: receipt copies decides whether a sale ticket carries its copy
+        // after the cut (B18), so a suite that sets it must not leave it set for the next one.
+        jdbc.update("DELETE FROM terminal_settings");
         jdbc.update("DELETE FROM staff WHERE name <> 'Admin'");
         jdbc.update("UPDATE staff SET failed_pins = 0, locked_until = NULL, active = TRUE, "
                 + "avatar_color = '#ec3013', pin_hash = ? WHERE name = 'Admin'", pins.encode(ADMIN_PIN));

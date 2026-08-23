@@ -69,6 +69,17 @@ gamersden:
     # Persists the LOCKED flip on an idle floor; reads derive it either way (ARCHITECTURE.md §5.1).
     lock-sweeper-enabled: true
   currency: BDT
+  # Print queue (B18). The transport is off by default — only the venue box owns a USB printer
+  # (ARCHITECTURE.md §6); every other profile runs the fake port. The attempt count and the
+  # backoff are the numbers docs/backend-architecture.md §5 fixes: 3 auto-attempts, 2 s apart.
+  printing:
+    enabled: false
+    worker-enabled: true
+    default-device: ""
+    poll-interval: 1s
+    max-attempts: 3
+    retry-backoff: 2s
+    usb-timeout: 5s
   # OPEN FLAG (ARCHITECTURE.md §8): documented default until the venue confirms.
   morning-discount:
     from: "10:00"

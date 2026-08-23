@@ -114,6 +114,45 @@ public class PrintJob {
         this.attempts = attempts;
     }
 
+    /**
+     * QUEUED → PRINTING, the claim half of the worker's state machine
+     * (docs/backend-architecture.md §5). Nothing else about the row moves: the bytes were fixed at
+     * creation and the attempt counter belongs to the transport, not to the claim.
+     */
+    public void markPrinting() {
+        this.status = PrintJobStatus.PRINTING;
+    }
+
+    /** PRINTING → DONE. {@code attempts} is however many goes the transport needed. */
+    public void markDone(int attempts, OffsetDateTime at) {
+        this.status = PrintJobStatus.DONE;
+        this.attempts = attempts;
+        this.error = null;
+        this.completedAt = at;
+    }
+
+    /**
+     * PRINTING → FAILED, carrying <em>which</em> failure so S11 can tell the operator to load
+     * paper rather than to "try again" (docs/backend-architecture.md §5).
+     */
+    public void markFailed(int attempts, PrintFailure failure, OffsetDateTime at) {
+        this.status = PrintJobStatus.FAILED;
+        this.attempts = attempts;
+        this.error = failure.name();
+        this.completedAt = at;
+    }
+
+    /**
+     * FAILED → QUEUED, for {@code POST /print-jobs/{id}/retry}. The attempt count survives on
+     * purpose — it is the audit of how hard this ticket was to print — and {@code completed_at}
+     * is cleared because the job has not completed after all.
+     */
+    public void requeue() {
+        this.status = PrintJobStatus.QUEUED;
+        this.error = null;
+        this.completedAt = null;
+    }
+
     public String getDeviceId() {
         return deviceId;
     }

@@ -232,6 +232,39 @@ public class PlaceholderReceiptRenderer implements ReceiptRenderer {
     }
 
     /**
+     * The cut plus the same ticket again. The real {@code GS V} paper cut lands with B17; what
+     * matters already is where the copy is composed — into the stored bytes, once, so preview,
+     * paper and retry stay the same document.
+     */
+    @Override
+    public RenderedDocument withReceiptCopy(RenderedDocument original) {
+        String paper = original.text() + "\n" + cut() + "\n" + original.text();
+        return RenderedDocument.plainText(paper);
+    }
+
+    /**
+     * The reprint band above the original ticket (design.md §5). The real template inverts it;
+     * here it is the same words at the same width, and — as on paper — it says which reprint
+     * reason was given, because that is the line a dispute turns on.
+     */
+    @Override
+    public RenderedDocument withReprintBand(RenderedDocument original, ReprintReason reason,
+                                            java.time.OffsetDateTime at) {
+        StringJoiner band = new StringJoiner("\n");
+        band.add(rule());
+        band.add(centred("*** REPRINT ***"));
+        band.add(centred(reason.name().replace('_', ' ')));
+        band.add(centred(STAMP.format(at)));
+        band.add(rule());
+        return RenderedDocument.plainText(band + "\n" + original.text());
+    }
+
+    /** Where the blade goes. B17 replaces the marker with {@code GS V}. */
+    private static String cut() {
+        return "-".repeat(RenderedDocument.COLUMNS) + "\n" + centred("[CUT]");
+    }
+
+    /**
      * A method's row of the takings matrix. Two printed lines rather than a five-column grid: at
      * 48 characters the real P2 wraps the categories under their method too (design.md §5).
      */
