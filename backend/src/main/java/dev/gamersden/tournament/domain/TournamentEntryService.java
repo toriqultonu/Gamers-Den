@@ -165,6 +165,16 @@ public class TournamentEntryService implements TournamentEntrySettlement {
         return entries.countByTournamentId(tournamentId);
     }
 
+    /**
+     * The name on one ticket — what a card shows for its champion (§8) without pulling the whole
+     * field back for a list of finished events.
+     */
+    @Transactional(readOnly = true)
+    public String playerNameOf(Long entryId) {
+        return entryId == null ? null
+                : entries.findById(entryId).map(TournamentEntry::getPlayerName).orElse(null);
+    }
+
     // ---- guards -------------------------------------------------------------------------------
 
     private Tournament lock(Long tournamentId) {

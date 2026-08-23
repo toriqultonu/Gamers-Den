@@ -19,7 +19,8 @@ public record CancellationView(TournamentView tournament,
 
     public static CancellationView of(TournamentService.Cancellation cancellation, int entries) {
         return new CancellationView(
-                TournamentView.of(cancellation.tournament(), entries),
+                // A called-off event never had a champion, so there is no name to carry.
+                TournamentView.of(cancellation.tournament(), entries, null),
                 cancellation.entriesRefunded(),
                 cancellation.refunds().stream()
                         .map(refund -> new RefundView(refund.transactionId(), refund.publicId(),

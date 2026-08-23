@@ -14,7 +14,9 @@ import java.time.OffsetDateTime;
  * (invariant: derived values are never stored).
  *
  * <p>Null members are omitted from the JSON ({@code default-property-inclusion: non_null}), so a
- * free station carries neither {@code session} nor {@code match} nor {@code arrival}.
+ * free station carries neither {@code session} nor {@code match} nor {@code arrival}. A console
+ * reserved by a tournament carries {@code match} only while one is actually being played on it
+ * (docs/tournaments.md §4).
  */
 @Schema(name = "Station")
 public record StationView(
@@ -36,7 +38,7 @@ public record StationView(
                 summary.station().getStatus(),
                 summary.floorState(),
                 StationSessionView.of(summary.session()),
-                null,   // B13 — tournament match
+                StationMatchView.of(summary.match()),
                 null,   // B16 — checked-in arrival
                 summary.station().getCreatedAt());
     }
