@@ -63,6 +63,7 @@ public class PlaceholderReceiptRenderer implements ReceiptRenderer {
         if (receipt.bookingStub() != null) {
             paper.add(bookingStub(receipt.bookingStub()));
         }
+        receipt.playTicketStubs().forEach(stub -> paper.add(playTicketStub(stub)));
         return RenderedDocument.plainText(paper.toString());
     }
 
@@ -108,6 +109,25 @@ public class PlaceholderReceiptRenderer implements ReceiptRenderer {
     }
 
     /**
+     * P6, appended to the sale receipt in the same job (docs/bookings.md §3) — a play ticket sold
+     * at the POS is handed over with the receipt that paid for it, so it is one piece of paper.
+     * The same content as the standalone stub below, minus the heading a check-in earns.
+     */
+    private static String playTicketStub(SaleReceiptPrinting.PlayTicketStub stub) {
+        StringJoiner ticket = new StringJoiner("\n");
+        ticket.add(rule());
+        ticket.add(centred("PLAY TICKET"));
+        ticket.add(centred("TOKEN #%02d".formatted(stub.tokenNo())));
+        ticket.add(meta("NAME", stub.playerName()));
+        ticket.add(meta("CONSOLE", stub.consoleType()));
+        ticket.add(meta("PREPAID", "%d x 30 min".formatted(stub.blocks())));
+        ticket.add(meta("DAY", stub.tokenDate().toString()));
+        ticket.add(centred("Tokens reset daily"));
+        ticket.add(centred("[CODE128] " + stub.queueEntryId()));
+        return ticket.toString();
+    }
+
+    /**
      * P6 — the play-ticket stub a check-in prints on its own (docs/bookings.md §2). The real
      * template gives {@code TOKEN #NN} double height and barcodes the entry id as Code 128; the
      * payload is printed as text here so the scan path is testable before B17.
@@ -133,6 +153,7 @@ public class PlaceholderReceiptRenderer implements ReceiptRenderer {
         paper.add(meta("ISSUED", STAMP.format(ticket.at())));
         paper.add(meta("DAY", ticket.tokenDate().toString()));
         paper.add(rule());
+        paper.add(centred("Tokens reset daily"));
         paper.add(centred("Wait for your token to be called"));
         paper.add(centred("[CODE128] " + ticket.queueEntryId()));
         return RenderedDocument.plainText(paper.toString());

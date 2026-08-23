@@ -10,6 +10,7 @@ import dev.gamersden.common.security.StaffPrincipal;
 import dev.gamersden.common.spi.CartLookup;
 import dev.gamersden.common.spi.PrepaidSeatLookup;
 import dev.gamersden.common.spi.PrepaidSeatLookup.PrepaidSeat;
+import dev.gamersden.common.spi.SessionSeating;
 import dev.gamersden.common.spi.ShiftLookup;
 import dev.gamersden.common.spi.StationLookup;
 import dev.gamersden.common.spi.StationReservation;
@@ -47,7 +48,7 @@ import java.util.Map;
  * the open shift, the unsettled cart, the prepaid token — never a foreign repository (§3).
  */
 @Service
-public class SessionService {
+public class SessionService implements SessionSeating {
 
     private static final Logger log = LoggerFactory.getLogger(SessionService.class);
 
@@ -145,6 +146,24 @@ public class SessionService {
             log.info("session {} opened on station {}", session.getId(), station.id());
         }
         return settleAndDescribe(session, at);
+    }
+
+    /**
+     * {@code POST /play-queue/{id}/seat} — the same seat, started from the token's side rather
+     * than the station's (api-contract.md, "Play queue").
+     *
+     * <p>Deliberately a delegation and nothing more: the Floor's queue rail and
+     * {@code POST /sessions} with a {@code queueEntryId} are one act, so they run one piece of
+     * code and share every guard — 409 {@code STATION_BUSY}, {@code STATION_RESERVED},
+     * {@code CONSOLE_TYPE_MISMATCH} — and the one transaction of invariant §5.9.
+     */
+    @Override
+    @Transactional
+    public SeatedSession seat(long stationId, long queueEntryId) {
+        SessionDetail seated = open(stationId, null, null, queueEntryId);
+        return new SeatedSession(seated.session().getId(), seated.session().getStationId(),
+                queueEntryId, seated.state().name(), seated.blockCount(), seated.paidBlocks(),
+                seated.remainingSeconds(), seated.balance().netOutstanding());
     }
 
     // ---- POST /sessions/{id}/blocks --------------------------------------------------------

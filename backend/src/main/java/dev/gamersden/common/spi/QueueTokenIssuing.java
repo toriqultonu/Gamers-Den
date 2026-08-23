@@ -29,13 +29,19 @@ public interface QueueTokenIssuing {
      * @param txId        the sale that paid for the time behind the token (invariant §5.7)
      * @param consoleType {@code PS5|PS4}; enforced against the seat when the token is seated
      * @param blocks      30-minute blocks already paid for
+     * @param playAmount  what those blocks were charged at — {@code blocks ×} the console's rate
+     *                    snapshot. Carried onto the token so the prepaid {@code session_blocks} a
+     *                    seat inserts are born at the price that was actually sold, and so a
+     *                    no-show refund hands back exactly what was taken, whatever the rate card
+     *                    says by then (invariants §5.9, §5.11)
      */
     record TokenRequest(String source,
                         Long bookingId,
                         long txId,
                         String playerName,
                         String consoleType,
-                        int blocks) {
+                        int blocks,
+                        int playAmount) {
     }
 
     /**
