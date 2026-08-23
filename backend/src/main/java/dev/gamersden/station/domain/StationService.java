@@ -5,6 +5,7 @@ import dev.gamersden.common.error.ErrorCode;
 import dev.gamersden.common.error.NotFoundException;
 import dev.gamersden.common.spi.MatchLookup;
 import dev.gamersden.common.spi.SessionLookup;
+import dev.gamersden.common.spi.StationArrivalLookup;
 import dev.gamersden.common.spi.StationReservation;
 import dev.gamersden.station.repo.StationRepository;
 import org.slf4j.Logger;
@@ -21,8 +22,8 @@ import java.util.Set;
  * Stations CRUD (api-contract.md, "Stations &amp; pricing" — Admin writes) plus the Floor read:
  * {@code GET /stations} carries the live session summary so one call fills every card.
  *
- * <p>The arrival half of that summary lands with B16 (checked-in bookings); it is already shaped
- * in {@link StationSummary}.
+ * <p>The arrival half of that summary is the checked-in booking waiting for the seat, read
+ * through {@link StationArrivalLookup} — one query for the whole grid, like the other three.
  *
  * <p>A station is never touched while it is occupied: the live session is read through
  * {@link SessionLookup} and the tournament hold through {@link StationReservation}, never through
@@ -38,27 +39,33 @@ public class StationService {
     private final SessionLookup sessions;
     private final StationReservation reservations;
     private final MatchLookup matches;
+    private final StationArrivalLookup arrivals;
 
     public StationService(StationRepository stations, SessionLookup sessions,
-                          StationReservation reservations, MatchLookup matches) {
+                          StationReservation reservations, MatchLookup matches,
+                          StationArrivalLookup arrivals) {
         this.stations = stations;
         this.sessions = sessions;
         this.reservations = reservations;
         this.matches = matches;
+        this.arrivals = arrivals;
     }
 
     /**
-     * One query for the stations, one for the live sessions and one for the tournament holds — the
-     * Floor grid stays a single read however many cards it draws.
+     * One query for the stations, one for the live sessions, one for the tournament holds and one
+     * for the checked-in arrivals — the Floor grid stays a handful of reads however many cards it
+     * draws.
      */
     @Transactional(readOnly = true)
     public List<StationSummary> floor() {
         Map<Long, SessionLookup.LiveSession> live = sessions.liveSessionsByStation();
         Set<Long> reserved = reservations.reservedStationIds();
         Map<Long, MatchLookup.LiveMatch> onNow = matches.liveMatchesByStation();
+        Map<Long, StationArrivalLookup.Arrival> waiting = arrivals.arrivalsByStation();
         return stations.findAll(BY_ID).stream()
                 .map(station -> StationSummary.of(station, live.get(station.getId()),
-                        reserved.contains(station.getId()), onNow.get(station.getId())))
+                        reserved.contains(station.getId()), onNow.get(station.getId()),
+                        waiting.get(station.getId())))
                 .toList();
     }
 
@@ -67,7 +74,8 @@ public class StationService {
         Station station = get(id);
         return StationSummary.of(station, sessions.liveSessionOn(station.getId()).orElse(null),
                 reservations.reservedStationIds().contains(station.getId()),
-                matches.liveMatchOn(station.getId()).orElse(null));
+                matches.liveMatchOn(station.getId()).orElse(null),
+                arrivals.arrivalsByStation().get(station.getId()));
     }
 
     @Transactional(readOnly = true)

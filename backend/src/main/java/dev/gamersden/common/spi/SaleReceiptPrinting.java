@@ -33,6 +33,10 @@ public interface SaleReceiptPrinting {
      *                   (docs/tournaments.md §7); empty on an ordinary sale
      * @param bookingStub the P7 booking confirmation this sale created, appended to the same job
      *                    (docs/bookings.md §2); {@code null} on an ordinary sale
+     * @param playTicketStubs the P6 play-ticket stubs this sale issued tokens for, appended to the
+     *                        same job (docs/bookings.md §3); empty on an ordinary sale. A booking
+     *                        check-in prints its P6 through {@link PlayTicketPrinting} instead,
+     *                        because it takes no money and so has no receipt to ride on
      */
     record SaleReceipt(long transactionId,
                        String publicId,
@@ -47,11 +51,32 @@ public interface SaleReceiptPrinting {
                        int pointsEarned,
                        Integer pointsBalance,
                        List<EntryStub> entryStubs,
-                       BookingStub bookingStub) {
+                       BookingStub bookingStub,
+                       List<PlayTicketStub> playTicketStubs) {
 
         public SaleReceipt {
             entryStubs = entryStubs == null ? List.of() : List.copyOf(entryStubs);
+            playTicketStubs = playTicketStubs == null ? List.of() : List.copyOf(playTicketStubs);
         }
+    }
+
+    /**
+     * One P6 play-ticket stub (design.md §5 P6, docs/bookings.md §3) — the band, the player, the
+     * double-height {@code TOKEN #NN}, the console type and prepaid length, and the Code 128 of
+     * the queue-entry id.
+     *
+     * <p>Same layout as the standalone stub a booking check-in prints; only the heading differs,
+     * and it is the sale that decides which — "PLAY TICKET" here, "PLAY TICKET — PREBOOKED" there.
+     *
+     * @param queueEntryId the barcode payload, and the id that keeps working across a rollover
+     * @param tokenDate    which day's counter the number came off
+     */
+    record PlayTicketStub(long queueEntryId,
+                          int tokenNo,
+                          java.time.LocalDate tokenDate,
+                          String playerName,
+                          String consoleType,
+                          int blocks) {
     }
 
     /**

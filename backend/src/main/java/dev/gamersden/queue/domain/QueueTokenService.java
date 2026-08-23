@@ -64,20 +64,33 @@ public class QueueTokenService implements QueueTokenIssuing, QueueTokenLookup {
         int tokenNo = tokens.allocate(day);
         QueueEntry entry = entries.saveAndFlush(new QueueEntry(day, tokenNo,
                 QueueEntrySource.valueOf(request.source()), request.bookingId(), request.txId(),
-                request.playerName(), request.consoleType(), request.blocks()));
-        log.info("queue entry {} issued TOKEN #{} of {} from {} for \"{}\" ({} x 30 min on {}) "
-                        + "against transaction {}", entry.getId(), tokenNo, day, request.source(),
-                request.playerName(), request.blocks(), request.consoleType(), request.txId());
+                request.playerName(), request.consoleType(), request.blocks(), request.playAmount()));
+        log.info("queue entry {} issued TOKEN #{} of {} from {} for \"{}\" ({} x 30 min on {} at "
+                        + "{} BDT) against transaction {}", entry.getId(), tokenNo, day,
+                request.source(), request.playerName(), request.blocks(), request.consoleType(),
+                request.playAmount(), request.txId());
         return new IssuedToken(entry.getId(), tokenNo, day);
     }
 
     // ---- reads --------------------------------------------------------------------------------
 
-    /** Today's queue in token order — the Floor rail's "who plays next" (B16 exposes it). */
+    /**
+     * The queue rail's "who plays next" — everyone still waiting, oldest counter first.
+     *
+     * <p>Not filtered to today on purpose (docs/bookings.md §7): a token that went unseated over a
+     * rollover is still a customer who has paid, so it keeps its place at the head of the rail and
+     * carries its issue date for the operator to see.
+     */
     @Transactional(readOnly = true)
-    public List<QueueEntry> waitingToday() {
+    public List<QueueEntry> waiting() {
+        return entries.findByStatusOrderByTokenDateAscTokenNoAsc(QueueEntryStatus.WAITING);
+    }
+
+    /** Today's seated tokens — the rail's history strip, in the order the counter issued them. */
+    @Transactional(readOnly = true)
+    public List<QueueEntry> seatedToday() {
         return entries.findByTokenDateAndStatusOrderByTokenNoAsc(VenueTime.businessDay(clock),
-                QueueEntryStatus.WAITING);
+                QueueEntryStatus.SEATED);
     }
 
     @Override

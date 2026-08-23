@@ -7,8 +7,8 @@ import java.util.Map;
 
 /**
  * Booking and queue rows a suite needs to read back or to set up without going through the API —
- * the settings a disabled-feature test flips, and the raw columns the money, token and refund
- * assertions check (B15).
+ * the settings a disabled-feature test flips, and the raw columns the money, token, seat and
+ * refund assertions check (B15, B16).
  */
 public final class BookingFixtures {
 
@@ -54,14 +54,35 @@ public final class BookingFixtures {
     /** Every token issued today, in the order the counter handed them out. */
     public List<Map<String, Object>> tokensToday() {
         return jdbc.queryForList("SELECT id, token_date, token_no, source, booking_id, tx_id, "
-                + "player_name, console_type, blocks, status, session_id FROM queue_entries "
-                + "ORDER BY token_no");
+                + "player_name, console_type, blocks, play_amount, status, session_id "
+                + "FROM queue_entries ORDER BY token_no");
     }
 
     public Map<String, Object> token(long queueEntryId) {
         return jdbc.queryForMap("SELECT id, token_date, token_no, source, booking_id, tx_id, "
-                + "player_name, console_type, blocks, status FROM queue_entries WHERE id = ?",
+                + "player_name, console_type, blocks, play_amount, status, session_id "
+                + "FROM queue_entries WHERE id = ?", queueEntryId);
+    }
+
+    public String tokenStatusOf(long queueEntryId) {
+        return jdbc.queryForObject("SELECT status FROM queue_entries WHERE id = ?", String.class,
                 queueEntryId);
+    }
+
+    /** What the daily counter will hand out next for {@code day} — absent until it has counted. */
+    public Integer nextTokenNoOn(java.time.LocalDate day) {
+        return jdbc.query("SELECT next_no FROM token_seq WHERE token_date = ?",
+                rs -> rs.next() ? rs.getInt(1) : null, day);
+    }
+
+    /**
+     * The prepaid blocks a seat inserted: what each cost and which sale is already carrying it.
+     * A block born paid is indistinguishable from one settled mid-session, which is the point —
+     * {@code paid_tx_id} is a plain column and the end guard only asks whether it is set (§5.9).
+     */
+    public List<Map<String, Object>> blocksOf(long sessionId) {
+        return jdbc.queryForList("SELECT price, paid_tx_id FROM session_blocks "
+                + "WHERE session_id = ? AND NOT removed ORDER BY id", sessionId);
     }
 
     // ---- money --------------------------------------------------------------------------------

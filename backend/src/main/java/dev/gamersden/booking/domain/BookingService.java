@@ -172,7 +172,7 @@ public class BookingService implements MemberBookingLookup {
 
         QueueTokenIssuing.IssuedToken token = tokens.issue(new QueueTokenIssuing.TokenRequest(
                 SOURCE_BOOKING, booking.getId(), booking.getTxId(), booking.getName(),
-                station.consoleType(), booking.getBlocks()));
+                station.consoleType(), booking.getBlocks(), booking.getPlayAmount()));
         booking.setQueueEntryId(token.queueEntryId());
         booking.setStatus(BookingStatus.ARRIVED);
 

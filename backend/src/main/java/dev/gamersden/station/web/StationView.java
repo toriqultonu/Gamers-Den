@@ -39,7 +39,7 @@ public record StationView(
                 summary.floorState(),
                 StationSessionView.of(summary.session()),
                 StationMatchView.of(summary.match()),
-                null,   // B16 — checked-in arrival
+                StationArrivalView.of(summary.arrival()),
                 summary.station().getCreatedAt());
     }
 }

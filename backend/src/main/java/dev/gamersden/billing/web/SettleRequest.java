@@ -2,10 +2,12 @@ package dev.gamersden.billing.web;
 
 import dev.gamersden.billing.domain.PaymentMethod;
 import dev.gamersden.billing.domain.Tender;
+import dev.gamersden.common.spi.PlayTicketSettlement.TicketSale;
 import dev.gamersden.common.spi.TournamentEntrySettlement.EntrySale;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;
 
 import java.util.List;
@@ -28,10 +30,10 @@ import java.util.List;
  * @param tournamentEntries entries sold with this payment (docs/tournaments.md §5): each one
  *                          registers a player at the event's fee, takes the next seed and comes
  *                          back as a {@code entryTokens[]} QR
- * @param playTickets       play-queue tickets sold with this payment — B16. The field is part of
- *                          the contract today so the FE's request shape never has to change, but a
- *                          non-empty list is refused rather than dropped: a customer must not be
- *                          able to pay for time nothing records
+ * @param playTickets       play-queue tickets sold with this payment (docs/bookings.md §3):
+ *                          console type and length, sellable while every console is busy. Each one
+ *                          takes the next daily token, enters the queue as WAITING and comes back
+ *                          in {@code queueTokens[]}
  */
 @Schema(name = "SettleRequest", description = "Settle a session's bill or a counter cart")
 public record SettleRequest(@NotNull @Valid Target target,
@@ -73,9 +75,24 @@ public record SettleRequest(@NotNull @Valid Target target,
         }
     }
 
-    /** {@code playTickets[]} — sells prepaid time and returns a daily queue token (B16). */
+    /**
+     * {@code playTickets[]} — sells prepaid time and returns a daily queue token.
+     *
+     * <p>No station: a play ticket is sold for a console <em>type</em>, priced off that type's
+     * rate card, and seated later onto whichever console of that type comes free
+     * (docs/bookings.md §3).
+     *
+     * @param playerName free text; blank falls back to the member on the bill, then to
+     *                   "Walk-in guest", exactly as a tournament entry does
+     */
     @Schema(name = "PlayTicketRequest")
-    public record PlayTicketRequest(@NotNull String consoleType, int blocks, String playerName) {
+    public record PlayTicketRequest(@NotNull String consoleType,
+                                    @Positive int blocks,
+                                    String playerName) {
+
+        TicketSale toSale() {
+            return new TicketSale(consoleType, blocks, playerName);
+        }
     }
 
     public List<Tender> tenders() {
@@ -86,5 +103,11 @@ public record SettleRequest(@NotNull @Valid Target target,
         return tournamentEntries == null
                 ? List.of()
                 : tournamentEntries.stream().map(TournamentEntryRequest::toSale).toList();
+    }
+
+    public List<TicketSale> ticketSales() {
+        return playTickets == null
+                ? List.of()
+                : playTickets.stream().map(PlayTicketRequest::toSale).toList();
     }
 }

@@ -62,6 +62,14 @@ public class QueueEntry {
     @Column(nullable = false)
     private int blocks;
 
+    /**
+     * {@code blocks ×} the console's block rate at the moment of sale (V004). The snapshot the
+     * prepaid {@code session_blocks} are born at, and the amount a no-show refund hands back — a
+     * later {@code PUT /pricing} can reach neither (invariants §5.9, §5.11).
+     */
+    @Column(name = "play_amount", nullable = false)
+    private int playAmount;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private QueueEntryStatus status = QueueEntryStatus.WAITING;
@@ -78,7 +86,7 @@ public class QueueEntry {
     }
 
     public QueueEntry(LocalDate tokenDate, int tokenNo, QueueEntrySource source, Long bookingId,
-                      Long txId, String playerName, String consoleType, int blocks) {
+                      Long txId, String playerName, String consoleType, int blocks, int playAmount) {
         this.tokenDate = tokenDate;
         this.tokenNo = tokenNo;
         this.source = source;
@@ -87,6 +95,22 @@ public class QueueEntry {
         this.playerName = playerName;
         this.consoleType = consoleType;
         this.blocks = blocks;
+        this.playAmount = playAmount;
+    }
+
+    // ---- derived (never stored — invariant §5.4) ----------------------------------------------
+
+    /**
+     * What one prepaid block cost. Exact by construction: {@code playAmount} is only ever written
+     * as {@code blocks ×} a block rate, so the division never loses a taka.
+     */
+    public int blockPrice() {
+        return blocks == 0 ? 0 : playAmount / blocks;
+    }
+
+    /** True while this token can still be seated or refunded. */
+    public boolean isWaiting() {
+        return status == QueueEntryStatus.WAITING;
     }
 
     public Long getId() {
@@ -123,6 +147,10 @@ public class QueueEntry {
 
     public int getBlocks() {
         return blocks;
+    }
+
+    public int getPlayAmount() {
+        return playAmount;
     }
 
     public QueueEntryStatus getStatus() {

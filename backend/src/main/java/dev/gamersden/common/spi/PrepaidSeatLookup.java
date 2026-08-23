@@ -9,8 +9,11 @@ import java.util.Optional;
  * <p>Invariant §5.9: seating a token is one transaction — the session row, its prepaid blocks born
  * paid (carrying the original sale's {@code paid_tx_id}), and the token flipped to consumed. The
  * session half of that transaction is implemented in {@code SessionService}; this interface is the
- * other half, and {@code queue/domain/PrepaidSeatLookupService} answers "no such token" until
- * B15/B16 create {@code queue_entries} and {@code bookings}.
+ * other half, implemented by {@code queue/domain/PrepaidSeatLookupService}.
+ *
+ * <p>The token has to be one that can still be sat down. A queue entry already SEATED or refunded,
+ * and a booking that has not checked in yet, are 409 rather than empty: the operator has picked
+ * the wrong row, and "not found" would send them looking for a typo instead.
  */
 public interface PrepaidSeatLookup {
 
@@ -21,8 +24,8 @@ public interface PrepaidSeatLookup {
     Optional<PrepaidSeat> findByQueueEntry(long queueEntryId);
 
     /**
-     * Marks the token used, inside the caller's transaction: queue entry → SEATED and, for a
-     * booking, booking → USED. No-op until B16.
+     * Marks the token used, inside the caller's transaction: queue entry → SEATED (carrying the
+     * session it was seated on) and, for a booking, booking → USED.
      */
     void consume(PrepaidSeat seat, long sessionId);
 
