@@ -25,6 +25,20 @@ public interface StationLookup {
     int blockPriceAt(long stationId, OffsetDateTime at);
 
     /**
+     * What one block costs on a console <em>type</em> at {@code at} — the same morning-window
+     * aware rate as {@link #blockPriceAt}, asked for without a station.
+     *
+     * <p>A play ticket is sold for "a PS5", not for a seat: it is sellable precisely because every
+     * PS5 is busy (docs/bookings.md §3), so there is no station to quote from. The answer is
+     * snapshotted onto the queue entry, and the prepaid blocks are born at it when the token is
+     * finally seated.
+     *
+     * @throws dev.gamersden.common.error.ValidationFailedException 400 when {@code consoleType} is
+     *                                                             not one the rate card knows
+     */
+    int blockPriceOf(String consoleType, OffsetDateTime at);
+
+    /**
      * The rate card's plain hourly price for this station's console type — no morning window, no
      * snapshot. It is the "what this seat would have earned as an ordinary rental" number the
      * tournament finance panel averages over the consoles an event is holding

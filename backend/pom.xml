@@ -21,6 +21,7 @@
         <java.version>21</java.version>
         <springdoc.version>2.9.0</springdoc.version>
         <jjwt.version>0.12.6</jjwt.version>
+        <escpos.version>4.1.0</escpos.version>
     </properties>
 
     <dependencies>
@@ -78,6 +79,13 @@
             <artifactId>jjwt-jackson</artifactId>
             <version>${jjwt.version}</version>
             <scope>runtime</scope>
+        </dependency>
+
+        <!-- ESC/POS templates P1-P7: styles, GS k Code 128, GS ( k QR (B17) -->
+        <dependency>
+            <groupId>com.github.anastaciocintra</groupId>
+            <artifactId>escpos-coffee</artifactId>
+            <version>${escpos.version}</version>
         </dependency>
 
         <!-- API docs: FE type-gen consumes /v3/api-docs -->

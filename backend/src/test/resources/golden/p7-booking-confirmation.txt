@@ -1,0 +1,28 @@
+                  GAMER'S DEN
+             Jaleshwaritola, Bogura
+                  01711-000000
+------------------------------------------------
+TXN       GD-2608-048
+TYPE      Counter sale
+AT        26/08/2026 21:14
+CASHIER   #3
+------------------------------------------------
+BOOKING 3x30M                             Tk 480
+------------------------------------------------
+TOTAL                                     Tk 480
+CASH                                      Tk 480
+------------------------------------------------
+               BOOKING CONFIRMED                
+BOOKING   #12
+NAME      Rifat Hasan
+PHONE     01711-000000
+CONSOLE   PS5-01 - PS5
+STARTS    27/08/2026 18:00
+PLAY 3x30M                                Tk 480
+PACKAGE FEE                               Tk 100
+CANCEL BY 27/08/2026 14:00
+       Full refund until 4 h before start
+       Check in at the counter on arrival
+------------------------------------------------
+            See you again at the Den
+             [CODE128] GD-2608-048

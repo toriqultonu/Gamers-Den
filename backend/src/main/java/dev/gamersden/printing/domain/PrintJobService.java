@@ -1,6 +1,7 @@
 package dev.gamersden.printing.domain;
 
 import dev.gamersden.common.spi.ExpenseVoucherPrinting;
+import dev.gamersden.common.spi.PlayTicketPrinting;
 import dev.gamersden.common.spi.SaleReceiptPrinting;
 import dev.gamersden.common.spi.ShiftReportPrinting;
 import dev.gamersden.printing.repo.PrintJobRepository;
@@ -12,9 +13,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 /**
  * The {@code printing} package's answer to {@link SaleReceiptPrinting},
- * {@link ShiftReportPrinting} and {@link ExpenseVoucherPrinting} — the only door {@code billing}
- * and {@code shift} use into {@code print_jobs} (ARCHITECTURE.md §3). The queue worker, the device
- * port and the {@code /print-jobs} endpoints arrive with B18.
+ * {@link ShiftReportPrinting}, {@link ExpenseVoucherPrinting} and {@link PlayTicketPrinting} —
+ * the only door {@code billing}, {@code shift} and {@code booking} use into {@code print_jobs}
+ * (ARCHITECTURE.md §3). The queue worker, the device port and the {@code /print-jobs} endpoints
+ * arrive with B18.
  *
  * <p>Two invariants meet in {@link #issueSaleReceipt}:
  *
@@ -34,7 +36,7 @@ import org.springframework.transaction.annotation.Transactional;
  */
 @Service
 public class PrintJobService implements SaleReceiptPrinting, ShiftReportPrinting,
-        ExpenseVoucherPrinting {
+        ExpenseVoucherPrinting, PlayTicketPrinting {
 
     private static final Logger log = LoggerFactory.getLogger(PrintJobService.class);
 
@@ -85,6 +87,29 @@ public class PrintJobService implements SaleReceiptPrinting, ShiftReportPrinting
         log.info("print job {} queued as {} for expense {} ({} BDT on {})",
                 job.getId(), PrintJobType.EXPENSE_VOUCHER, voucher.expenseId(), voucher.amount(),
                 voucher.deviceId());
+        return job.getId();
+    }
+
+    /**
+     * P6, standalone — a booking check-in issues a token but takes no money, so there is no sale
+     * receipt for the stub to ride on (invariant §5.5). The job still belongs to the transaction
+     * that issued the token: {@link Propagation#MANDATORY}, so a check-in that rolls back cannot
+     * leave a token printed for a booking that is still waiting.
+     *
+     * <p>The job references the {@code queue_entries} row rather than the booking or the sale.
+     * That is what the Code 128 on the paper encodes, and it is the id that keeps working after a
+     * day rollover (invariant §5.10) — so a reprint from the job and a scan from the counter are
+     * looking up the same thing.
+     */
+    @Override
+    @Transactional(propagation = Propagation.MANDATORY)
+    public long issuePlayTicket(PlayTicket ticket) {
+        RenderedDocument rendered = renderer.renderPlayTicket(ticket);
+        PrintJob job = jobs.save(new PrintJob(PrintJobType.PLAY_TICKET, ticket.queueEntryId(),
+                ticket.deviceId(), ticket.operatorId(), rendered.bytes(), rendered.text()));
+        log.info("print job {} queued as {} for queue entry {} (TOKEN #{} of {} on {})",
+                job.getId(), PrintJobType.PLAY_TICKET, ticket.queueEntryId(), ticket.tokenNo(),
+                ticket.tokenDate(), ticket.deviceId());
         return job.getId();
     }
 }

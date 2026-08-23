@@ -1,0 +1,1 @@
+{"nodes": [{"id": "paymentmethod_paymentmethod", "label": "PaymentMethod", "file_type": "code", "source_file": "backend/src/main/java/dev/gamersden/billing/domain/PaymentMethod.java", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null}], "edges": [], "hyperedges": []}

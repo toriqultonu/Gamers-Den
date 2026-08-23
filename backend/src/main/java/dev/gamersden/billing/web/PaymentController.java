@@ -1,7 +1,6 @@
 package dev.gamersden.billing.web;
 
 import dev.gamersden.billing.domain.PaymentService;
-import dev.gamersden.common.error.ValidationFailedException;
 import dev.gamersden.common.security.Roles;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -16,8 +15,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.util.List;
 
 /**
  * {@code POST /payments} and {@code POST /payments/{id}/void} (api-contract.md, "Billing &amp;
@@ -59,13 +56,14 @@ public class PaymentController {
                     + "on a bKash/Nagad row with no TrxID, TOURNAMENT_FULL / TOURNAMENT_NOT_OPEN "
                     + "on an entry that cannot be registered; each of them leaves nothing "
                     + "written. tournamentEntries[] come back as entryTokens[], one QR per entry, "
-                    + "printed as P5 stubs on the same receipt.")
+                    + "printed as P5 stubs on the same receipt. playTickets[] come back as "
+                    + "queueTokens[], one daily token per ticket, printed as P6 stubs on the same "
+                    + "receipt and entered in the play queue as WAITING — they are sellable while "
+                    + "every console is busy, which is the whole point of the queue.")
     public SettleView settle(@Valid @RequestBody SettleRequest request) {
-        requireNotYetBuilt("playTickets", request.playTickets(),
-                "selling play tickets lands in B16");
         return SettleView.of(payments.settle(request.target().sessionId(),
                 request.target().cartId(), request.redeemPoints(), request.entrySales(),
-                request.tenders()));
+                request.ticketSales(), request.tenders()));
     }
 
     @PostMapping("/{id}/void")
@@ -73,22 +71,12 @@ public class PaymentController {
     @Operation(summary = "Reverse a settled payment in full",
             description = "Manager+, and only within the shift that took the money. Writes a "
                     + "negative reversal transaction with negated tenders, releases the blocks it "
-                    + "paid for back to billable, puts the stock back with VOID movements and "
-                    + "hands the loyalty back — one transaction, like the settle it undoes. The "
-                    + "original row is never edited, only flagged with its reason.")
+                    + "paid for back to billable, puts the stock back with VOID movements, revokes "
+                    + "any play-queue token it sold that is still waiting, and hands the loyalty "
+                    + "back — one transaction, like the settle it undoes. The original row is "
+                    + "never edited, only flagged with its reason.")
     public VoidView voidPayment(@PathVariable Long id, @Valid @RequestBody VoidRequest request) {
         return VoidView.of(payments.voidPayment(id, request.reason()));
     }
 
-    /**
-     * The one contract field whose behaviour has not been built yet. Refusing beats accepting: a
-     * settle that quietly dropped {@code playTickets} would take the customer's money for prepaid
-     * time no table has ever heard of.
-     */
-    private static void requireNotYetBuilt(String field, List<?> value, String when) {
-        if (value != null && !value.isEmpty()) {
-            throw ValidationFailedException.onField(field,
-                    "%s is part of the contract but %s — send it then, not now".formatted(field, when));
-        }
-    }
 }

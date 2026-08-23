@@ -1,0 +1,1 @@
+{"nodes": [{"id": "booking_context", "label": "Booking bounded context", "file_type": "code", "source_file": "backend/src/main/java/dev/gamersden/booking/package-info.java", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null}], "edges": [], "hyperedges": []}
