@@ -1,0 +1,60 @@
+          GAMER'S DEN
+     Jaleshwaritola, Bogura
+          01711-000000
+--------------------------------
+            Z REPORT
+--------------------------------
+SHIFT     #7
+TERMINAL  counter-1
+OPERATOR  #3
+OPENED    26/08/2026 14:00
+CLOSED    26/08/2026 22:05
+--------------------------------
+OPENING FLOAT           Tk 2,000
+--------------------------------
+     TAKINGS BY METHOD (Tk)
+CASH                    Tk 8,100
+  gaming                   4,800
+  fnb                      1,200
+  tournament                 600
+  pre-booking              1,500
+BKASH                   Tk 1,200
+  gaming                   1,200
+  fnb                          0
+  tournament                   0
+  pre-booking                  0
+NAGAD                       Tk 0
+  gaming                       0
+  fnb                          0
+  tournament                   0
+  pre-booking                  0
+WALLET                    Tk 300
+  gaming                       0
+  fnb                        300
+  tournament                   0
+  pre-booking                  0
+--------------------------------
+TOTAL                   Tk 9,600
+  gaming                   6,000
+  fnb                      1,500
+  tournament                 600
+  pre-booking              1,500
+--------------------------------
+POINTS REDEEMED          -Tk 100
+POINTS EARNED                480
+SALES                         12
+REFUNDS                        1
+--------------------------------
+            EXPENSES
+Bus fare (OTHER)         -Tk 120
+EXPENSES TOTAL           -Tk 120
+--------------------------------
+EXPECTED CASH           Tk 6,700
+COUNTED CASH            Tk 6,650
+DISCREPANCY               -Tk 50
+--------------------------------
+HANDOVER  Two controllers out
+for repair
+--------------------------------
+SIGNATURE ______________________
+       [CODE128] SHIFT-7

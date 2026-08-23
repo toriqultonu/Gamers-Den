@@ -131,11 +131,26 @@ class PaymentSettleIT extends AbstractApiIntegrationTest {
                 .containsEntry("device_id", TERMINAL)
                 .containsEntry("operator_id", adminId)
                 .containsEntry("is_reprint", false);
-        assertThat((byte[]) job.get("rendered")).isNotEmpty();
+        // Real P1 bytes since B17: ESC @ opens the artifact, GS k closes it with the Code 128 of
+        // the transaction id, and GS V cuts (design.md §5).
+        assertThat((byte[]) job.get("rendered")).startsWith((byte) 0x1B, (byte) 0x40);
+        assertThat(hex((byte[]) job.get("rendered")))
+                .contains("1D 6B 49")
+                .endsWith("1D 56 30");
         assertThat((String) job.get("rendered_text"))
                 .contains("GD-" + dayMonth() + "-001")
                 .contains("PS5-01")
-                .contains("TOTAL");
+                .contains("TOTAL")
+                .contains("[CODE128] GD-" + dayMonth() + "-001");
+    }
+
+    /** Readable form of the stored bytes, so a failure shows the command that went missing. */
+    private static String hex(byte[] bytes) {
+        StringBuilder out = new StringBuilder();
+        for (byte b : bytes) {
+            out.append("%02X ".formatted(b));
+        }
+        return out.toString().trim();
     }
 
     @Test

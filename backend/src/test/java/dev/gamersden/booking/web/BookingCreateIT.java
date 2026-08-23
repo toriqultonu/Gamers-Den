@@ -101,7 +101,10 @@ class BookingCreateIT extends AbstractApiIntegrationTest {
                 .contains("PACKAGE FEE")
                 .contains("BOOKING CONFIRMED")
                 .contains("Rifat Hasan")
-                .contains("CANCEL BY");
+                .contains("CANCEL BY")
+                .contains("Full refund until");
+        // B17: the job carries real P1+P7 ESC/POS, not the placeholder's plain text.
+        assertThat(fixtures.renderedOf(printJobId)).startsWith((byte) 0x1B, (byte) 0x40);
         assertThat(countOf("print_jobs")).isEqualTo(1);
     }
 

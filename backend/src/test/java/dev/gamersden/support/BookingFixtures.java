@@ -110,6 +110,12 @@ public final class BookingFixtures {
                 String.class, printJobId);
     }
 
+    /** The stored ESC/POS bytes — what a retry re-sends, unchanged (invariant §5.5). */
+    public byte[] renderedOf(long printJobId) {
+        return jdbc.queryForObject("SELECT rendered FROM print_jobs WHERE id = ?", byte[].class,
+                printJobId);
+    }
+
     public String printJobTypeOf(long printJobId) {
         return jdbc.queryForObject("SELECT type FROM print_jobs WHERE id = ?", String.class,
                 printJobId);

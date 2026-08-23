@@ -69,6 +69,14 @@ gamersden:
     # Persists the LOCKED flip on an idle floor; reads derive it either way (ARCHITECTURE.md §5.1).
     lock-sweeper-enabled: true
   currency: BDT
+  printing:
+    # P1-P7 lay out to this width; 58 mm is the documented config switch and narrows the Code 128
+    # module with it (design.md §5, OPEN FLAG on the printer model - ARCHITECTURE.md §8).
+    receipt:
+      paper-width: MM_80
+      venue-name: "GAMER'S DEN"
+      address: "Jaleshwaritola, Bogura"
+      phone: "01711-000000"
   # OPEN FLAG (ARCHITECTURE.md §8): documented default until the venue confirms.
   morning-discount:
     from: "10:00"

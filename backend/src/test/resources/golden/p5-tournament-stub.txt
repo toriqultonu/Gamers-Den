@@ -1,0 +1,23 @@
+                  GAMER'S DEN
+             Jaleshwaritola, Bogura
+                  01711-000000
+------------------------------------------------
+TXN       GD-2608-048
+TYPE      Counter sale
+AT        26/08/2026 21:14
+CASHIER   #3
+------------------------------------------------
+ENTRY FRIDAY FIFA                         Tk 200
+------------------------------------------------
+TOTAL                                     Tk 200
+CASH                                      Tk 200
+------------------------------------------------
+                TOURNAMENT ENTRY                
+                  Friday FIFA
+              Player: Rifat Hasan
+                   TOKEN #01
+            [QR] qr_7f3a9c21b48e4d05
+      Show this ticket at the bracket desk
+------------------------------------------------
+            See you again at the Den
+             [CODE128] GD-2608-048

@@ -97,6 +97,8 @@ class BookingCheckInIT extends AbstractApiIntegrationTest {
                 .contains("Rifat Hasan")
                 .contains("PS5")
                 .contains("[CODE128] " + queueEntryId);
+        // B17: a check-in stores real P6 ESC/POS of its own, standalone (invariant §5.5).
+        assertThat(fixtures.renderedOf(printJobId)).startsWith((byte) 0x1B, (byte) 0x40);
         // One for the booking's receipt, one for this stub.
         assertThat(countOf("print_jobs")).isEqualTo(2);
     }
