@@ -3,6 +3,7 @@ package dev.gamersden.queue.domain;
 import dev.gamersden.common.error.ConflictException;
 import dev.gamersden.common.error.ErrorCode;
 import dev.gamersden.common.error.NotFoundException;
+import dev.gamersden.common.events.LiveEvents;
 import dev.gamersden.common.spi.BookingSeatLookup;
 import dev.gamersden.common.spi.PrepaidSeatLookup;
 import dev.gamersden.queue.repo.QueueEntryRepository;
@@ -37,10 +38,13 @@ public class PrepaidSeatLookupService implements PrepaidSeatLookup {
 
     private final QueueEntryRepository entries;
     private final BookingSeatLookup bookings;
+    private final LiveEvents live;
 
-    public PrepaidSeatLookupService(QueueEntryRepository entries, BookingSeatLookup bookings) {
+    public PrepaidSeatLookupService(QueueEntryRepository entries, BookingSeatLookup bookings,
+                                    LiveEvents live) {
         this.entries = entries;
         this.bookings = bookings;
+        this.live = live;
     }
 
     /**
@@ -87,8 +91,13 @@ public class PrepaidSeatLookupService implements PrepaidSeatLookup {
         requireSeatable(entry);
         entry.setStatus(QueueEntryStatus.SEATED);
         entry.setSessionId(sessionId);
+        live.queueChanged();
         if (entry.getBookingId() != null) {
             bookings.markUsed(entry.getBookingId(), sessionId);
+            // The slot has just become USED, which is the last thing the Bookings rail shows about
+            // it — announced here rather than in booking, because this is the transaction that did
+            // it and §4.5 sends after that one commits.
+            live.bookingChanged(entry.getBookingId());
         }
     }
 

@@ -13,6 +13,7 @@ import java.time.LocalTime;
  * @param currency        integer-BDT money label
  * @param morningDiscount OPEN FLAG (§8) — documented default 10:00–14:00 at −25%, unconfirmed
  * @param printing        USB printing is on only under the {@code venue} profile
+ * @param events          the SSE hub behind {@code GET /events}
  * @param sync            one-way venue → cloud outbox push
  */
 @ConfigurationProperties(prefix = "gamersden")
@@ -21,6 +22,7 @@ public record GamersDenProperties(
         String currency,
         MorningDiscount morningDiscount,
         Printing printing,
+        Events events,
         Sync sync) {
 
     public record MorningDiscount(LocalTime from, LocalTime to, int percent) {
@@ -51,6 +53,19 @@ public record GamersDenProperties(
                            int maxAttempts,
                            Duration retryBackoff,
                            Duration usbTimeout) {
+    }
+
+    /**
+     * {@code GET /events} (B19). Both numbers are about a stream nobody is reading any more: the
+     * server closes one after {@code timeout} rather than holding an emitter for a browser that
+     * was closed hours ago, and the heartbeat comment discovers a dead one while the venue is
+     * quiet. The frontend reconnects on its own and polls every 10 s meanwhile (ARCHITECTURE.md
+     * §4.5), so neither number is load-bearing for correctness.
+     *
+     * @param timeout   how long one subscription is held open before the client is asked to reconnect
+     * @param heartbeat interval of the keep-alive comment down every open stream
+     */
+    public record Events(Duration timeout, Duration heartbeat) {
     }
 
     public record Sync(boolean pushEnabled, boolean receiveEnabled, int pushIntervalSeconds) {

@@ -62,16 +62,19 @@ public class TournamentController {
     private final MatchExecutionService matches;
     private final TournamentFinanceService finance;
     private final TournamentEntrySale sales;
+    private final TournamentDetailAssembler details;
 
     public TournamentController(TournamentService tournaments, TournamentEntryService entries,
                                 BracketService brackets, MatchExecutionService matches,
-                                TournamentFinanceService finance, TournamentEntrySale sales) {
+                                TournamentFinanceService finance, TournamentEntrySale sales,
+                                TournamentDetailAssembler details) {
         this.tournaments = tournaments;
         this.entries = entries;
         this.brackets = brackets;
         this.matches = matches;
         this.finance = finance;
         this.sales = sales;
+        this.details = details;
     }
 
     // ---- reads --------------------------------------------------------------------------------
@@ -266,11 +269,12 @@ public class TournamentController {
                 entries.playerNameOf(tournament.getWinnerEntryId()));
     }
 
+    /**
+     * Shared with {@code TournamentLiveEmitter}: the SSE {@code tournament-update} payload has to
+     * equal this shape (ARCHITECTURE.md §4.5), so both go through the one assembler.
+     */
     private TournamentDetailView detail(Tournament tournament) {
-        List<TournamentEntry> sold = entries.of(tournament.getId());
-        return TournamentDetailView.of(tournament, sold,
-                tournaments.stationIdsOf(tournament.getId()),
-                matches.bracketOf(tournament.getId(), tournament.getMatchDurationMin()));
+        return details.detail(tournament);
     }
 
     /** Player names for one event, so a single-match response can label its two sides. */

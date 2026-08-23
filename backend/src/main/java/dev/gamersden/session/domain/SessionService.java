@@ -5,6 +5,7 @@ import dev.gamersden.common.error.ConflictException;
 import dev.gamersden.common.error.ErrorCode;
 import dev.gamersden.common.error.NotFoundException;
 import dev.gamersden.common.error.ValidationFailedException;
+import dev.gamersden.common.events.LiveEvents;
 import dev.gamersden.common.security.CurrentStaff;
 import dev.gamersden.common.security.StaffPrincipal;
 import dev.gamersden.common.spi.CartLookup;
@@ -46,6 +47,10 @@ import java.util.Map;
  *
  * <p>Cross-package reads all go through {@code common.spi} doors — the station and its rate card,
  * the open shift, the unsettled cart, the prepaid token — never a foreign repository (§3).
+ *
+ * <p>Every move announces its station through {@link LiveEvents}; {@code StationLiveEmitter} turns
+ * that into the SSE {@code station-update} card once this transaction commits (§4.5). Nothing is
+ * sent from inside the write, so a seat that rolls back is a seat nobody was told about.
  */
 @Service
 public class SessionService implements SessionSeating {
@@ -59,6 +64,7 @@ public class SessionService implements SessionSeating {
     private final PrepaidSeatLookup prepaidSeats;
     private final CartLookup carts;
     private final ShiftLookup shifts;
+    private final LiveEvents live;
     private final Clock clock;
 
     public SessionService(SessionRepository sessions,
@@ -68,6 +74,7 @@ public class SessionService implements SessionSeating {
                           PrepaidSeatLookup prepaidSeats,
                           CartLookup carts,
                           ShiftLookup shifts,
+                          LiveEvents live,
                           Clock clock) {
         this.sessions = sessions;
         this.blocks = blocks;
@@ -76,6 +83,7 @@ public class SessionService implements SessionSeating {
         this.prepaidSeats = prepaidSeats;
         this.carts = carts;
         this.shifts = shifts;
+        this.live = live;
         this.clock = clock;
     }
 
@@ -145,6 +153,7 @@ public class SessionService implements SessionSeating {
         } else {
             log.info("session {} opened on station {}", session.getId(), station.id());
         }
+        live.stationChanged(station.id());
         return settleAndDescribe(session, at);
     }
 
@@ -196,6 +205,7 @@ public class SessionService implements SessionSeating {
         } else {
             removeOneBlock(session, live, at);
         }
+        this.live.stationChanged(session.getStationId());
         return settleAndDescribe(session, at);
     }
 
@@ -259,6 +269,7 @@ public class SessionService implements SessionSeating {
         }
         log.info("session {} clock {} -> {} ({}s consumed)", id, action, session.getState(),
                 SessionClock.consumedSeconds(session, at));
+        this.live.stationChanged(session.getStationId());
         return settleAndDescribe(session, at);
     }
 
@@ -291,6 +302,7 @@ public class SessionService implements SessionSeating {
         session.setEndedAt(at);
         log.info("session {} ended on station {} after {}s", id, session.getStationId(),
                 session.getConsumedSec());
+        this.live.stationChanged(session.getStationId());
         return SessionDetail.of(session, live, balance, at);
     }
 
@@ -328,6 +340,7 @@ public class SessionService implements SessionSeating {
         move(session, SessionState.LOCKED);
         log.info("session {} locked — purchased time exhausted after {}s",
                 session.getId(), session.getConsumedSec());
+        live.stationChanged(session.getStationId());
         return true;
     }
 

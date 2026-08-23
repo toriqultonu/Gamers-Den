@@ -1,6 +1,7 @@
 package dev.gamersden.queue.domain;
 
 import dev.gamersden.common.error.ValidationFailedException;
+import dev.gamersden.common.events.LiveEvents;
 import dev.gamersden.common.spi.PlayTicketSettlement;
 import dev.gamersden.common.spi.QueueTokenIssuing;
 import dev.gamersden.common.spi.StationLookup;
@@ -51,13 +52,15 @@ public class PlayTicketSettlementService implements PlayTicketSettlement {
     private final QueueTokenService tokens;
     private final QueueEntryRepository entries;
     private final StationLookup stations;
+    private final LiveEvents live;
     private final Clock clock;
 
     public PlayTicketSettlementService(QueueTokenService tokens, QueueEntryRepository entries,
-                                       StationLookup stations, Clock clock) {
+                                       StationLookup stations, LiveEvents live, Clock clock) {
         this.tokens = tokens;
         this.entries = entries;
         this.stations = stations;
+        this.live = live;
         this.clock = clock;
     }
 
@@ -124,6 +127,7 @@ public class PlayTicketSettlementService implements PlayTicketSettlement {
         if (!revoked.isEmpty()) {
             log.info("transaction {} voided — {} waiting token(s) revoked: {}", txId,
                     revoked.size(), revoked.stream().map(QueueEntry::getId).toList());
+            live.queueChanged();
         }
         return revoked.size();
     }

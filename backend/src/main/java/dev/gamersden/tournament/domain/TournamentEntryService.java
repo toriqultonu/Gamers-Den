@@ -3,6 +3,7 @@ package dev.gamersden.tournament.domain;
 import dev.gamersden.common.error.ConflictException;
 import dev.gamersden.common.error.ErrorCode;
 import dev.gamersden.common.error.NotFoundException;
+import dev.gamersden.common.events.LiveEvents;
 import dev.gamersden.common.error.ValidationFailedException;
 import dev.gamersden.common.spi.TournamentEntrySettlement;
 import dev.gamersden.tournament.repo.TournamentEntryRepository;
@@ -43,13 +44,16 @@ public class TournamentEntryService implements TournamentEntrySettlement {
     private final TournamentRepository tournaments;
     private final TournamentEntryRepository entries;
     private final BracketService brackets;
+    private final LiveEvents live;
 
     public TournamentEntryService(TournamentRepository tournaments,
                                   TournamentEntryRepository entries,
-                                  BracketService brackets) {
+                                  BracketService brackets,
+                                  LiveEvents live) {
         this.tournaments = tournaments;
         this.entries = entries;
         this.brackets = brackets;
+        this.live = live;
     }
 
     // ---- the settle path ----------------------------------------------------------------------
@@ -116,6 +120,9 @@ public class TournamentEntryService implements TournamentEntrySettlement {
             touched.add(quote.tournamentId());
         }
         touched.forEach(brackets::generateIfFull);
+        // Slots left is what the POS card disables on, so every event this sale touched is sent —
+        // once, whether it took one ticket or three (docs/tournaments.md §5).
+        touched.forEach(live::tournamentChanged);
         return List.copyOf(registered);
     }
 
@@ -150,6 +157,7 @@ public class TournamentEntryService implements TournamentEntrySettlement {
         entry.setCheckedIn(true);
         log.info("tournament {} entry {} (seed #{}) checked in", entry.getTournamentId(), entryId,
                 entry.getSeed());
+        live.tournamentChanged(entry.getTournamentId());
         return entry;
     }
 

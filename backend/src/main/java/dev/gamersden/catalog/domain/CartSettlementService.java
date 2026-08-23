@@ -6,6 +6,7 @@ import dev.gamersden.catalog.repo.ItemRepository;
 import dev.gamersden.catalog.repo.StockMovementRepository;
 import dev.gamersden.common.error.NotFoundException;
 import dev.gamersden.common.security.CurrentStaff;
+import dev.gamersden.common.spi.AlertPublisher;
 import dev.gamersden.common.spi.CartLookup;
 import dev.gamersden.common.spi.CartSettlement;
 import org.slf4j.Logger;
@@ -32,6 +33,11 @@ import java.util.Optional;
  * <p>{@link Propagation#MANDATORY} on both writes: they are halves of a payment or a void
  * (invariant §5.3). Stock that moved while the money rolled back is shrinkage with no receipt to
  * explain it.
+ *
+ * <p>It is also where the low-stock alert of the operator feed is raised (B19), because this is
+ * the only place a sale moves the shelf. It fires on the <em>crossing</em> — the sale that takes
+ * an item from above its reorder point to at or below it — so the feed carries one card per item
+ * running down rather than one per bottle sold afterwards.
  */
 @Service
 public class CartSettlementService implements CartSettlement {
@@ -42,15 +48,18 @@ public class CartSettlementService implements CartSettlement {
     private final CartLineRepository lines;
     private final ItemRepository items;
     private final StockMovementRepository movements;
+    private final AlertPublisher alerts;
 
     public CartSettlementService(CartRepository carts,
                                  CartLineRepository lines,
                                  ItemRepository items,
-                                 StockMovementRepository movements) {
+                                 StockMovementRepository movements,
+                                 AlertPublisher alerts) {
         this.carts = carts;
         this.lines = lines;
         this.items = items;
         this.movements = movements;
+        this.alerts = alerts;
     }
 
     // ---- reads ----------------------------------------------------------------------------
@@ -100,8 +109,10 @@ public class CartSettlementService implements CartSettlement {
             Item item = items.findById(line.getItemId())
                     .orElseThrow(() -> new NotFoundException("Item", line.getItemId()));
             int delta = charging ? -line.getQty() : line.getQty();
-            item.setStock(item.getStock() + delta);
+            int before = item.getStock();
+            item.setStock(before + delta);
             movements.save(new StockMovement(item.getId(), delta, reason, txId, staffId));
+            raiseLowStockIfCrossed(item, before);
             if (item.getStock() < 0) {
                 log.warn("item {} \"{}\" went to {} on {} by transaction {} — the shelf is over-sold; "
                         + "correct it with a stocktake", item.getId(), item.getName(),
@@ -113,6 +124,24 @@ public class CartSettlementService implements CartSettlement {
         log.info("cart {} {} for {} BDT by transaction {} ({} lines)",
                 cartId, charging ? "settled" : "released", total, txId, found.size());
         return total;
+    }
+
+    /**
+     * The stock watchlist's alert, raised the once. An item at or below {@code reorder_at} before
+     * this sale was already on the feed; only the sale that pushes it over the line writes a card,
+     * so a busy evening does not bury the discrepancy and printer alerts under a run on Coke.
+     *
+     * <p>Inside the settle transaction, like every alert: an alert about a sale that rolled back
+     * would be an alert about stock that never moved.
+     */
+    private void raiseLowStockIfCrossed(Item item, int before) {
+        if (before <= item.getReorderAt() || item.getStock() > item.getReorderAt()) {
+            return;
+        }
+        alerts.raise(AlertPublisher.LOW_STOCK,
+                "%s is down to %d".formatted(item.getName(), item.getStock()),
+                "%s crossed its reorder point of %d — %d left on the shelf."
+                        .formatted(item.getName(), item.getReorderAt(), item.getStock()));
     }
 
     /** One extra query for the item names, whatever the line count — never one per line. */

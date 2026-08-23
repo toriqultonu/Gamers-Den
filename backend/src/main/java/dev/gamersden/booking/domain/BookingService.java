@@ -5,6 +5,7 @@ import dev.gamersden.common.config.VenueTime;
 import dev.gamersden.common.error.ConflictException;
 import dev.gamersden.common.error.ErrorCode;
 import dev.gamersden.common.error.NotFoundException;
+import dev.gamersden.common.events.LiveEvents;
 import dev.gamersden.common.error.ValidationFailedException;
 import dev.gamersden.common.security.CurrentStaff;
 import dev.gamersden.common.security.StaffPrincipal;
@@ -82,6 +83,7 @@ public class BookingService implements MemberBookingLookup {
     private final QueueTokenIssuing tokens;
     private final QueueTokenLookup issuedTokens;
     private final PlayTicketPrinting tickets;
+    private final LiveEvents live;
     private final Clock clock;
 
     public BookingService(BookingRepository bookings,
@@ -93,6 +95,7 @@ public class BookingService implements MemberBookingLookup {
                           QueueTokenIssuing tokens,
                           QueueTokenLookup issuedTokens,
                           PlayTicketPrinting tickets,
+                          LiveEvents live,
                           Clock clock) {
         this.bookings = bookings;
         this.settings = settings;
@@ -103,6 +106,7 @@ public class BookingService implements MemberBookingLookup {
         this.tokens = tokens;
         this.issuedTokens = issuedTokens;
         this.tickets = tickets;
+        this.live = live;
         this.clock = clock;
     }
 
@@ -139,6 +143,7 @@ public class BookingService implements MemberBookingLookup {
         Booking booking = bookings.findById(sold.bookingId())
                 .orElseThrow(() -> new IllegalStateException(
                         "booking %d vanished inside its own transaction".formatted(sold.bookingId())));
+        live.bookingChanged(booking.getId());
         return new Created(
                 summaryOf(booking, station, null, !sold.overlappingBookingIds().isEmpty()),
                 sold.transactionId(), sold.publicId(), sold.printJobId(),
@@ -184,6 +189,10 @@ public class BookingService implements MemberBookingLookup {
         log.info("booking {} checked in by staff {} — TOKEN #{} of {} on queue entry {}, "
                         + "print job {}", booking.getId(), staff.id(), token.tokenNo(),
                 token.tokenDate(), token.queueEntryId(), printJobId);
+        live.bookingChanged(booking.getId());
+        // The Floor card grows an arrival prompt the moment the customer is at the door — the
+        // console is still free, and staff seat the token onto it from there (docs/bookings.md §7).
+        live.stationChanged(booking.getStationId());
         return new CheckedIn(summaryOf(booking, station, token.tokenNo(), false), token, printJobId);
     }
 
@@ -220,6 +229,7 @@ public class BookingService implements MemberBookingLookup {
 
         log.info("booking {} cancelled ({}) — {} BDT returned on {}", booking.getId(), why,
                 booking.total(), refund == null ? "nothing (it was sold for 0)" : refund.publicId());
+        live.bookingChanged(booking.getId());
         return new Cancelled(summaryOf(booking, station(booking.getStationId()), null, false), refund);
     }
 
