@@ -4,6 +4,7 @@ import dev.gamersden.common.error.ConflictException;
 import dev.gamersden.common.error.ErrorCode;
 import dev.gamersden.common.error.NotFoundException;
 import dev.gamersden.common.error.ValidationFailedException;
+import dev.gamersden.common.spi.MemberBookingLookup;
 import dev.gamersden.common.spi.MemberVisitLookup;
 import dev.gamersden.common.spi.StationLookup;
 import dev.gamersden.member.repo.MemberRepository;
@@ -31,15 +32,21 @@ public class MemberService {
     /** How much of the visits strip S6 shows on the member detail. */
     public static final int RECENT_VISITS = 10;
 
+    /** How much of the bookings strip S6 shows next to it (docs/bookings.md §2). */
+    public static final int RECENT_BOOKINGS = 10;
+
     private static final Logger log = LoggerFactory.getLogger(MemberService.class);
 
     private final MemberRepository members;
     private final MemberVisitLookup visits;
+    private final MemberBookingLookup bookings;
     private final StationLookup stations;
 
-    public MemberService(MemberRepository members, MemberVisitLookup visits, StationLookup stations) {
+    public MemberService(MemberRepository members, MemberVisitLookup visits,
+                         MemberBookingLookup bookings, StationLookup stations) {
         this.members = members;
         this.visits = visits;
+        this.bookings = bookings;
         this.stations = stations;
     }
 
@@ -61,8 +68,9 @@ public class MemberService {
     }
 
     /**
-     * {@code GET /members/{id}} — the member plus their last {@value #RECENT_VISITS} seats, each
-     * named by its station. Both halves come from other packages' lookups, never their tables.
+     * {@code GET /members/{id}} — the member, their last {@value #RECENT_VISITS} seats, each named
+     * by its station, and their last {@value #RECENT_BOOKINGS} bookings. All three halves come
+     * from other packages' lookups, never their tables.
      */
     @Transactional(readOnly = true)
     public MemberProfile profile(long id) {
@@ -70,7 +78,7 @@ public class MemberService {
         List<MemberVisit> recent = visits.recentVisits(id, RECENT_VISITS).stream()
                 .map(this::describe)
                 .toList();
-        return new MemberProfile(member, recent);
+        return new MemberProfile(member, recent, bookings.recentBookings(id, RECENT_BOOKINGS));
     }
 
     // ---- writes -----------------------------------------------------------------------------

@@ -9,6 +9,8 @@ import dev.gamersden.common.error.NotFoundException;
 import dev.gamersden.common.error.ValidationFailedException;
 import dev.gamersden.common.security.CurrentStaff;
 import dev.gamersden.common.security.StaffPrincipal;
+import dev.gamersden.common.spi.BookingSale;
+import dev.gamersden.common.spi.BookingSettlement;
 import dev.gamersden.common.spi.CartSettlement;
 import dev.gamersden.common.spi.MemberPointsLookup;
 import dev.gamersden.common.spi.MemberSettlement;
@@ -67,7 +69,7 @@ import java.util.Map;
  * same doors that applied it.
  */
 @Service
-public class PaymentService implements TournamentEntrySale {
+public class PaymentService implements TournamentEntrySale, BookingSale {
 
     private static final Logger log = LoggerFactory.getLogger(PaymentService.class);
 
@@ -87,6 +89,7 @@ public class PaymentService implements TournamentEntrySale {
     private final StationLookup stations;
     private final ShiftLookup shifts;
     private final TournamentEntrySettlement tournamentEntries;
+    private final BookingSettlement bookings;
     private final PublicIdSequence publicIds;
     private final Clock clock;
 
@@ -101,6 +104,7 @@ public class PaymentService implements TournamentEntrySale {
                           StationLookup stations,
                           ShiftLookup shifts,
                           TournamentEntrySettlement tournamentEntries,
+                          BookingSettlement bookings,
                           PublicIdSequence publicIds,
                           Clock clock) {
         this.transactions = transactions;
@@ -114,6 +118,7 @@ public class PaymentService implements TournamentEntrySale {
         this.stations = stations;
         this.shifts = shifts;
         this.tournamentEntries = tournamentEntries;
+        this.bookings = bookings;
         this.publicIds = publicIds;
         this.clock = clock;
     }
@@ -162,6 +167,27 @@ public class PaymentService implements TournamentEntrySale {
     }
 
     /**
+     * {@code POST /bookings} — the {@code booking} package's route into exactly the same settle
+     * (api-contract.md, Pre-bookings; docs/bookings.md §2). A booking is pay-first, so it begins
+     * life here: the prepaid play time and the package fee go into the {@code booking_amount}
+     * bucket, the booking row is written through {@link BookingSettlement} inside this transaction,
+     * and the receipt carries its P7 confirmation on the same job (invariants §5.3, §5.7).
+     *
+     * <p>The amounts arrive already priced. {@code booking} snapshots the console's block rate and
+     * the package fee before calling, so there is exactly one figure in play and the money row and
+     * the booking row cannot disagree about what was charged.
+     */
+    @Override
+    @Transactional
+    public SoldBooking sell(Order order) {
+        Settled settled = write(booking(order), null, List.of(new Tender(
+                PaymentMethod.parse(order.method()), order.total(), order.paymentRef())));
+        return new SoldBooking(settled.tx().getId(), settled.tx().getPublicId(),
+                settled.printJobId(), settled.booking().bookingId(),
+                settled.booking().overlappingBookingIds());
+    }
+
+    /**
      * The one transaction (invariant §5.3): the snapshot and its tenders, the blocks it pays for,
      * the cart it closes, the entries it registers, the loyalty it moves and the receipt it
      * queues. Nothing is written before {@link Settlement} has accepted the request, so a 409
@@ -169,11 +195,15 @@ public class PaymentService implements TournamentEntrySale {
      */
     private Settled write(Long sessionId, Long cartId, Integer redeemPoints,
                           List<EntrySale> entrySales, List<Tender> tenders) {
+        return write(resolve(sessionId, cartId, entrySales), redeemPoints, tenders);
+    }
+
+    /** The same transaction, once the target has been resolved and priced. */
+    private Settled write(Target target, Integer redeemPoints, List<Tender> tenders) {
         StaffPrincipal staff = CurrentStaff.require();
         long shiftId = requireOpenShift(staff);
         OffsetDateTime at = VenueTime.now(clock);
 
-        Target target = resolve(sessionId, cartId, entrySales);
         Settlement settlement = Settlement.of(target.charges(), target.member(), redeemPoints, tenders);
 
         Transaction tx = snapshot(target, settlement, shiftId, staff);
@@ -191,22 +221,27 @@ public class PaymentService implements TournamentEntrySale {
         }
         List<RegisteredEntry> registered =
                 tournamentEntries.register(tx.getId(), settlement.memberId(), target.entries());
+        BookingSettlement.Registered heldSlot = target.booking() == null
+                ? null
+                : bookings.register(tx.getId(), target.booking());
         if (settlement.memberId() != null) {
             memberWrites.applySale(settlement.memberId(), tx.getId(), settlement.loyalty());
         }
 
         long printJobId = receipts.issueSaleReceipt(
-                receiptOf(tx, target, settlement, staff, at, registered));
+                receiptOf(tx, target, settlement, staff, at, registered, heldSlot));
         log.info("transaction {} ({}) settled {} BDT on shift {} by staff {} — gaming {}, fnb {}, "
-                        + "tournament {} ({} entries), points -{}/+{}; print job {}",
+                        + "tournament {} ({} entries), booking {}, points -{}/+{}; print job {}",
                 tx.getId(), tx.getPublicId(), tx.getTotalDue(), shiftId, staff.id(),
                 tx.getGamingAmount(), tx.getFnbAmount(), tx.getTournamentAmount(),
-                registered.size(), tx.getPointsRedeemed(), tx.getPointsEarned(), printJobId);
-        return new Settled(tx, printJobId, registered);
+                registered.size(), tx.getBookingAmount(), tx.getPointsRedeemed(),
+                tx.getPointsEarned(), printJobId);
+        return new Settled(tx, printJobId, registered, heldSlot);
     }
 
     /** What one settle wrote, before it is narrowed to whichever response shape asked for it. */
-    private record Settled(Transaction tx, long printJobId, List<RegisteredEntry> entries) {
+    private record Settled(Transaction tx, long printJobId, List<RegisteredEntry> entries,
+                           BookingSettlement.Registered booking) {
     }
 
     /**
@@ -359,6 +394,30 @@ public class PaymentService implements TournamentEntrySale {
         return withEntries;
     }
 
+    /**
+     * A booking: no seat and no basket — the time has not been played yet — but a member if one
+     * was attached, so the wallet can pay for it and the sale earns its points like any other.
+     *
+     * <p>The whole charge lands in the {@code booking} bucket, prepaid play time and package fee
+     * alike: that is the column the X/Z "Pre-booking" line adds up (docs/bookings.md §6), and
+     * splitting the play half into {@code gaming_amount} would double-count it against the floor
+     * when the token is finally seated.
+     */
+    private Target booking(Order order) {
+        Bill.Member member = order.memberId() == null
+                ? Bill.Member.NONE
+                : Bill.Member.of(memberReads.loyaltyOf(order.memberId())
+                        .orElseThrow(() -> new NotFoundException("Member", order.memberId())));
+        List<SaleReceiptPrinting.Line> lines = new java.util.ArrayList<>(2);
+        lines.add(new SaleReceiptPrinting.Line("BOOKING %dx30M".formatted(order.blocks()),
+                order.blocks(), order.playAmount()));
+        if (order.packageFee() > 0) {
+            lines.add(new SaleReceiptPrinting.Line("PACKAGE FEE", 1, order.packageFee()));
+        }
+        return new Target(null, null, new Charges(0, 0, 0, order.total()), member,
+                order.stationName(), List.copyOf(lines), List.of(), order);
+    }
+
     /** A walk-up buying only a ticket: no seat, no basket, no member, no loyalty. */
     private static Target entriesOnly() {
         return new Target(null, null, new Charges(0, 0, 0, 0), Bill.Member.NONE, ENTRY_SALE,
@@ -446,7 +505,8 @@ public class PaymentService implements TournamentEntrySale {
     private SaleReceiptPrinting.SaleReceipt receiptOf(Transaction tx, Target target,
                                                       Settlement settlement, StaffPrincipal staff,
                                                       OffsetDateTime at,
-                                                      List<RegisteredEntry> registered) {
+                                                      List<RegisteredEntry> registered,
+                                                      BookingSettlement.Registered heldSlot) {
         List<SaleReceiptPrinting.Tender> tenders = settlement.tenders().stream()
                 .map(tender -> new SaleReceiptPrinting.Tender(tender.method().name(),
                         tender.amount(), tender.paymentRef()))
@@ -462,7 +522,24 @@ public class PaymentService implements TournamentEntrySale {
                 .toList();
         return new SaleReceiptPrinting.SaleReceipt(tx.getId(), tx.getPublicId(), target.heading(),
                 staff.terminal(), staff.id(), at, target.receiptLines(), tx.getTotalDue(), tenders,
-                tx.getPointsRedeemed(), tx.getPointsEarned(), balance, stubs);
+                tx.getPointsRedeemed(), tx.getPointsEarned(), balance, stubs,
+                bookingStubOf(target.booking(), heldSlot));
+    }
+
+    /**
+     * P7, on the same job as the P1 it was paid on (invariant §5.5). The cancellation deadline is
+     * computed from the order's own cutoff snapshot, so the paper promises the customer exactly
+     * what {@code POST /bookings/{id}/cancel} will later enforce (invariant §5.11).
+     */
+    private static SaleReceiptPrinting.BookingStub bookingStubOf(Order order,
+                                                                 BookingSettlement.Registered held) {
+        if (order == null || held == null) {
+            return null;
+        }
+        return new SaleReceiptPrinting.BookingStub(held.bookingId(), order.stationName(),
+                order.consoleType(), order.name(), order.phone(), order.startAt(), order.blocks(),
+                order.playAmount(), order.packageFee(),
+                order.startAt().minusHours(order.cutoffHours()));
     }
 
     /**
@@ -471,6 +548,7 @@ public class PaymentService implements TournamentEntrySale {
      * time alone never closes a cart the customer is still adding to.
      *
      * @param entries the tournament entries this sale will register, already priced and seeded
+     * @param booking the booking this sale will hold, or {@code null} on every other sale
      */
     private record Target(Long sessionId,
                           CartSettlement.SettleableCart cart,
@@ -478,7 +556,14 @@ public class PaymentService implements TournamentEntrySale {
                           Bill.Member member,
                           String heading,
                           List<SaleReceiptPrinting.Line> receiptLines,
-                          List<QuotedEntry> entries) {
+                          List<QuotedEntry> entries,
+                          Order booking) {
+
+        Target(Long sessionId, CartSettlement.SettleableCart cart, Charges charges,
+               Bill.Member member, String heading, List<SaleReceiptPrinting.Line> receiptLines,
+               List<QuotedEntry> entries) {
+            this(sessionId, cart, charges, member, heading, receiptLines, entries, null);
+        }
 
         /**
          * The same target with the quoted entries folded in — their fees into the tournament
@@ -496,7 +581,7 @@ public class PaymentService implements TournamentEntrySale {
             return new Target(sessionId, cart,
                     new Charges(charges.gaming(), charges.fnb(), charges.tournament() + fees,
                             charges.booking()),
-                    member, heading, List.copyOf(lines), quoted);
+                    member, heading, List.copyOf(lines), quoted, booking);
         }
 
         boolean chargesCart() {
