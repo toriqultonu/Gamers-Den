@@ -39,4 +39,27 @@ public interface QueueEntryRepository extends JpaRepository<QueueEntry, Long> {
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT q FROM QueueEntry q WHERE q.id = :id")
     Optional<QueueEntry> findByIdForUpdate(@Param("id") long id);
+
+    /**
+     * Walk-up tokens sold and still waiting for a seat — the play-ticket half of S2's pre-sold
+     * stat (docs/bookings.md §6).
+     *
+     * <p>{@code source = 'PLAY_TICKET'} on purpose. A token issued at a booking's check-in belongs
+     * to a booking that has already left the PAID column the other half of the stat counts, so
+     * including it here would bill the same money twice.
+     */
+    @Query(value = """
+            SELECT COUNT(*)                        AS tokens,
+                   COALESCE(SUM(q.play_amount), 0) AS amount
+              FROM queue_entries q
+             WHERE q.status = 'WAITING' AND q.source = 'PLAY_TICKET'
+            """, nativeQuery = true)
+    PreSoldRow waitingPlayTickets();
+
+    /** Projection for {@link #waitingPlayTickets()}. */
+    interface PreSoldRow {
+        int getTokens();
+
+        int getAmount();
+    }
 }

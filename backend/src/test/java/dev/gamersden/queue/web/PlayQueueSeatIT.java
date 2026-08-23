@@ -330,8 +330,11 @@ class PlayQueueSeatIT extends AbstractApiIntegrationTest {
         assertThat(stale.get("token").get("tokenNo").asInt()).isEqualTo(1);
         assertThat(stale.get("token").get("tokenDate").asText()).isEqualTo(yesterday.toString());
 
-        // Over midnight, into the next evening.
+        // Over midnight, into the next evening. The access token is minted from the clock and
+        // lives 15 minutes, so a jump of a whole day outruns the one this suite signed in with —
+        // sign in again on the far side of midnight, or the rollover assertions never get made.
         clock.setToVenueTime(yesterday.plusDays(1), EVENING);
+        staff = adminBearer();
         JsonNode fresh = sellTicket("PS4", 1, "Nafis Iqbal");
 
         // The counter counts against the day, so it has restarted on its own — no job to run.

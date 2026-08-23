@@ -3,10 +3,13 @@ package dev.gamersden.catalog.repo;
 import dev.gamersden.catalog.domain.CartLine;
 import dev.gamersden.catalog.domain.CartLineId;
 import dev.gamersden.catalog.domain.ItemHold;
+import dev.gamersden.catalog.domain.ItemSold;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.Collection;
 import java.util.List;
 
 public interface CartLineRepository extends JpaRepository<CartLine, CartLineId> {
@@ -46,4 +49,22 @@ public interface CartLineRepository extends JpaRepository<CartLine, CartLineId> 
             group by line.id.itemId
             """)
     List<ItemHold> heldByItem();
+
+    /**
+     * What those carts sold, best by revenue first — S9's top-seller table.
+     *
+     * <p>Which carts count is {@code billing}'s call, not this package's: it hands over the ones a
+     * sale that stuck settled inside the window ({@code RevenueLookup.settledCartIds}), and all
+     * that happens here is pricing their lines out of the columns {@code catalog} owns.
+     */
+    @Query("""
+            select new dev.gamersden.catalog.domain.ItemSold(
+                       line.id.itemId, item.name, item.category,
+                       sum(line.qty), sum(line.qty * line.unitPrice))
+            from CartLine line join Item item on item.id = line.id.itemId
+            where line.id.cartId in :cartIds
+            group by line.id.itemId, item.name, item.category
+            order by sum(line.qty * line.unitPrice) desc, sum(line.qty) desc, item.name asc
+            """)
+    List<ItemSold> soldOn(@Param("cartIds") Collection<Long> cartIds, Pageable page);
 }

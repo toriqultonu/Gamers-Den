@@ -1,6 +1,7 @@
 package dev.gamersden.common.spi;
 
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -17,6 +18,13 @@ public interface StationLookup {
 
     /** The station, or empty when the id is unknown. */
     Optional<StationInfo> find(long stationId);
+
+    /**
+     * Every station on the floor, by name — the denominator behind "2 of 4 busy" (design.md S2)
+     * and the row set S9's utilisation bars are drawn for, seats under maintenance included so a
+     * report can say a console earned nothing because it was in pieces.
+     */
+    List<StationInfo> all();
 
     /**
      * What one block costs on this station at {@code at} — the morning-window aware half-hour rate

@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.Collection;
 import java.util.List;
@@ -53,4 +54,84 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     List<Booking> overlapping(@Param("stationId") long stationId,
                               @Param("from") OffsetDateTime from,
                               @Param("to") OffsetDateTime to);
+
+    /**
+     * Slots due to start inside the window, folded by the venue day they were due on — S9's
+     * "bookings per day" and the show-rate's three counters (docs/bookings.md §6).
+     *
+     * <p>Keyed on {@code start_at}, not {@code created_at}: this is attendance, and a booking
+     * sold on Monday for Tuesday was a Tuesday slot. {@code expired} is the no-show — still PAID
+     * with its slot already past — measured against a server-supplied {@code now}, never a
+     * client's clock (invariant §5.1). ARRIVED sits in neither half of the show-rate: they turned
+     * up, and the visit has not resolved either way until the Floor seats them.
+     */
+    @Query(value = """
+            SELECT (b.start_at AT TIME ZONE 'Asia/Dhaka')::date              AS day,
+                   COUNT(*)                                                  AS booked,
+                   COUNT(*) FILTER (WHERE b.status = 'USED')                 AS used,
+                   COUNT(*) FILTER (WHERE b.status = 'CANCELLED')            AS cancelled,
+                   COUNT(*) FILTER (WHERE b.status = 'ARRIVED')              AS arrived,
+                   COUNT(*) FILTER (WHERE b.status = 'PAID'
+                                      AND b.start_at < :now)                 AS expired
+              FROM bookings b
+             WHERE b.start_at >= :from AND b.start_at < :to
+             GROUP BY day
+             ORDER BY day
+            """, nativeQuery = true)
+    List<DailyBookingRow> dailyAttendance(@Param("from") OffsetDateTime from,
+                                          @Param("to") OffsetDateTime to,
+                                          @Param("now") OffsetDateTime now);
+
+    /**
+     * What bookings sold inside the window brought in, split into the play time and the package
+     * fee docs/bookings.md §6 asks reports to show separately.
+     *
+     * <p>Keyed on {@code created_at} — the day the money was taken, so the figure lines up with
+     * the {@code transactions.booking_amount} it came in as. CANCELLED bookings are left out
+     * because their refund gave every taka of it back.
+     */
+    @Query(value = """
+            SELECT COUNT(*)                          AS bookings,
+                   COALESCE(SUM(b.play_amount), 0)   AS "playAmount",
+                   COALESCE(SUM(b.package_fee), 0)   AS "packageFee"
+              FROM bookings b
+             WHERE b.created_at >= :from AND b.created_at < :to
+               AND b.status <> 'CANCELLED'
+            """, nativeQuery = true)
+    BookingMoneyRow incomeBetween(@Param("from") OffsetDateTime from,
+                                  @Param("to") OffsetDateTime to);
+
+    /** Bookings still PAID — the booking half of S2's pre-sold stat (docs/bookings.md §6). */
+    @Query(value = """
+            SELECT COUNT(*)                          AS bookings,
+                   COALESCE(SUM(b.play_amount), 0)   AS "playAmount",
+                   COALESCE(SUM(b.package_fee), 0)   AS "packageFee"
+              FROM bookings b
+             WHERE b.status = 'PAID'
+            """, nativeQuery = true)
+    BookingMoneyRow preSold();
+
+    /** Projection for {@link #dailyAttendance}. */
+    interface DailyBookingRow {
+        LocalDate getDay();
+
+        int getBooked();
+
+        int getUsed();
+
+        int getCancelled();
+
+        int getArrived();
+
+        int getExpired();
+    }
+
+    /** Projection for {@link #incomeBetween} and {@link #preSold}. */
+    interface BookingMoneyRow {
+        int getBookings();
+
+        int getPlayAmount();
+
+        int getPackageFee();
+    }
 }
