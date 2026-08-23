@@ -44,6 +44,13 @@ public abstract class AbstractApiIntegrationTest extends AbstractIntegrationTest
     void resetAuthState() {
         jdbc.update("DELETE FROM refresh_tokens");
         jdbc.update("DELETE FROM idempotency_keys");
+        // Bookings and queue tokens reference each other both ways (B15): a queue entry points at
+        // the booking it checked in, and the booking points back at the token it was given. Break
+        // the second link, then delete tokens before bookings and bookings before transactions.
+        jdbc.update("UPDATE bookings SET queue_entry_id = NULL");
+        jdbc.update("DELETE FROM queue_entries");
+        jdbc.update("DELETE FROM bookings");
+        jdbc.update("DELETE FROM token_seq");
         // Tournaments first: an entry references the transaction that sold it and the tournament
         // it is in, a match references both, and the winner FK points back the other way (B12).
         jdbc.update("UPDATE tournaments SET winner_entry_id = NULL");
@@ -78,6 +85,13 @@ public abstract class AbstractApiIntegrationTest extends AbstractIntegrationTest
                 + "avatar_color = '#ec3013', pin_hash = ? WHERE name = 'Admin'", pins.encode(ADMIN_PIN));
         adminId = jdbc.queryForObject("SELECT id FROM staff WHERE name = 'Admin'", Long.class);
         resetSeededPricing();
+        resetSeededBookingSettings();
+    }
+
+    /** Back to the V003 defaults: pre-booking on, 100 BDT package fee, 2-hour cancellation lock. */
+    private void resetSeededBookingSettings() {
+        jdbc.update("UPDATE booking_settings SET enabled = TRUE, package_fee = 100, "
+                + "cancel_cutoff_hours = 2, updated_by = NULL, updated_at = now()");
     }
 
     /** Back to the V001 rate card: PS5 120/80, PS4 80/50, morning -25% from 10:00 to 14:00. */

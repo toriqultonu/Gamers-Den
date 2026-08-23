@@ -31,6 +31,8 @@ public interface SaleReceiptPrinting {
      * @param total      what the tenders come to: charges minus any points discount
      * @param entryStubs the P5 tournament stubs this sale registered, appended to the same job
      *                   (docs/tournaments.md §7); empty on an ordinary sale
+     * @param bookingStub the P7 booking confirmation this sale created, appended to the same job
+     *                    (docs/bookings.md §2); {@code null} on an ordinary sale
      */
     record SaleReceipt(long transactionId,
                        String publicId,
@@ -44,7 +46,8 @@ public interface SaleReceiptPrinting {
                        int pointsRedeemed,
                        int pointsEarned,
                        Integer pointsBalance,
-                       List<EntryStub> entryStubs) {
+                       List<EntryStub> entryStubs,
+                       BookingStub bookingStub) {
 
         public SaleReceipt {
             entryStubs = entryStubs == null ? List.of() : List.copyOf(entryStubs);
@@ -59,6 +62,26 @@ public interface SaleReceiptPrinting {
      *                the way a payment reference is
      */
     record EntryStub(long entryId, String tournamentName, String playerName, int seed, String qrToken) {
+    }
+
+    /**
+     * The P7 booking confirmation (design.md §5, docs/bookings.md §2) — appended to the sale
+     * receipt in the same job, because a booking's receipt and its confirmation are one piece of
+     * paper handed over at one counter (invariant §5.5).
+     *
+     * @param cancellableUntil {@code start_at − cutoff_hours} off the booking's own snapshot; the
+     *                         customer is told the deadline they were actually sold
+     */
+    record BookingStub(long bookingId,
+                       String stationName,
+                       String consoleType,
+                       String playerName,
+                       String phone,
+                       OffsetDateTime startAt,
+                       int blocks,
+                       int playAmount,
+                       int packageFee,
+                       OffsetDateTime cancellableUntil) {
     }
 
     /** One printed line — {@code GAMING 3x30M}, {@code PEPSI 250ML x2}. */

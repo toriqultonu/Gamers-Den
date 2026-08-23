@@ -1,6 +1,7 @@
 package dev.gamersden.printing.domain;
 
 import dev.gamersden.common.spi.ExpenseVoucherPrinting;
+import dev.gamersden.common.spi.PlayTicketPrinting;
 import dev.gamersden.common.spi.SaleReceiptPrinting;
 import dev.gamersden.common.spi.ShiftReportPrinting;
 import dev.gamersden.common.util.Money;
@@ -59,6 +60,9 @@ public class PlaceholderReceiptRenderer implements ReceiptRenderer {
         paper.add(rule());
         paper.add(centred(receipt.publicId()));
         receipt.entryStubs().forEach(stub -> paper.add(entryStub(stub)));
+        if (receipt.bookingStub() != null) {
+            paper.add(bookingStub(receipt.bookingStub()));
+        }
         return RenderedDocument.plainText(paper.toString());
     }
 
@@ -77,6 +81,61 @@ public class PlaceholderReceiptRenderer implements ReceiptRenderer {
         ticket.add(centred("TOKEN #%02d".formatted(stub.seed())));
         ticket.add(centred("[QR] " + stub.qrToken()));
         return ticket.toString();
+    }
+
+    /**
+     * P7, appended to the sale receipt in the same job (docs/bookings.md §2). The real template
+     * bands the heading and barcodes the booking id; here the same content is laid out flat, with
+     * the cancellation deadline spelled out because that is the one figure the customer is going
+     * to come back and argue about.
+     */
+    private static String bookingStub(SaleReceiptPrinting.BookingStub stub) {
+        StringJoiner ticket = new StringJoiner("\n");
+        ticket.add(rule());
+        ticket.add(centred("BOOKING CONFIRMED"));
+        ticket.add(meta("BOOKING", "#" + stub.bookingId()));
+        ticket.add(meta("NAME", stub.playerName()));
+        if (stub.phone() != null && !stub.phone().isBlank()) {
+            ticket.add(meta("PHONE", stub.phone()));
+        }
+        ticket.add(meta("CONSOLE", "%s - %s".formatted(stub.stationName(), stub.consoleType())));
+        ticket.add(meta("STARTS", STAMP.format(stub.startAt())));
+        ticket.add(amountRow("PLAY %dx30M".formatted(stub.blocks()), stub.playAmount()));
+        ticket.add(amountRow("PACKAGE FEE", stub.packageFee()));
+        ticket.add(meta("CANCEL BY", STAMP.format(stub.cancellableUntil())));
+        ticket.add(centred("Check in at the counter on arrival"));
+        return ticket.toString();
+    }
+
+    /**
+     * P6 — the play-ticket stub a check-in prints on its own (docs/bookings.md §2). The real
+     * template gives {@code TOKEN #NN} double height and barcodes the entry id as Code 128; the
+     * payload is printed as text here so the scan path is testable before B17.
+     */
+    @Override
+    public RenderedDocument renderPlayTicket(PlayTicketPrinting.PlayTicket ticket) {
+        StringJoiner paper = new StringJoiner("\n");
+        paper.add(centred("GAMER'S DEN"));
+        paper.add(centred(ticket.prebooked() ? "PLAY TICKET - PREBOOKED" : "PLAY TICKET"));
+        paper.add(centred("- placeholder render, P6 lands in B17 -"));
+        paper.add(rule());
+        paper.add(centred("TOKEN #%02d".formatted(ticket.tokenNo())));
+        paper.add(rule());
+        paper.add(meta("NAME", ticket.playerName()));
+        paper.add(meta("CONSOLE", ticket.consoleType()));
+        paper.add(meta("PREPAID", "%d x 30 min".formatted(ticket.blocks())));
+        if (ticket.stationName() != null) {
+            paper.add(meta("BOOKED", ticket.stationName()));
+        }
+        if (ticket.startAt() != null) {
+            paper.add(meta("SLOT", STAMP.format(ticket.startAt())));
+        }
+        paper.add(meta("ISSUED", STAMP.format(ticket.at())));
+        paper.add(meta("DAY", ticket.tokenDate().toString()));
+        paper.add(rule());
+        paper.add(centred("Wait for your token to be called"));
+        paper.add(centred("[CODE128] " + ticket.queueEntryId()));
+        return RenderedDocument.plainText(paper.toString());
     }
 
     /**
