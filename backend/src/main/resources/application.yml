@@ -27,6 +27,13 @@ spring:
   threads:
     virtual:
       enabled: true
+  servlet:
+    multipart:
+      # Backstop only. The rule an operator actually meets is gamersden.settings.login-bg.max-size
+      # below, which answers with the VALIDATION_FAILED envelope; these cut off an upload that is
+      # far past it before it can be buffered (B21).
+      max-file-size: 8MB
+      max-request-size: 8MB
 
 server:
   port: ${SERVER_PORT:8080}
@@ -86,6 +93,12 @@ gamersden:
   events:
     timeout: 30m
     heartbeat: 20s
+  # S13 terminal settings (B21). A login background is a photo behind a dark overlay, not a print
+  # asset; anything past this is a mistake rather than a preference, and is refused with the
+  # documented 400 envelope naming the limit.
+  settings:
+    login-bg:
+      max-size: 2MB
   # OPEN FLAG (ARCHITECTURE.md §8): documented default until the venue confirms.
   morning-discount:
     from: "10:00"

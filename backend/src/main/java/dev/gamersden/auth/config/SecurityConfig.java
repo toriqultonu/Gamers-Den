@@ -6,6 +6,7 @@ import dev.gamersden.auth.web.ApiAuthenticationEntryPoint;
 import dev.gamersden.auth.web.JwtAuthenticationFilter;
 import dev.gamersden.common.config.WebMvcConfig;
 import dev.gamersden.common.error.ErrorResponseWriter;
+import dev.gamersden.settings.web.TerminalSettingsController;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
@@ -53,6 +54,16 @@ public class SecurityConfig {
             WebMvcConfig.API_BASE_PATH + "/auth/logout"
     };
 
+    /**
+     * The login background (B21). S1 paints it under the brand statement before anyone has a
+     * token (design.md §1), so the one route that serves the picture has to be reachable without
+     * one — reads only, by an id minted at upload and stored nowhere a stranger can list. The
+     * settings around it stay authenticated: reading them needs a role, writing them needs Admin.
+     */
+    private static final String[] PUBLIC_IMAGE_ROUTES = {
+            WebMvcConfig.API_BASE_PATH + TerminalSettingsController.LOGIN_BG_PATH + "/*"
+    };
+
     public SecurityConfig(AuthProperties properties, Environment environment) {
         assertUsableSecret(properties, environment);
     }
@@ -79,6 +90,7 @@ public class SecurityConfig {
                         .dispatcherTypeMatchers(DispatcherType.ASYNC, DispatcherType.ERROR).permitAll()
                         .requestMatchers(PUBLIC_PATHS).permitAll()
                         .requestMatchers(HttpMethod.POST, PUBLIC_AUTH_ROUTES).permitAll()
+                        .requestMatchers(HttpMethod.GET, PUBLIC_IMAGE_ROUTES).permitAll()
                         .anyRequest().authenticated())
                 .exceptionHandling(handling -> handling
                         .authenticationEntryPoint(entryPoint)
