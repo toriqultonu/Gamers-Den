@@ -118,7 +118,7 @@ class EntityMappingIT extends AbstractIntegrationTest {
     @Test
     void loginBackgroundRoundTripsThroughBytea() {
         TerminalSettings settings = new TerminalSettings("T1");
-        settings.setLoginBg(new byte[] {(byte) 0x89, 'P', 'N', 'G'});
+        settings.setLoginBg("img-1", "image/png", new byte[] {(byte) 0x89, 'P', 'N', 'G'});
 
         terminalSettings.saveAndFlush(settings);
         em.clear();
@@ -128,6 +128,10 @@ class EntityMappingIT extends AbstractIntegrationTest {
         assertThat(reloaded.getAccent()).isEqualTo("#ec3013");
         assertThat(reloaded.getReceiptCopies()).isEqualTo(1);
         assertThat(reloaded.getLoginBg()).containsExactly((byte) 0x89, 'P', 'N', 'G');
+        // The id and the media type ride with the bytes (V005) — an image with neither could not
+        // be served, and the CHECK on the table refuses the half-set anyway.
+        assertThat(reloaded.getLoginBgImageId()).isEqualTo("img-1");
+        assertThat(reloaded.getLoginBgContentType()).isEqualTo("image/png");
     }
 
     @Test

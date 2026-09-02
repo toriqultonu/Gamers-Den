@@ -30,11 +30,19 @@ public class TerminalSettings {
     private FontScale fontScale = FontScale.DEFAULT;
 
     @Column(nullable = false)
-    private String accent = "#ec3013";
+    private String accent = Accent.DEFAULT.hex();
 
-    /** Admin-uploaded login background (B21). */
+    /** Admin-uploaded login background (B21). Null together with the two columns below. */
     @Column(name = "login_bg")
     private byte[] loginBg;
+
+    /** The id {@code GET /terminal-settings/login-bg/{imageId}} is addressed by (V005). */
+    @Column(name = "login_bg_image_id")
+    private String loginBgImageId;
+
+    /** Sniffed from the bytes at upload, replayed on the serve response (V005). */
+    @Column(name = "login_bg_content_type")
+    private String loginBgContentType;
 
     @Column(nullable = false)
     private boolean sound = true;
@@ -94,8 +102,27 @@ public class TerminalSettings {
         return loginBg;
     }
 
-    public void setLoginBg(byte[] loginBg) {
-        this.loginBg = loginBg;
+    public String getLoginBgImageId() {
+        return loginBgImageId;
+    }
+
+    public String getLoginBgContentType() {
+        return loginBgContentType;
+    }
+
+    /**
+     * Replaces the background with a freshly identified one. The three columns only ever move
+     * together — the V005 CHECK enforces that — so there is no setter for any of them alone.
+     */
+    public void setLoginBg(String imageId, String contentType, byte[] bytes) {
+        this.loginBgImageId = imageId;
+        this.loginBgContentType = contentType;
+        this.loginBg = bytes;
+    }
+
+    /** design.md §6 "remove": the bytes go with the id, never left behind unreachable. */
+    public void clearLoginBg() {
+        setLoginBg(null, null, null);
     }
 
     public boolean isSound() {
