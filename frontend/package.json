@@ -7,14 +7,18 @@
     "build": "node scripts/run.mjs next build",
     "start": "node scripts/run.mjs next start",
     "typecheck": "tsc --noEmit",
+    "types:gen": "node scripts/generate-api-types.mjs",
+    "types:check": "node scripts/generate-api-types.mjs --check",
     "test": "node scripts/run.mjs vitest run",
     "test:watch": "node scripts/run.mjs vitest"
   },
   "dependencies": {
+    "@tanstack/react-query": "^5.102.8",
     "class-variance-authority": "^0.7.1",
     "next": "^15.5.25",
     "react": "19.1.1",
-    "react-dom": "19.1.1"
+    "react-dom": "19.1.1",
+    "zod": "^4.5.4"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "4.1.13",
@@ -27,6 +31,7 @@
     "@types/react-dom": "19.1.9",
     "@vitejs/plugin-react": "5.0.2",
     "jsdom": "26.1.0",
+    "openapi-typescript": "^7.13.0",
     "tailwindcss": "4.1.13",
     "typescript": "5.9.2",
     "vitest": "3.2.4"
