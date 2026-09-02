@@ -1,0 +1,251 @@
+@import 'tailwindcss';
+@import '../styles/tokens.css';
+
+/* ----------------------------------------------------------------------------
+ * Tailwind 4 theme — a 1:1 map onto the docs/design.md §3 tokens.
+ * `inline` so utilities resolve straight to the --gd-* custom properties and
+ * therefore re-resolve per [data-theme] / [data-accent] subtree.
+ * ------------------------------------------------------------------------- */
+
+@theme inline {
+  /* --- color: semantic roles ------------------------------------------- */
+  --color-bg: var(--gd-bg);
+  --color-surface: var(--gd-surface);
+  --color-card: var(--gd-card);
+  --color-text: var(--gd-text);
+  --color-divider: var(--gd-divider);
+  --color-track: var(--gd-track);
+  --color-bar-alt: var(--gd-bar-alt);
+  --color-on-accent: var(--gd-on-accent);
+  --color-paper: var(--gd-paper);
+
+  --color-accent: var(--gd-accent);
+  --color-accent-strong: var(--gd-accent-strong);
+  --color-accent-tint: var(--gd-accent-tint);
+
+  /* --- color: tonal ramps ---------------------------------------------- */
+  --color-accent-100: var(--gd-accent-100);
+  --color-accent-200: var(--gd-accent-200);
+  --color-accent-300: var(--gd-accent-300);
+  --color-accent-400: var(--gd-accent-400);
+  --color-accent-500: var(--gd-accent-500);
+  --color-accent-600: var(--gd-accent-600);
+  --color-accent-700: var(--gd-accent-700);
+  --color-accent-800: var(--gd-accent-800);
+  --color-accent-900: var(--gd-accent-900);
+
+  --color-neutral-100: var(--gd-neutral-100);
+  --color-neutral-200: var(--gd-neutral-200);
+  --color-neutral-300: var(--gd-neutral-300);
+  --color-neutral-400: var(--gd-neutral-400);
+  --color-neutral-500: var(--gd-neutral-500);
+  --color-neutral-600: var(--gd-neutral-600);
+  --color-neutral-700: var(--gd-neutral-700);
+  --color-neutral-800: var(--gd-neutral-800);
+  --color-neutral-900: var(--gd-neutral-900);
+
+  /* --- type ------------------------------------------------------------- */
+  --font-heading: var(--gd-font-heading);
+  --font-body: var(--gd-font-body);
+  --font-mono: var(--gd-font-mono);
+  --font-sans: var(--gd-font-body);
+
+  --text-display: var(--gd-text-display);
+  --text-display--line-height: var(--gd-leading-display);
+  --text-display--letter-spacing: var(--gd-tracking-display);
+  --text-display--font-weight: var(--gd-font-weight-heading);
+
+  --text-h1: var(--gd-text-h1);
+  --text-h1--line-height: var(--gd-leading-h1);
+  --text-h1--letter-spacing: var(--gd-tracking-h1);
+  --text-h1--font-weight: var(--gd-font-weight-heading);
+
+  --text-h2: var(--gd-text-h2);
+  --text-h2--line-height: var(--gd-leading-h2);
+  --text-h2--letter-spacing: var(--gd-tracking-h2);
+  --text-h2--font-weight: var(--gd-font-weight-heading);
+
+  --text-h3: var(--gd-text-h3);
+  --text-h3--line-height: var(--gd-leading-h3);
+  --text-h3--letter-spacing: var(--gd-tracking-h3);
+  --text-h3--font-weight: var(--gd-font-weight-heading);
+
+  --text-body: var(--gd-text-body);
+  --text-body--line-height: var(--gd-leading-body);
+
+  --text-label: var(--gd-text-label);
+  --text-label--line-height: var(--gd-leading-label);
+  --text-label--letter-spacing: var(--gd-tracking-label);
+
+  --text-mono: var(--gd-text-mono);
+  --text-mono--line-height: var(--gd-leading-mono);
+
+  --tracking-label: var(--gd-tracking-label);
+
+  /* --- spacing: docs/design.md §3 space.1..8 ----------------------------- */
+  --spacing-1: var(--gd-space-1);
+  --spacing-2: var(--gd-space-2);
+  --spacing-3: var(--gd-space-3);
+  --spacing-4: var(--gd-space-4);
+  --spacing-5: var(--gd-space-5);
+  --spacing-6: var(--gd-space-6);
+  --spacing-7: var(--gd-space-7);
+  --spacing-8: var(--gd-space-8);
+
+  /* --- radius: 0 everywhere (Modernist) --------------------------------- */
+  --radius-none: var(--gd-radius);
+  --radius-xs: var(--gd-radius);
+  --radius-sm: var(--gd-radius);
+  --radius-md: var(--gd-radius);
+  --radius-lg: var(--gd-radius);
+  --radius-xl: var(--gd-radius);
+  --radius-2xl: var(--gd-radius);
+  --radius-3xl: var(--gd-radius);
+  --radius-4xl: var(--gd-radius);
+
+  /* --- elevation: app frame, dialogs, receipt preview only -------------- */
+  --shadow-sm: var(--gd-shadow-sm);
+  --shadow-md: var(--gd-shadow-md);
+  --shadow-lg: var(--gd-shadow-lg);
+}
+
+/* ----------------------------------------------------------------------------
+ * Base — radius 0, 2px rules, no browser defaults on form controls.
+ * ------------------------------------------------------------------------- */
+
+@layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+    border-radius: 0;
+  }
+
+  html {
+    font-size: var(--gd-font-size-base);
+    background-color: var(--gd-bg);
+  }
+
+  body {
+    margin: 0;
+    background-color: var(--gd-bg);
+    color: var(--gd-text);
+    font-family: var(--gd-font-body);
+    font-size: var(--gd-text-body);
+    line-height: var(--gd-leading-body);
+    font-weight: var(--gd-font-weight-body);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    margin: 0;
+    font-family: var(--gd-font-heading);
+    font-weight: var(--gd-font-weight-heading);
+    letter-spacing: var(--gd-tracking-h1);
+    line-height: var(--gd-leading-h1);
+  }
+
+  hr {
+    border: 0;
+    block-size: var(--gd-rule-strong);
+    background-color: var(--gd-divider);
+  }
+
+  /* design.md §3: inputs and secondary/ghost buttons carry explicit
+     backgrounds so the dark theme never falls through to browser defaults. */
+  input,
+  select,
+  textarea,
+  button {
+    font: inherit;
+    color: inherit;
+    border-radius: 0;
+  }
+
+  input,
+  select,
+  textarea {
+    background-color: var(--gd-surface);
+    border: var(--gd-rule-hair) solid var(--gd-divider);
+    caret-color: var(--gd-accent);
+  }
+
+  button {
+    background-color: transparent;
+    border: var(--gd-rule-hair) solid transparent;
+  }
+
+  :focus {
+    outline: none;
+  }
+
+  :focus-visible {
+    outline: var(--gd-focus-ring) solid var(--gd-accent);
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background-color: color-mix(in srgb, var(--gd-accent) 30%, transparent);
+  }
+
+  [disabled],
+  [aria-disabled='true'] {
+    opacity: var(--gd-disabled-opacity);
+  }
+}
+
+/* ----------------------------------------------------------------------------
+ * Utilities the design language leans on everywhere.
+ * ------------------------------------------------------------------------- */
+
+/* Bills, clocks and tables — docs/design.md §3. */
+@utility tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Kickers and table headers: 10/1.2, +0.14em, uppercase. */
+@utility type-label {
+  font-size: var(--gd-text-label);
+  line-height: var(--gd-leading-label);
+  letter-spacing: var(--gd-tracking-label);
+  text-transform: uppercase;
+}
+
+/* Receipt / stub previews only. */
+@utility type-mono {
+  font-family: var(--gd-font-mono);
+  font-size: var(--gd-text-mono);
+  line-height: var(--gd-leading-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 2px structural rule / 1px hairline, as a standalone element. */
+@utility rule {
+  border: 0;
+  block-size: var(--gd-rule-strong);
+  background-color: var(--gd-divider);
+}
+
+@utility rule-hair {
+  border: 0;
+  block-size: var(--gd-rule-hair);
+  background-color: var(--gd-divider);
+}
+
+/* Borders in the 2px / 1px structural weights. */
+@utility border-rule {
+  border-width: var(--gd-rule-strong);
+  border-style: solid;
+  border-color: var(--gd-divider);
+}
+
+@utility border-hair {
+  border-width: var(--gd-rule-hair);
+  border-style: solid;
+  border-color: var(--gd-divider);
+}

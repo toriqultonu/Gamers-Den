@@ -1,0 +1,267 @@
+/* ============================================================================
+ * Gamer's Den — design tokens
+ *
+ * Authority: docs/design.md §3. Values are the Modernist palette
+ * (_ds/modernist-<id>/styles.css) plus the dark overrides pinned by the
+ * prototype (`Gamers Den.dc.html`, `.gd-dark`).
+ *
+ * Layering (matches docs/design.md §3 + frontend/ARCHITECTURE.md §5.5):
+ *   1. :root                        — theme-independent tokens (space, type, rules)
+ *   2. [data-theme="dark|light"]    — ground / surface / neutral ramp
+ *   3. [data-theme][data-accent]    — the chosen accent's full tonal ramp
+ *   4. [data-text-size]             — Compact 13px / Default 14px / Large 16px
+ *
+ * Levels 2 and 3 also match a bare `:root` so an html element that somehow
+ * lost its attributes still paints dark + Den Red rather than nothing.
+ *
+ * Plain attribute selectors (not `:root[...]`) on purpose: any subtree can be
+ * re-themed, which is what the /tokens demo page relies on.
+ *
+ * Dark is the DEFAULT theme (dim venue). `<html>` ships with
+ * data-theme="dark" data-accent="red" data-text-size="default" so the first
+ * paint is correct with JavaScript disabled.
+ *
+ * Ramp construction: the light ramps are the design system's, generated in
+ * OKLCH on one shared lightness scale. The dark red ramp pins the three
+ * documented anchors (100 / 700 / 800) and fills the gaps by OKLCH
+ * interpolation; the dark neutral ramp pins the prototype's seven anchors and
+ * fills 500/600 the same way. Blue and Green ramps are generated at the same
+ * lightnesses, chroma scaled by the ratio of the accent's own chroma to Den
+ * Red's, then gamut-mapped into sRGB — so every step of every role matches the
+ * others in visual value.
+ * ========================================================================= */
+
+/* --- 1. base ------------------------------------------------------------- */
+
+:root {
+  color-scheme: dark;
+
+  /* structural */
+  --gd-rule-strong: 2px;
+  --gd-rule-hair: 1px;
+  --gd-radius: 0px;
+  --gd-focus-ring: 2px;
+  --gd-disabled-opacity: 0.45;
+
+  /* spacing — docs/design.md §3 "space.1..8" */
+  --gd-space-1: 4px;
+  --gd-space-2: 8px;
+  --gd-space-3: 12px;
+  --gd-space-4: 16px;
+  --gd-space-5: 20px;
+  --gd-space-6: 22px;
+  --gd-space-7: 32px;
+  --gd-space-8: 56px;
+
+  /* type — Archivo throughout, headings weight 800, tight tracking */
+  --gd-font-heading: var(--font-archivo), 'Archivo', system-ui, sans-serif;
+  --gd-font-body: var(--font-archivo), 'Archivo', system-ui, sans-serif;
+  --gd-font-mono: ui-monospace, 'SF Mono', 'Cascadia Mono', Menlo, monospace;
+  --gd-font-weight-heading: 800;
+  --gd-font-weight-medium: 600;
+  --gd-font-weight-body: 400;
+
+  --gd-text-scale: 1;
+  --gd-font-size-base: calc(14px * var(--gd-text-scale));
+
+  --gd-text-display: calc(52px * var(--gd-text-scale));
+  --gd-leading-display: 1.05;
+  --gd-tracking-display: -0.045em;
+
+  --gd-text-h1: calc(36px * var(--gd-text-scale));
+  --gd-leading-h1: 1.1;
+  --gd-tracking-h1: -0.015em;
+
+  --gd-text-h2: calc(23px * var(--gd-text-scale));
+  --gd-leading-h2: 1.15;
+  --gd-tracking-h2: -0.015em;
+
+  --gd-text-h3: calc(18px * var(--gd-text-scale));
+  --gd-leading-h3: 1.2;
+  --gd-tracking-h3: -0.015em;
+
+  --gd-text-body: calc(14px * var(--gd-text-scale));
+  --gd-leading-body: 1.5;
+  --gd-tracking-body: 0em;
+
+  --gd-text-label: calc(10px * var(--gd-text-scale));
+  --gd-leading-label: 1.2;
+  --gd-tracking-label: 0.14em;
+
+  --gd-text-mono: calc(11px * var(--gd-text-scale));
+  --gd-leading-mono: 1.5;
+  --gd-tracking-mono: 0em;
+
+  /* fixed regardless of theme — receipt & stub previews are monochrome paper */
+  --gd-paper: #ffffff;
+  --gd-on-accent: #ffffff;
+}
+
+/* --- 2. themes ----------------------------------------------------------- */
+
+[data-theme='dark'],
+:root:not([data-theme]) {
+  color-scheme: dark;
+
+  --gd-bg: #171514;
+  --gd-surface: #211f1e;
+  --gd-card: #2a2725;
+  --gd-text: #f3f2f2;
+  --gd-divider: #3c3835;
+  --gd-track: #343130;
+  --gd-bar-alt: #b5b0ab;
+  --gd-on-accent: #ffffff;
+  --gd-paper: #ffffff;
+
+  --gd-neutral-100: #2a2725;
+  --gd-neutral-200: #211f1e;
+  --gd-neutral-300: #343130;
+  --gd-neutral-400: #57524e;
+  --gd-neutral-500: #75706c;
+  --gd-neutral-600: #948f8b;
+  --gd-neutral-700: #b5b0ab;
+  --gd-neutral-800: #d6d2ce;
+  --gd-neutral-900: #f3f2f2;
+
+  --gd-shadow-sm: 0 1px 2px rgb(0 0 0 / 0.34);
+  --gd-shadow-md: 0 3px 10px rgb(0 0 0 / 0.44);
+  --gd-shadow-lg: 0 12px 32px rgb(0 0 0 / 0.56);
+}
+
+[data-theme='light'] {
+  color-scheme: light;
+
+  --gd-bg: #f3f2f2;
+  --gd-surface: #eceaea;
+  --gd-card: #ffffff;
+  --gd-text: #201e1d;
+  --gd-divider: #d8d5d3;
+  --gd-track: #d7d3d3;
+  --gd-bar-alt: #605d5d;
+  --gd-on-accent: #ffffff;
+  --gd-paper: #ffffff;
+
+  --gd-neutral-100: #f8f4f4;
+  --gd-neutral-200: #eae7e7;
+  --gd-neutral-300: #d7d3d3;
+  --gd-neutral-400: #bab6b6;
+  --gd-neutral-500: #9b9797;
+  --gd-neutral-600: #7d7979;
+  --gd-neutral-700: #605d5d;
+  --gd-neutral-800: #444141;
+  --gd-neutral-900: #2d2b2b;
+
+  --gd-shadow-sm: 0 1px 2px color-mix(in srgb, #2d2b2b 14%, transparent);
+  --gd-shadow-md: 0 3px 10px color-mix(in srgb, #2d2b2b 16%, transparent);
+  --gd-shadow-lg: 0 12px 32px color-mix(in srgb, #2d2b2b 22%, transparent);
+}
+
+/* --- 3. accent ramps (theme × accent) ------------------------------------ */
+
+/* Den Red — default */
+[data-theme='dark'][data-accent='red'],
+:root:not([data-accent]) {
+  --gd-accent: #ec3013;
+  --gd-accent-100: #42150e;
+  --gd-accent-200: #5e241a;
+  --gd-accent-300: #7c3426;
+  --gd-accent-400: #9b4433;
+  --gd-accent-500: #bb5641;
+  --gd-accent-600: #dd674e;
+  --gd-accent-700: #ff7a5c;
+  --gd-accent-800: #ff9c82;
+  --gd-accent-900: #fdbba9;
+  --gd-accent-strong: var(--gd-accent-700);
+  --gd-accent-tint: var(--gd-accent-100);
+}
+
+[data-theme='light'][data-accent='red'] {
+  --gd-accent: #ec3013;
+  --gd-accent-100: #fff2ef;
+  --gd-accent-200: #ffe0d9;
+  --gd-accent-300: #ffc4b8;
+  --gd-accent-400: #ff9783;
+  --gd-accent-500: #ff563c;
+  --gd-accent-600: #dd2b0f;
+  --gd-accent-700: #ae1800;
+  --gd-accent-800: #7c1405;
+  --gd-accent-900: #4d170e;
+  --gd-accent-strong: var(--gd-accent-700);
+  --gd-accent-tint: var(--gd-accent-100);
+}
+
+/* Blue */
+[data-theme='dark'][data-accent='blue'] {
+  --gd-accent: #0f62fe;
+  --gd-accent-100: #0f244b;
+  --gd-accent-200: #1c3669;
+  --gd-accent-300: #2a4b8a;
+  --gd-accent-400: #375fac;
+  --gd-accent-500: #4776ce;
+  --gd-accent-600: #558cf3;
+  --gd-accent-700: #76a6ff;
+  --gd-accent-800: #94baff;
+  --gd-accent-900: #b3ceff;
+  --gd-accent-strong: var(--gd-accent-700);
+  --gd-accent-tint: var(--gd-accent-100);
+}
+
+[data-theme='light'][data-accent='blue'] {
+  --gd-accent: #0f62fe;
+  --gd-accent-100: #f0f6ff;
+  --gd-accent-200: #dce9ff;
+  --gd-accent-300: #bed5ff;
+  --gd-accent-400: #90b8ff;
+  --gd-accent-500: #5c94ff;
+  --gd-accent-600: #226dff;
+  --gd-accent-700: #1251cc;
+  --gd-accent-800: #0e3a91;
+  --gd-accent-900: #102958;
+  --gd-accent-strong: var(--gd-accent-700);
+  --gd-accent-tint: var(--gd-accent-100);
+}
+
+/* Green */
+[data-theme='dark'][data-accent='green'] {
+  --gd-accent: #198038;
+  --gd-accent-100: #152c19;
+  --gd-accent-200: #244129;
+  --gd-accent-300: #335739;
+  --gd-accent-400: #436e4a;
+  --gd-accent-500: #55875c;
+  --gd-accent-600: #65a06e;
+  --gd-accent-700: #78ba82;
+  --gd-accent-800: #98c89e;
+  --gd-accent-900: #b8d7bb;
+  --gd-accent-strong: var(--gd-accent-700);
+  --gd-accent-tint: var(--gd-accent-100);
+}
+
+[data-theme='light'][data-accent='green'] {
+  --gd-accent: #198038;
+  --gd-accent-100: #f1f7f2;
+  --gd-accent-200: #deece0;
+  --gd-accent-300: #c2ddc5;
+  --gd-accent-400: #94c69b;
+  --gd-accent-500: #59ae69;
+  --gd-accent-600: #35904a;
+  --gd-accent-700: #236f36;
+  --gd-accent-800: #1a4f26;
+  --gd-accent-900: #17331c;
+  --gd-accent-strong: var(--gd-accent-700);
+  --gd-accent-tint: var(--gd-accent-100);
+}
+
+/* --- 4. text size (S13, per terminal) ------------------------------------ */
+
+[data-text-size='compact'] {
+  --gd-text-scale: 0.9286;
+}
+
+[data-text-size='default'] {
+  --gd-text-scale: 1;
+}
+
+[data-text-size='large'] {
+  --gd-text-scale: 1.1429;
+}
