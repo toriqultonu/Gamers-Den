@@ -6,6 +6,7 @@ import dev.gamersden.common.error.NotFoundException;
 import dev.gamersden.common.events.LiveEvents;
 import dev.gamersden.common.spi.BookingSeatLookup;
 import dev.gamersden.common.spi.PrepaidSeatLookup;
+import dev.gamersden.common.spi.SyncOutboxWriter;
 import dev.gamersden.queue.repo.QueueEntryRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -39,12 +40,14 @@ public class PrepaidSeatLookupService implements PrepaidSeatLookup {
     private final QueueEntryRepository entries;
     private final BookingSeatLookup bookings;
     private final LiveEvents live;
+    private final SyncOutboxWriter outbox;
 
     public PrepaidSeatLookupService(QueueEntryRepository entries, BookingSeatLookup bookings,
-                                    LiveEvents live) {
+                                    LiveEvents live, SyncOutboxWriter outbox) {
         this.entries = entries;
         this.bookings = bookings;
         this.live = live;
+        this.outbox = outbox;
     }
 
     /**
@@ -91,6 +94,8 @@ public class PrepaidSeatLookupService implements PrepaidSeatLookup {
         requireSeatable(entry);
         entry.setStatus(QueueEntryStatus.SEATED);
         entry.setSessionId(sessionId);
+        outbox.record(SyncOutboxWriter.QUEUE_ENTRIES, SyncOutboxWriter.SEATED, entry.getId(),
+                SyncOutboxWriter.data("sessionId", sessionId, "bookingId", entry.getBookingId()));
         live.queueChanged();
         if (entry.getBookingId() != null) {
             bookings.markUsed(entry.getBookingId(), sessionId);

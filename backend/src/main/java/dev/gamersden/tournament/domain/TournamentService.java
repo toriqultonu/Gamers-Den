@@ -8,6 +8,7 @@ import dev.gamersden.common.error.ValidationFailedException;
 import dev.gamersden.common.security.CurrentStaff;
 import dev.gamersden.common.spi.SaleRefunding;
 import dev.gamersden.common.spi.StationLookup;
+import dev.gamersden.common.spi.SyncOutboxWriter;
 import dev.gamersden.tournament.repo.TournamentEntryRepository;
 import dev.gamersden.tournament.repo.TournamentRepository;
 import dev.gamersden.tournament.repo.TournamentStationBlockRepository;
@@ -56,19 +57,22 @@ public class TournamentService {
     private final StationLookup stations;
     private final SaleRefunding refunds;
     private final LiveEvents live;
+    private final SyncOutboxWriter outbox;
 
     public TournamentService(TournamentRepository tournaments,
                              TournamentEntryRepository entries,
                              TournamentStationBlockRepository blocks,
                              StationLookup stations,
                              SaleRefunding refunds,
-                             LiveEvents live) {
+                             LiveEvents live,
+                             SyncOutboxWriter outbox) {
         this.tournaments = tournaments;
         this.entries = entries;
         this.blocks = blocks;
         this.stations = stations;
         this.refunds = refunds;
         this.live = live;
+        this.outbox = outbox;
     }
 
     // ---- reads --------------------------------------------------------------------------------
@@ -114,6 +118,8 @@ public class TournamentService {
         log.info("tournament {} created: \"{}\" {} on {}, cap {}, fee {} BDT, prize {} BDT",
                 created.getId(), created.getName(), created.getGame(), created.getScheduledAt(),
                 created.getMaxPlayers(), created.getEntryFee(), created.getPrizePool());
+        outbox.record(SyncOutboxWriter.TOURNAMENTS, SyncOutboxWriter.CREATED, created.getId(),
+                describe(created));
         live.tournamentChanged(created.getId());
         return created;
     }
@@ -167,6 +173,8 @@ public class TournamentService {
             tournament.setMatchDurationMin(matchDurationMin);
         }
         log.info("tournament {} updated", id);
+        outbox.record(SyncOutboxWriter.TOURNAMENTS, SyncOutboxWriter.UPDATED, id,
+                describe(tournament));
         live.tournamentChanged(id);
         return tournament;
     }
@@ -195,6 +203,8 @@ public class TournamentService {
         blocks.flush();
         wanted.forEach(stationId -> blocks.save(new TournamentStationBlock(id, stationId)));
         log.info("tournament {} now blocks {} console(s): {}", id, wanted.size(), wanted);
+        outbox.record(SyncOutboxWriter.TOURNAMENTS, SyncOutboxWriter.CONSOLES_BLOCKED, id,
+                SyncOutboxWriter.data("stationIds", List.copyOf(wanted)));
         live.tournamentChanged(id);
         // A blocked console reads RESERVED on the Floor and an unblocked one goes back to free,
         // so both sides of the change are cards that have to move.
@@ -244,10 +254,28 @@ public class TournamentService {
         log.info("tournament {} (\"{}\") cancelled by staff {}: \"{}\" — {} entries refunded across "
                         + "{} sale(s)", id, tournament.getName(), CurrentStaff.require().id(), why,
                 refunded, issued.size());
+        outbox.record(SyncOutboxWriter.TOURNAMENTS, SyncOutboxWriter.CANCELLED, id,
+                SyncOutboxWriter.data("reason", why,
+                        "entriesRefunded", refunded,
+                        "refundTxIds", issued.stream()
+                                .map(SaleRefunding.Refund::transactionId).toList()));
         live.tournamentChanged(id);
         // CANCELLED releases every console the event was holding (§2) — those cards are free now.
         stationIdsOf(id).forEach(live::stationChanged);
         return new Cancellation(tournament, refunded, List.copyOf(issued));
+    }
+
+    /** The configuration the cloud mirrors: what the event is, what it costs, how big it is. */
+    private static java.util.Map<String, Object> describe(Tournament tournament) {
+        return SyncOutboxWriter.data("name", tournament.getName(),
+                "game", tournament.getGame(),
+                "cadence", tournament.getCadence().name(),
+                "scheduledAt", tournament.getScheduledAt().toString(),
+                "entryFee", tournament.getEntryFee(),
+                "prizePool", tournament.getPrizePool(),
+                "maxPlayers", tournament.getMaxPlayers(),
+                "matchDurationMin", tournament.getMatchDurationMin(),
+                "status", tournament.getStatus().name());
     }
 
     /**

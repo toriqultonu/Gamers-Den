@@ -8,6 +8,7 @@ import dev.gamersden.common.spi.PlayTicketSale;
 import dev.gamersden.common.spi.SaleRefunding;
 import dev.gamersden.common.spi.SessionSeating;
 import dev.gamersden.common.spi.StationLookup;
+import dev.gamersden.common.spi.SyncOutboxWriter;
 import dev.gamersden.queue.repo.QueueEntryRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -59,6 +60,7 @@ public class PlayQueueService {
     private final SessionSeating seats;
     private final StationLookup stations;
     private final LiveEvents live;
+    private final SyncOutboxWriter outbox;
 
     public PlayQueueService(QueueEntryRepository entries,
                             QueueTokenService tokens,
@@ -66,7 +68,8 @@ public class PlayQueueService {
                             SaleRefunding refunds,
                             SessionSeating seats,
                             StationLookup stations,
-                            LiveEvents live) {
+                            LiveEvents live,
+                            SyncOutboxWriter outbox) {
         this.entries = entries;
         this.tokens = tokens;
         this.sales = sales;
@@ -74,6 +77,7 @@ public class PlayQueueService {
         this.seats = seats;
         this.stations = stations;
         this.live = live;
+        this.outbox = outbox;
     }
 
     // ---- GET /play-queue ----------------------------------------------------------------------
@@ -180,6 +184,12 @@ public class PlayQueueService {
         log.info("queue entry {} (TOKEN #{} of {}) removed as a no-show ({}) — {} BDT returned on {}",
                 entry.getId(), entry.getTokenNo(), entry.getTokenDate(), why, entry.getPlayAmount(),
                 refund == null ? "nothing (it was sold for 0)" : refund.publicId());
+        outbox.record(SyncOutboxWriter.QUEUE_ENTRIES, SyncOutboxWriter.REFUNDED, entry.getId(),
+                SyncOutboxWriter.data(
+                        "reason", why,
+                        "refunded", entry.getPlayAmount(),
+                        "refundTxId", refund == null ? null : refund.transactionId(),
+                        "txId", entry.getTxId()));
         live.queueChanged();
         return new Removed(entry, refund);
     }

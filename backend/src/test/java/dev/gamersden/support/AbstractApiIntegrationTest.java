@@ -80,6 +80,10 @@ public abstract class AbstractApiIntegrationTest extends AbstractIntegrationTest
         jdbc.update("DELETE FROM expenses");
         jdbc.update("DELETE FROM shifts");
         jdbc.update("DELETE FROM alerts");
+        // Every money, inventory, tournament and booking write leaves an op behind (B22, §5.8),
+        // so a suite that does not clear them inherits the last one's — and the sync assertions
+        // are about counts.
+        jdbc.update("DELETE FROM sync_outbox");
         // Per-terminal preferences: receipt copies decides whether a sale ticket carries its copy
         // after the cut (B18), so a suite that sets it must not leave it set for the next one.
         jdbc.update("DELETE FROM terminal_settings");

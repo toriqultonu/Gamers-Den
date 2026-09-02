@@ -10,6 +10,7 @@ import dev.gamersden.common.security.CurrentStaff;
 import dev.gamersden.common.spi.MatchLookup;
 import dev.gamersden.common.spi.SessionLookup;
 import dev.gamersden.common.spi.StationLookup;
+import dev.gamersden.common.spi.SyncOutboxWriter;
 import dev.gamersden.tournament.repo.TournamentEntryRepository;
 import dev.gamersden.tournament.repo.TournamentMatchRepository;
 import dev.gamersden.tournament.repo.TournamentRepository;
@@ -74,6 +75,7 @@ public class MatchExecutionService implements MatchLookup {
     private final StationLookup stations;
     private final SessionLookup sessions;
     private final LiveEvents live;
+    private final SyncOutboxWriter outbox;
     private final Clock clock;
 
     public MatchExecutionService(TournamentRepository tournaments,
@@ -83,6 +85,7 @@ public class MatchExecutionService implements MatchLookup {
                                  StationLookup stations,
                                  SessionLookup sessions,
                                  LiveEvents live,
+                                 SyncOutboxWriter outbox,
                                  Clock clock) {
         this.tournaments = tournaments;
         this.matches = matches;
@@ -91,6 +94,7 @@ public class MatchExecutionService implements MatchLookup {
         this.stations = stations;
         this.sessions = sessions;
         this.live = live;
+        this.outbox = outbox;
         this.clock = clock;
     }
 
@@ -249,6 +253,13 @@ public class MatchExecutionService implements MatchLookup {
                         + "(\"{}\") for {} min", tournamentId, matchId, match.getRound(),
                 match.getSlot(), CurrentStaff.require().id(), seat.stationId(), seat.stationName(),
                 tournament.getMatchDurationMin());
+        outbox.record(SyncOutboxWriter.TOURNAMENT_MATCHES, SyncOutboxWriter.STARTED, matchId,
+                SyncOutboxWriter.data("tournamentId", tournamentId,
+                        "round", match.getRound(),
+                        "slot", match.getSlot(),
+                        "stationId", match.getStationId(),
+                        "startedAt", at.toString(),
+                        "durationMin", tournament.getMatchDurationMin()));
         announce(tournamentId, match.getStationId());
         return view(match, seat.stationName(), tournament.getMatchDurationMin(), at);
     }
@@ -288,6 +299,10 @@ public class MatchExecutionService implements MatchLookup {
                 tournamentId, matchId, minutes,
                 tournament.getMatchDurationMin() + match.getExtraMin(),
                 CurrentStaff.require().id());
+        outbox.record(SyncOutboxWriter.TOURNAMENT_MATCHES, SyncOutboxWriter.EXTENDED, matchId,
+                SyncOutboxWriter.data("tournamentId", tournamentId,
+                        "minutes", minutes,
+                        "extraMin", match.getExtraMin()));
         announce(tournamentId, match.getStationId());
         return view(match, stationNameOf(match.getStationId()),
                 tournament.getMatchDurationMin(), at);

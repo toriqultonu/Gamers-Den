@@ -99,6 +99,18 @@ gamersden:
   settings:
     login-bg:
       max-size: 2MB
+  # One-way venue -> cloud (docs/backend-architecture.md §9). Both switches are off here: the
+  # venue profile turns the pusher on, the cloud profile turns the receiver on, and dev/test run
+  # neither. SYNC_TOKEN is the shared secret of ARCHITECTURE.md §6 — with no URL configured the
+  # pusher stands down rather than reporting the chip OFFLINE.
+  sync:
+    push-enabled: false
+    receive-enabled: false
+    url: ${SYNC_URL:}
+    token: ${SYNC_TOKEN:}
+    push-interval-seconds: 30
+    batch-size: 200
+    timeout: 5s
   # OPEN FLAG (ARCHITECTURE.md §8): documented default until the venue confirms.
   morning-discount:
     from: "10:00"

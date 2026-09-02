@@ -11,6 +11,7 @@ import dev.gamersden.common.security.StaffPrincipal;
 import dev.gamersden.common.spi.MemberSettlement;
 import dev.gamersden.common.spi.SaleRefunding;
 import dev.gamersden.common.spi.ShiftLookup;
+import dev.gamersden.common.spi.SyncOutboxWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -62,6 +63,7 @@ public class RefundService implements SaleRefunding {
     private final PublicIdSequence publicIds;
     private final MemberSettlement memberWrites;
     private final ShiftLookup shifts;
+    private final SyncOutboxWriter outbox;
     private final Clock clock;
 
     public RefundService(TransactionRepository transactions,
@@ -69,12 +71,14 @@ public class RefundService implements SaleRefunding {
                          PublicIdSequence publicIds,
                          MemberSettlement memberWrites,
                          ShiftLookup shifts,
+                         SyncOutboxWriter outbox,
                          Clock clock) {
         this.transactions = transactions;
         this.splits = splits;
         this.publicIds = publicIds;
         this.memberWrites = memberWrites;
         this.shifts = shifts;
+        this.outbox = outbox;
         this.clock = clock;
     }
 
@@ -102,6 +106,17 @@ public class RefundService implements SaleRefunding {
                     new MemberSettlement.LoyaltyMovement(0, 0, walletBack));
         }
 
+        outbox.record(SyncOutboxWriter.TRANSACTIONS, SyncOutboxWriter.REFUNDED, refund.getId(),
+                SyncOutboxWriter.data(
+                        "publicId", refund.getPublicId(),
+                        "shiftId", shiftId,
+                        "staffId", staff.id(),
+                        "refundOf", original.getId(),
+                        "refundOfPublicId", original.getPublicId(),
+                        "bucket", request.bucket().name(),
+                        "reason", request.reason(),
+                        "memberId", refund.getMemberId(),
+                        "totalDue", refund.getTotalDue()));
         log.info("refund {} ({}) returns {} BDT of the {} on transaction {} ({}) to shift {} by "
                         + "staff {}: \"{}\"", refund.getId(), refund.getPublicId(), amount,
                 request.bucket(), original.getId(), original.getPublicId(), shiftId, staff.id(),

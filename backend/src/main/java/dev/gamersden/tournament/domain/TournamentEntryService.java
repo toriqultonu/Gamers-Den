@@ -5,6 +5,7 @@ import dev.gamersden.common.error.ErrorCode;
 import dev.gamersden.common.error.NotFoundException;
 import dev.gamersden.common.events.LiveEvents;
 import dev.gamersden.common.error.ValidationFailedException;
+import dev.gamersden.common.spi.SyncOutboxWriter;
 import dev.gamersden.common.spi.TournamentEntrySettlement;
 import dev.gamersden.tournament.repo.TournamentEntryRepository;
 import dev.gamersden.tournament.repo.TournamentRepository;
@@ -45,15 +46,18 @@ public class TournamentEntryService implements TournamentEntrySettlement {
     private final TournamentEntryRepository entries;
     private final BracketService brackets;
     private final LiveEvents live;
+    private final SyncOutboxWriter outbox;
 
     public TournamentEntryService(TournamentRepository tournaments,
                                   TournamentEntryRepository entries,
                                   BracketService brackets,
-                                  LiveEvents live) {
+                                  LiveEvents live,
+                                  SyncOutboxWriter outbox) {
         this.tournaments = tournaments;
         this.entries = entries;
         this.brackets = brackets;
         this.live = live;
+        this.outbox = outbox;
     }
 
     // ---- the settle path ----------------------------------------------------------------------
@@ -114,6 +118,14 @@ public class TournamentEntryService implements TournamentEntrySettlement {
             log.info("tournament {} entry {} registered as seed #{} for \"{}\" on transaction {} "
                             + "({} BDT)", quote.tournamentId(), entry.getId(), entry.getSeed(),
                     entry.getPlayerName(), txId, quote.fee());
+            outbox.record(SyncOutboxWriter.TOURNAMENT_ENTRIES, SyncOutboxWriter.REGISTERED,
+                    entry.getId(), SyncOutboxWriter.data(
+                            "tournamentId", quote.tournamentId(),
+                            "memberId", memberId,
+                            "playerName", entry.getPlayerName(),
+                            "seed", entry.getSeed(),
+                            "fee", quote.fee(),
+                            "txId", txId));
             registered.add(new RegisteredEntry(entry.getId(), quote.tournamentId(),
                     quote.tournamentName(), entry.getPlayerName(), entry.getSeed(),
                     entry.getQrToken()));
@@ -157,6 +169,9 @@ public class TournamentEntryService implements TournamentEntrySettlement {
         entry.setCheckedIn(true);
         log.info("tournament {} entry {} (seed #{}) checked in", entry.getTournamentId(), entryId,
                 entry.getSeed());
+        outbox.record(SyncOutboxWriter.TOURNAMENT_ENTRIES, SyncOutboxWriter.CHECKED_IN, entryId,
+                SyncOutboxWriter.data("tournamentId", entry.getTournamentId(),
+                        "seed", entry.getSeed()));
         live.tournamentChanged(entry.getTournamentId());
         return entry;
     }

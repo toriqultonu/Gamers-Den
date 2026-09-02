@@ -11,6 +11,7 @@ import dev.gamersden.common.security.StaffPrincipal;
 import dev.gamersden.common.spi.AlertPublisher;
 import dev.gamersden.common.spi.OperatorSignOut;
 import dev.gamersden.common.spi.ShiftReportPrinting;
+import dev.gamersden.common.spi.SyncOutboxWriter;
 import dev.gamersden.common.util.Money;
 import dev.gamersden.shift.repo.ShiftRepository;
 import org.slf4j.Logger;
@@ -57,6 +58,7 @@ public class ShiftService {
     private final ShiftReportPrinting printing;
     private final AlertPublisher alerts;
     private final OperatorSignOut signOut;
+    private final SyncOutboxWriter outbox;
     private final Clock clock;
 
     public ShiftService(ShiftRepository shifts,
@@ -64,12 +66,14 @@ public class ShiftService {
                         ShiftReportPrinting printing,
                         AlertPublisher alerts,
                         OperatorSignOut signOut,
+                        SyncOutboxWriter outbox,
                         Clock clock) {
         this.shifts = shifts;
         this.reports = reports;
         this.printing = printing;
         this.alerts = alerts;
         this.signOut = signOut;
+        this.outbox = outbox;
         this.clock = clock;
     }
 
@@ -98,6 +102,12 @@ public class ShiftService {
         log.info("shift {} opened on {} by staff {} with a float of {}",
                 shift.getId(), shift.getTerminal(), shift.getStaffId(),
                 Money.format(shift.getOpeningFloat()));
+        // Every transaction carries a shift_id, so the cloud cannot reconcile a takings row it has
+        // no shift for — the drawer's own lifecycle is part of the money path (invariant §5.7).
+        outbox.record(SyncOutboxWriter.SHIFTS, SyncOutboxWriter.OPENED, shift.getId(),
+                SyncOutboxWriter.data("terminal", shift.getTerminal(),
+                        "staffId", shift.getStaffId(),
+                        "openingFloat", shift.getOpeningFloat()));
         return shift;
     }
 
@@ -160,6 +170,19 @@ public class ShiftService {
             raiseDiscrepancyAlert(shift, report);
         }
         signOut.signOutOfTerminal(shift.getStaffId(), shift.getTerminal());
+        outbox.record(SyncOutboxWriter.SHIFTS, SyncOutboxWriter.CLOSED, shift.getId(),
+                SyncOutboxWriter.data("terminal", shift.getTerminal(),
+                        "staffId", shift.getStaffId(),
+                        "closedBy", staff.id(),
+                        "openingFloat", shift.getOpeningFloat(),
+                        "expectedCash", report.cash().expected(),
+                        "countedCash", countedCash,
+                        "discrepancy", report.cash().discrepancy(),
+                        "takings", report.takings().totals().total(),
+                        "tournamentTakings", report.takings().totals().tournament(),
+                        "bookingTakings", report.takings().totals().booking(),
+                        "expenses", report.expenses().total(),
+                        "printJobId", printJobId));
 
         log.info("shift {} closed on {} by staff {} — expected {}, counted {}, discrepancy {}; "
                         + "Z print job {}",

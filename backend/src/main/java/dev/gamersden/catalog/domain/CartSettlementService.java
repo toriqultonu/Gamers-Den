@@ -7,6 +7,7 @@ import dev.gamersden.catalog.repo.StockMovementRepository;
 import dev.gamersden.common.error.NotFoundException;
 import dev.gamersden.common.security.CurrentStaff;
 import dev.gamersden.common.spi.AlertPublisher;
+import dev.gamersden.common.spi.SyncOutboxWriter;
 import dev.gamersden.common.spi.CartLookup;
 import dev.gamersden.common.spi.CartSettlement;
 import org.slf4j.Logger;
@@ -49,17 +50,20 @@ public class CartSettlementService implements CartSettlement {
     private final ItemRepository items;
     private final StockMovementRepository movements;
     private final AlertPublisher alerts;
+    private final SyncOutboxWriter outbox;
 
     public CartSettlementService(CartRepository carts,
                                  CartLineRepository lines,
                                  ItemRepository items,
                                  StockMovementRepository movements,
-                                 AlertPublisher alerts) {
+                                 AlertPublisher alerts,
+                                 SyncOutboxWriter outbox) {
         this.carts = carts;
         this.lines = lines;
         this.items = items;
         this.movements = movements;
         this.alerts = alerts;
+        this.outbox = outbox;
     }
 
     // ---- reads ----------------------------------------------------------------------------
@@ -111,7 +115,18 @@ public class CartSettlementService implements CartSettlement {
             int delta = charging ? -line.getQty() : line.getQty();
             int before = item.getStock();
             item.setStock(before + delta);
-            movements.save(new StockMovement(item.getId(), delta, reason, txId, staffId));
+            StockMovement movement =
+                    movements.save(new StockMovement(item.getId(), delta, reason, txId, staffId));
+            // Inventory is on the §5.8 list beside money, and this is where the shelf actually
+            // moves — one op per line, carrying the transaction that caused it.
+            outbox.record(SyncOutboxWriter.STOCK_MOVEMENTS, SyncOutboxWriter.RECORDED,
+                    movement.getId(), SyncOutboxWriter.data(
+                            "itemId", item.getId(),
+                            "delta", delta,
+                            "reason", reason.name(),
+                            "txId", txId,
+                            "staffId", staffId,
+                            "stockAfter", item.getStock()));
             raiseLowStockIfCrossed(item, before);
             if (item.getStock() < 0) {
                 log.warn("item {} \"{}\" went to {} on {} by transaction {} — the shelf is over-sold; "
