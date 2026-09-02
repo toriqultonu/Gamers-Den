@@ -10,7 +10,45 @@ npm run dev        # http://localhost:3000
 npm run build      # production build — the task gate
 npm test           # Vitest + Testing Library — the task gate
 npm run typecheck  # tsc --noEmit
+npm run types:gen  # regenerate the API types from a running backend
+npm run types:check # CI gate: fail when they drift from /v3/api-docs
 ```
+
+## Talking to the backend
+
+`src/lib/api.ts` is the only place this app calls the venue backend. It attaches
+the bearer token, attaches an `Idempotency-Key` to the money/print routes
+`docs/api-contract.md` §1 guards, parses the error envelope once into a typed
+`ApiError`, and handles a 401 with exactly one silent refresh before signing
+out. Screens switch on `error.code` (`CANCEL_CUTOFF_PASSED`,
+`PREBOOKING_DISABLED`, `CONSOLE_TYPE_MISMATCH`, …) and render `errorNotice()`.
+
+**One key per user intent, reused on retry.** Pass `intent` on a guarded call —
+`api.post('/payments', body, { intent: 'settle:session:41' })`. The key is held
+until that intent succeeds, so a retry after a timeout replays the server's
+stored answer instead of charging twice. A guarded call with no intent throws
+before it reaches the network.
+
+```
+src/lib/api-types.ts   generated from /v3/api-docs — never edit
+openapi.json           the spec snapshot those types were cut from
+src/lib/query-keys.ts  the canonical keys of ARCHITECTURE.md §4.1
+src/lib/query-client.ts  retry/staleness policy; mutations never auto-retry
+src/lib/time.ts        the server-offset clock every countdown ticks from
+src/lib/money.ts       integer BDT
+```
+
+Regenerating the types needs a running backend
+(`cd backend && ./mvnw spring-boot:run`); `npm run types:gen` rewrites both
+files and `npm run types:check` is what CI runs to fail the build on drift.
+`OPENAPI_URL` overrides the default `http://localhost:8080/v3/api-docs`, and
+`NEXT_PUBLIC_API_BASE_URL` points the app itself at a backend other than
+`http://localhost:8080/api/v1`.
+
+**Clocks are the server's.** Nothing in the UI may read `Date.now()` for a
+countdown: `lib/api.ts` measures the offset from every response's `Date` header
+and `useCountdown(snapshot)` re-derives the remainder each tick, so a terminal
+with a wrong clock still shows the right time left.
 
 ## The design tokens
 

@@ -1,0 +1,82 @@
+### Frontend CI — the F03 build gate.
+#
+# Two things have to hold on every push touching `frontend/`:
+#
+#   1. `npm run build && npm test` are green (TASKLIST.md GLOBAL RULE 8);
+#   2. the committed OpenAPI types still match the backend.
+#
+# (2) is why this job boots Postgres and the Spring app: `npm run types:check`
+# re-fetches `/v3/api-docs` from a live backend and fails when `openapi.json`
+# or `src/lib/api-types.ts` has drifted, so a renamed field breaks the build
+# here rather than a screen at the counter (frontend/ARCHITECTURE.md §2).
+
+name: frontend
+
+on:
+  push:
+    branches: [main, dev]
+    paths: ['frontend/**', 'backend/**', '.github/workflows/frontend.yml']
+  pull_request:
+    paths: ['frontend/**', 'backend/**', '.github/workflows/frontend.yml']
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: gamersden
+          POSTGRES_USER: gamersden
+          POSTGRES_PASSWORD: gamersden
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U gamersden"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      # The API-type drift gate. The backend runs only long enough to publish
+      # its OpenAPI document; nothing else in this job depends on it.
+      - name: Start the backend
+        working-directory: backend
+        run: |
+          ./mvnw -q -DskipTests spring-boot:run -Dspring-boot.run.profiles=dev &
+          for i in $(seq 1 60); do
+            if curl -sf http://localhost:8080/actuator/health > /dev/null; then exit 0; fi
+            sleep 3
+          done
+          echo "backend did not come up" >&2
+          exit 1
+
+      - name: Check OpenAPI type drift
+        working-directory: frontend
+        run: npm run types:check
+
+      - name: Build
+        working-directory: frontend
+        run: npm run build
+
+      - name: Unit tests
+        working-directory: frontend
+        run: npm test
