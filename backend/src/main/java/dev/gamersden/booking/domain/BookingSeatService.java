@@ -5,6 +5,7 @@ import dev.gamersden.common.error.NotFoundException;
 import dev.gamersden.common.spi.BookingSeatLookup;
 import dev.gamersden.common.spi.QueueTokenLookup;
 import dev.gamersden.common.spi.StationArrivalLookup;
+import dev.gamersden.common.spi.SyncOutboxWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -38,10 +39,13 @@ public class BookingSeatService implements BookingSeatLookup, StationArrivalLook
 
     private final BookingRepository bookings;
     private final QueueTokenLookup tokens;
+    private final SyncOutboxWriter outbox;
 
-    public BookingSeatService(BookingRepository bookings, QueueTokenLookup tokens) {
+    public BookingSeatService(BookingRepository bookings, QueueTokenLookup tokens,
+                              SyncOutboxWriter outbox) {
         this.bookings = bookings;
         this.tokens = tokens;
+        this.outbox = outbox;
     }
 
     // ---- BookingSeatLookup --------------------------------------------------------------------
@@ -58,6 +62,8 @@ public class BookingSeatService implements BookingSeatLookup, StationArrivalLook
         Booking booking = bookings.findById(bookingId)
                 .orElseThrow(() -> new NotFoundException("Booking", bookingId));
         booking.setStatus(BookingStatus.USED);
+        outbox.record(SyncOutboxWriter.BOOKINGS, SyncOutboxWriter.USED, bookingId,
+                SyncOutboxWriter.data("sessionId", sessionId, "blocks", booking.getBlocks()));
         log.info("booking {} seated on session {} — prepaid {} x 30 min for {}", bookingId,
                 sessionId, booking.getBlocks(), booking.getName());
     }

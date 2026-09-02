@@ -24,6 +24,7 @@ import dev.gamersden.common.spi.SaleReceiptPrinting;
 import dev.gamersden.common.spi.SessionSettlement;
 import dev.gamersden.common.spi.ShiftLookup;
 import dev.gamersden.common.spi.StationLookup;
+import dev.gamersden.common.spi.SyncOutboxWriter;
 import dev.gamersden.common.spi.TournamentEntrySale;
 import dev.gamersden.common.spi.TournamentEntrySettlement;
 import dev.gamersden.common.spi.TournamentEntrySettlement.EntrySale;
@@ -100,6 +101,7 @@ public class PaymentService implements TournamentEntrySale, BookingSale, PlayTic
     private final BookingSettlement bookings;
     private final PlayTicketSettlement playTickets;
     private final PublicIdSequence publicIds;
+    private final SyncOutboxWriter outbox;
     private final Clock clock;
 
     public PaymentService(TransactionRepository transactions,
@@ -116,6 +118,7 @@ public class PaymentService implements TournamentEntrySale, BookingSale, PlayTic
                           BookingSettlement bookings,
                           PlayTicketSettlement playTickets,
                           PublicIdSequence publicIds,
+                          SyncOutboxWriter outbox,
                           Clock clock) {
         this.transactions = transactions;
         this.splits = splits;
@@ -131,6 +134,7 @@ public class PaymentService implements TournamentEntrySale, BookingSale, PlayTic
         this.bookings = bookings;
         this.playTickets = playTickets;
         this.publicIds = publicIds;
+        this.outbox = outbox;
         this.clock = clock;
     }
 
@@ -272,6 +276,31 @@ public class PaymentService implements TournamentEntrySale, BookingSale, PlayTic
 
         long printJobId = receipts.issueSaleReceipt(
                 receiptOf(tx, target, settlement, staff, at, registered, heldSlot, issued));
+        // The op ships with the money, in the money's own transaction (invariant §5.8). A settle
+        // that is refused therefore tells the cloud nothing, and one that commits cannot fail to.
+        outbox.record(SyncOutboxWriter.TRANSACTIONS, SyncOutboxWriter.SETTLED, tx.getId(),
+                SyncOutboxWriter.data(
+                        "publicId", tx.getPublicId(),
+                        "shiftId", shiftId,
+                        "staffId", staff.id(),
+                        "sessionId", tx.getSessionId(),
+                        "cartId", tx.getCartId(),
+                        "memberId", tx.getMemberId(),
+                        "gamingAmount", tx.getGamingAmount(),
+                        "fnbAmount", tx.getFnbAmount(),
+                        "tournamentAmount", tx.getTournamentAmount(),
+                        "bookingAmount", tx.getBookingAmount(),
+                        "pointsRedeemed", tx.getPointsRedeemed(),
+                        "pointsEarned", tx.getPointsEarned(),
+                        "totalDue", tx.getTotalDue(),
+                        "tenders", settlement.tenders().stream()
+                                .map(tender -> Map.of("method", tender.method().name(),
+                                        "amount", tender.amount()))
+                                .toList(),
+                        "entryIds", registered.stream().map(RegisteredEntry::entryId).toList(),
+                        "queueEntryIds", issued.stream().map(IssuedTicket::queueEntryId).toList(),
+                        "bookingId", heldSlot == null ? null : heldSlot.bookingId(),
+                        "printJobId", printJobId));
         log.info("transaction {} ({}) settled {} BDT on shift {} by staff {} — gaming {}, fnb {}, "
                         + "tournament {} ({} entries), booking {} ({} play tickets), "
                         + "points -{}/+{}; print job {}",
@@ -347,6 +376,17 @@ public class PaymentService implements TournamentEntrySale, BookingSale, PlayTic
                             walletSpentOn(tendered)));
         }
 
+        outbox.record(SyncOutboxWriter.TRANSACTIONS, SyncOutboxWriter.VOIDED, reversal.getId(),
+                SyncOutboxWriter.data(
+                        "publicId", reversal.getPublicId(),
+                        "shiftId", shiftId,
+                        "staffId", staff.id(),
+                        "reversalOf", original.getId(),
+                        "reversalOfPublicId", original.getPublicId(),
+                        "reason", original.getVoidReason(),
+                        "totalDue", reversal.getTotalDue(),
+                        "blocksReleased", released,
+                        "tokensRevoked", revoked));
         log.info("transaction {} ({}) voided by staff {} on shift {}: \"{}\" — reversal {} ({}) "
                         + "for {} BDT, {} blocks released back to billable, {} queue token(s) revoked",
                 original.getId(), original.getPublicId(), staff.id(), shiftId,

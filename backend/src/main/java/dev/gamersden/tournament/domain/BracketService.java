@@ -9,6 +9,7 @@ import dev.gamersden.common.error.NotFoundException;
 import dev.gamersden.common.events.LiveEvents;
 import dev.gamersden.common.security.CurrentStaff;
 import dev.gamersden.common.security.StaffPrincipal;
+import dev.gamersden.common.spi.SyncOutboxWriter;
 import dev.gamersden.tournament.repo.TournamentEntryRepository;
 import dev.gamersden.tournament.repo.TournamentMatchRepository;
 import dev.gamersden.tournament.repo.TournamentRepository;
@@ -62,14 +63,17 @@ public class BracketService {
     private final TournamentEntryRepository entries;
     private final TournamentMatchRepository matches;
     private final LiveEvents live;
+    private final SyncOutboxWriter outbox;
     private final Clock clock;
 
     public BracketService(TournamentRepository tournaments, TournamentEntryRepository entries,
-                          TournamentMatchRepository matches, LiveEvents live, Clock clock) {
+                          TournamentMatchRepository matches, LiveEvents live,
+                          SyncOutboxWriter outbox, Clock clock) {
         this.tournaments = tournaments;
         this.entries = entries;
         this.matches = matches;
         this.live = live;
+        this.outbox = outbox;
         this.clock = clock;
     }
 
@@ -173,6 +177,12 @@ public class BracketService {
                         + "bracket — {} matches, {} bye(s), status LIVE", tournamentId,
                 tournament.getName(), CurrentStaff.require().id(), players.size(), plan.size(),
                 bracket.size(), plan.byes());
+        outbox.record(SyncOutboxWriter.TOURNAMENTS, SyncOutboxWriter.BRACKET_DRAWN, tournamentId,
+                SyncOutboxWriter.data("players", players.size(),
+                        "slots", plan.size(),
+                        "matches", bracket.size(),
+                        "byes", plan.byes(),
+                        "matchIds", bracket.stream().map(TournamentMatch::getId).toList()));
         live.tournamentChanged(tournamentId);
         return List.copyOf(bracket);
     }
@@ -251,6 +261,14 @@ public class BracketService {
                 winnerEntryId, staff.id(),
                 champion ? " — the final: tournament DONE, consoles released"
                         : " — advances to match " + next.getId());
+        outbox.record(SyncOutboxWriter.TOURNAMENT_MATCHES, SyncOutboxWriter.WON, matchId,
+                SyncOutboxWriter.data("tournamentId", tournamentId,
+                        "round", match.getRound(),
+                        "slot", match.getSlot(),
+                        "winnerEntryId", winnerEntryId,
+                        "decidedBy", staff.id(),
+                        "champion", champion,
+                        "nextMatchId", next == null ? null : next.getId()));
         live.tournamentChanged(tournamentId);
         if (match.getStationId() != null) {
             // The console the match was on is free again — and on the final, so is every other one

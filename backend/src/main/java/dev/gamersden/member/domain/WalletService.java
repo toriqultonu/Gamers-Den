@@ -4,6 +4,7 @@ import dev.gamersden.common.error.ConflictException;
 import dev.gamersden.common.error.ErrorCode;
 import dev.gamersden.common.error.NotFoundException;
 import dev.gamersden.common.error.ValidationFailedException;
+import dev.gamersden.common.spi.SyncOutboxWriter;
 import dev.gamersden.member.repo.MemberRepository;
 import dev.gamersden.member.repo.PointsLedgerRepository;
 import dev.gamersden.member.repo.WalletLedgerRepository;
@@ -45,12 +46,14 @@ public class WalletService {
     private final MemberRepository members;
     private final WalletLedgerRepository walletLedger;
     private final PointsLedgerRepository pointsLedger;
+    private final SyncOutboxWriter outbox;
 
     public WalletService(MemberRepository members, WalletLedgerRepository walletLedger,
-                         PointsLedgerRepository pointsLedger) {
+                         PointsLedgerRepository pointsLedger, SyncOutboxWriter outbox) {
         this.members = members;
         this.walletLedger = walletLedger;
         this.pointsLedger = pointsLedger;
+        this.outbox = outbox;
     }
 
     /**
@@ -68,6 +71,12 @@ public class WalletService {
         log.info("member {} wallet +{} by {}{} -> {}", member.getId(), amount, method,
                 paymentRef == null || paymentRef.isBlank() ? "" : " ref *" + lastFour(paymentRef),
                 member.getWallet());
+        // The wallet is money the venue is holding, so a top-up is an op like any other sale.
+        // The payment reference is not carried: §5.12 keeps refs out of anything but the row.
+        outbox.record(SyncOutboxWriter.WALLET_LEDGER, SyncOutboxWriter.TOPPED_UP, member.getId(),
+                SyncOutboxWriter.data("amount", amount,
+                        "method", method.name(),
+                        "wallet", member.getWallet()));
         return member;
     }
 
@@ -94,6 +103,10 @@ public class WalletService {
         member.setWallet(member.getWallet() + points);
         log.info("member {} redeemed {} points to wallet -> wallet {} points {}",
                 member.getId(), points, member.getWallet(), member.getPoints());
+        outbox.record(SyncOutboxWriter.WALLET_LEDGER, SyncOutboxWriter.POINTS_REDEEMED,
+                member.getId(), SyncOutboxWriter.data("points", points,
+                        "wallet", member.getWallet(),
+                        "pointsLeft", member.getPoints()));
         return member;
     }
 

@@ -17,6 +17,7 @@ import dev.gamersden.common.spi.QueueTokenIssuing;
 import dev.gamersden.common.spi.QueueTokenLookup;
 import dev.gamersden.common.spi.SaleRefunding;
 import dev.gamersden.common.spi.StationLookup;
+import dev.gamersden.common.spi.SyncOutboxWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -84,6 +85,7 @@ public class BookingService implements MemberBookingLookup {
     private final QueueTokenLookup issuedTokens;
     private final PlayTicketPrinting tickets;
     private final LiveEvents live;
+    private final SyncOutboxWriter outbox;
     private final Clock clock;
 
     public BookingService(BookingRepository bookings,
@@ -96,6 +98,7 @@ public class BookingService implements MemberBookingLookup {
                           QueueTokenLookup issuedTokens,
                           PlayTicketPrinting tickets,
                           LiveEvents live,
+                          SyncOutboxWriter outbox,
                           Clock clock) {
         this.bookings = bookings;
         this.settings = settings;
@@ -107,6 +110,7 @@ public class BookingService implements MemberBookingLookup {
         this.issuedTokens = issuedTokens;
         this.tickets = tickets;
         this.live = live;
+        this.outbox = outbox;
         this.clock = clock;
     }
 
@@ -189,6 +193,13 @@ public class BookingService implements MemberBookingLookup {
         log.info("booking {} checked in by staff {} — TOKEN #{} of {} on queue entry {}, "
                         + "print job {}", booking.getId(), staff.id(), token.tokenNo(),
                 token.tokenDate(), token.queueEntryId(), printJobId);
+        outbox.record(SyncOutboxWriter.BOOKINGS, SyncOutboxWriter.CHECKED_IN, booking.getId(),
+                SyncOutboxWriter.data(
+                        "queueEntryId", token.queueEntryId(),
+                        "tokenNo", token.tokenNo(),
+                        "tokenDate", token.tokenDate().toString(),
+                        "staffId", staff.id(),
+                        "printJobId", printJobId));
         live.bookingChanged(booking.getId());
         // The Floor card grows an arrival prompt the moment the customer is at the door — the
         // console is still free, and staff seat the token onto it from there (docs/bookings.md §7).
@@ -229,6 +240,11 @@ public class BookingService implements MemberBookingLookup {
 
         log.info("booking {} cancelled ({}) — {} BDT returned on {}", booking.getId(), why,
                 booking.total(), refund == null ? "nothing (it was sold for 0)" : refund.publicId());
+        outbox.record(SyncOutboxWriter.BOOKINGS, SyncOutboxWriter.CANCELLED, booking.getId(),
+                SyncOutboxWriter.data(
+                        "reason", why,
+                        "refunded", booking.total(),
+                        "refundTxId", booking.getRefundTxId()));
         live.bookingChanged(booking.getId());
         return new Cancelled(summaryOf(booking, station(booking.getStationId()), null, false), refund);
     }

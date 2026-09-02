@@ -4,6 +4,7 @@ import dev.gamersden.common.config.VenueTime;
 import dev.gamersden.common.events.LiveEvents;
 import dev.gamersden.common.spi.QueueTokenIssuing;
 import dev.gamersden.common.spi.QueueTokenLookup;
+import dev.gamersden.common.spi.SyncOutboxWriter;
 import dev.gamersden.queue.repo.QueueEntryRepository;
 import dev.gamersden.queue.repo.TokenSeqRepository;
 import org.slf4j.Logger;
@@ -51,13 +52,15 @@ public class QueueTokenService implements QueueTokenIssuing, QueueTokenLookup {
     private final QueueEntryRepository entries;
     private final TokenSeqRepository tokens;
     private final LiveEvents live;
+    private final SyncOutboxWriter outbox;
     private final Clock clock;
 
     public QueueTokenService(QueueEntryRepository entries, TokenSeqRepository tokens,
-                             LiveEvents live, Clock clock) {
+                             LiveEvents live, SyncOutboxWriter outbox, Clock clock) {
         this.entries = entries;
         this.tokens = tokens;
         this.live = live;
+        this.outbox = outbox;
         this.clock = clock;
     }
 
@@ -75,6 +78,19 @@ public class QueueTokenService implements QueueTokenIssuing, QueueTokenLookup {
                 request.playAmount(), request.txId());
         // One announcement covers both counters: a walk-up sale and a booking check-in land here,
         // so the rail is re-sent from one place after the paying transaction commits (§4.5).
+        // A token is prepaid time: the sale that bought it is already an op, and this is the row
+        // that will be seated against it, so the cloud needs both halves (invariant §5.9).
+        outbox.record(SyncOutboxWriter.QUEUE_ENTRIES, SyncOutboxWriter.ISSUED, entry.getId(),
+                SyncOutboxWriter.data(
+                        "tokenNo", tokenNo,
+                        "tokenDate", day.toString(),
+                        "source", request.source(),
+                        "bookingId", request.bookingId(),
+                        "txId", request.txId(),
+                        "playerName", request.playerName(),
+                        "consoleType", request.consoleType(),
+                        "blocks", request.blocks(),
+                        "playAmount", request.playAmount()));
         live.queueChanged();
         return new IssuedToken(entry.getId(), tokenNo, day);
     }

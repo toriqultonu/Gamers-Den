@@ -5,6 +5,7 @@ import dev.gamersden.common.events.LiveEvents;
 import dev.gamersden.common.spi.PlayTicketSettlement;
 import dev.gamersden.common.spi.QueueTokenIssuing;
 import dev.gamersden.common.spi.StationLookup;
+import dev.gamersden.common.spi.SyncOutboxWriter;
 import dev.gamersden.queue.repo.QueueEntryRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,14 +54,17 @@ public class PlayTicketSettlementService implements PlayTicketSettlement {
     private final QueueEntryRepository entries;
     private final StationLookup stations;
     private final LiveEvents live;
+    private final SyncOutboxWriter outbox;
     private final Clock clock;
 
     public PlayTicketSettlementService(QueueTokenService tokens, QueueEntryRepository entries,
-                                       StationLookup stations, LiveEvents live, Clock clock) {
+                                       StationLookup stations, LiveEvents live,
+                                       SyncOutboxWriter outbox, Clock clock) {
         this.tokens = tokens;
         this.entries = entries;
         this.stations = stations;
         this.live = live;
+        this.outbox = outbox;
         this.clock = clock;
     }
 
@@ -127,6 +131,9 @@ public class PlayTicketSettlementService implements PlayTicketSettlement {
         if (!revoked.isEmpty()) {
             log.info("transaction {} voided — {} waiting token(s) revoked: {}", txId,
                     revoked.size(), revoked.stream().map(QueueEntry::getId).toList());
+            revoked.forEach(entry -> outbox.record(SyncOutboxWriter.QUEUE_ENTRIES,
+                    SyncOutboxWriter.REVOKED, entry.getId(),
+                    SyncOutboxWriter.data("txId", txId)));
             live.queueChanged();
         }
         return revoked.size();

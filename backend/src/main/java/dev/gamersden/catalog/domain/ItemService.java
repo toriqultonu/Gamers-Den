@@ -3,6 +3,7 @@ package dev.gamersden.catalog.domain;
 import dev.gamersden.catalog.repo.CartLineRepository;
 import dev.gamersden.catalog.repo.ItemRepository;
 import dev.gamersden.catalog.repo.StockMovementRepository;
+import dev.gamersden.common.spi.SyncOutboxWriter;
 import dev.gamersden.common.error.ConflictException;
 import dev.gamersden.common.error.ErrorCode;
 import dev.gamersden.common.error.NotFoundException;
@@ -38,11 +39,14 @@ public class ItemService {
     private final ItemRepository items;
     private final StockMovementRepository movements;
     private final CartLineRepository lines;
+    private final SyncOutboxWriter outbox;
 
-    public ItemService(ItemRepository items, StockMovementRepository movements, CartLineRepository lines) {
+    public ItemService(ItemRepository items, StockMovementRepository movements,
+                       CartLineRepository lines, SyncOutboxWriter outbox) {
         this.items = items;
         this.movements = movements;
         this.lines = lines;
+        this.outbox = outbox;
     }
 
     // ---- reads ----------------------------------------------------------------------------
@@ -91,6 +95,12 @@ public class ItemService {
             applyStock(created, stock, StockMovementReason.INITIAL);
         }
         log.info("item {} created as {} {} at {}", created.getId(), category, trimmed, price);
+        outbox.record(SyncOutboxWriter.ITEMS, SyncOutboxWriter.CREATED, created.getId(),
+                SyncOutboxWriter.data("name", created.getName(),
+                        "category", created.getCategory().name(),
+                        "price", created.getPrice(),
+                        "stock", created.getStock(),
+                        "reorderAt", created.getReorderAt()));
         return created;
     }
 
@@ -127,6 +137,13 @@ public class ItemService {
             applyStock(item, stock - item.getStock(), StockMovementReason.MANUAL_ADJUST);
         }
         log.info("item {} updated", id);
+        outbox.record(SyncOutboxWriter.ITEMS, SyncOutboxWriter.UPDATED, item.getId(),
+                SyncOutboxWriter.data("name", item.getName(),
+                        "category", item.getCategory().name(),
+                        "price", item.getPrice(),
+                        "stock", item.getStock(),
+                        "reorderAt", item.getReorderAt(),
+                        "active", item.isActive()));
         return item;
     }
 
@@ -141,17 +158,29 @@ public class ItemService {
         if (lines.existsByIdItemId(item.getId()) || movements.existsByItemId(item.getId())) {
             item.setActive(false);
             log.info("item {} deactivated — it has sales or stock history", id);
+            outbox.record(SyncOutboxWriter.ITEMS, SyncOutboxWriter.UPDATED, item.getId(),
+                    SyncOutboxWriter.data("active", false));
             return;
         }
         items.delete(item);
         log.info("item {} deleted", id);
+        outbox.record(SyncOutboxWriter.ITEMS, SyncOutboxWriter.DELETED, id);
     }
 
     /** One stock change: the column and its audit row, always together. */
     private void applyStock(Item item, int delta, StockMovementReason reason) {
         item.setStock(item.getStock() + delta);
-        movements.save(new StockMovement(item.getId(), delta, reason, null,
-                CurrentStaff.require().id()));
+        long staffId = CurrentStaff.require().id();
+        StockMovement movement =
+                movements.save(new StockMovement(item.getId(), delta, reason, null, staffId));
+        outbox.record(SyncOutboxWriter.STOCK_MOVEMENTS, SyncOutboxWriter.RECORDED,
+                movement.getId(), SyncOutboxWriter.data(
+                        "itemId", item.getId(),
+                        "delta", delta,
+                        "reason", reason.name(),
+                        "txId", null,
+                        "staffId", staffId,
+                        "stockAfter", item.getStock()));
         log.info("item {} stock {}{} by {} -> {}", item.getId(), delta > 0 ? "+" : "", delta,
                 reason, item.getStock());
     }

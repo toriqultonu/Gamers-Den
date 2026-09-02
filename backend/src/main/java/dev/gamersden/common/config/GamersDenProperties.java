@@ -68,6 +68,26 @@ public record GamersDenProperties(
     public record Events(Duration timeout, Duration heartbeat) {
     }
 
-    public record Sync(boolean pushEnabled, boolean receiveEnabled, int pushIntervalSeconds) {
+    /**
+     * One-way venue → cloud (docs/backend-architecture.md §9). {@code pushEnabled} is the
+     * {@code venue} profile and {@code receiveEnabled} the {@code cloud} one; nothing runs both.
+     *
+     * @param url                 the cloud's base URL, e.g. {@code https://cloud.example.net};
+     *                            blank means no mirror is configured and the pusher stands down
+     * @param token               the shared {@code SYNC_TOKEN} secret (ARCHITECTURE.md §6), sent
+     *                            as {@code X-Sync-Token} and required by the receiver
+     * @param pushIntervalSeconds 30 s, the number §9 fixes
+     * @param batchSize           ops per request; a venue that was offline for a day drains in
+     *                            several batches rather than one enormous body
+     * @param timeout             connect and read timeout — a cloud that has gone away must cost
+     *                            one tick, not a held scheduler thread
+     */
+    public record Sync(boolean pushEnabled,
+                       boolean receiveEnabled,
+                       String url,
+                       String token,
+                       int pushIntervalSeconds,
+                       int batchSize,
+                       Duration timeout) {
     }
 }

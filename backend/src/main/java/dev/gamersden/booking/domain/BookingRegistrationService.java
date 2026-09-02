@@ -2,6 +2,7 @@ package dev.gamersden.booking.domain;
 
 import dev.gamersden.booking.repo.BookingRepository;
 import dev.gamersden.common.spi.BookingSale;
+import dev.gamersden.common.spi.SyncOutboxWriter;
 import dev.gamersden.common.spi.BookingSettlement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,9 +32,11 @@ public class BookingRegistrationService implements BookingSettlement {
     private static final Logger log = LoggerFactory.getLogger(BookingRegistrationService.class);
 
     private final BookingRepository bookings;
+    private final SyncOutboxWriter outbox;
 
-    public BookingRegistrationService(BookingRepository bookings) {
+    public BookingRegistrationService(BookingRepository bookings, SyncOutboxWriter outbox) {
         this.bookings = bookings;
+        this.outbox = outbox;
     }
 
     @Override
@@ -49,6 +52,17 @@ public class BookingRegistrationService implements BookingSettlement {
                 booking.getPlayAmount(), booking.getPackageFee(), booking.total(), txId,
                 booking.cancellableUntil(),
                 clashes.isEmpty() ? "" : " (overlaps bookings " + clashes + ")");
+        outbox.record(SyncOutboxWriter.BOOKINGS, SyncOutboxWriter.CREATED, booking.getId(),
+                SyncOutboxWriter.data(
+                        "stationId", booking.getStationId(),
+                        "memberId", booking.getMemberId(),
+                        "name", booking.getName(),
+                        "startAt", booking.getStartAt().toString(),
+                        "blocks", booking.getBlocks(),
+                        "playAmount", booking.getPlayAmount(),
+                        "packageFee", booking.getPackageFee(),
+                        "cutoffHours", booking.getCutoffHours(),
+                        "txId", txId));
         return new Registered(booking.getId(), clashes);
     }
 

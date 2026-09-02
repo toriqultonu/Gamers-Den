@@ -15,6 +15,7 @@ import dev.gamersden.common.spi.SessionSeating;
 import dev.gamersden.common.spi.ShiftLookup;
 import dev.gamersden.common.spi.StationLookup;
 import dev.gamersden.common.spi.StationReservation;
+import dev.gamersden.common.spi.SyncOutboxWriter;
 import dev.gamersden.session.repo.SessionBlockRepository;
 import dev.gamersden.session.repo.SessionRepository;
 import org.slf4j.Logger;
@@ -65,6 +66,7 @@ public class SessionService implements SessionSeating {
     private final CartLookup carts;
     private final ShiftLookup shifts;
     private final LiveEvents live;
+    private final SyncOutboxWriter outbox;
     private final Clock clock;
 
     public SessionService(SessionRepository sessions,
@@ -75,6 +77,7 @@ public class SessionService implements SessionSeating {
                           CartLookup carts,
                           ShiftLookup shifts,
                           LiveEvents live,
+                          SyncOutboxWriter outbox,
                           Clock clock) {
         this.sessions = sessions;
         this.blocks = blocks;
@@ -84,6 +87,7 @@ public class SessionService implements SessionSeating {
         this.carts = carts;
         this.shifts = shifts;
         this.live = live;
+        this.outbox = outbox;
         this.clock = clock;
     }
 
@@ -153,6 +157,14 @@ public class SessionService implements SessionSeating {
         } else {
             log.info("session {} opened on station {}", session.getId(), station.id());
         }
+        outbox.record(SyncOutboxWriter.SESSIONS, SyncOutboxWriter.OPENED, session.getId(),
+                SyncOutboxWriter.data(
+                        "stationId", station.id(),
+                        "shiftId", session.getShiftId(),
+                        "memberId", session.getMemberId(),
+                        "queueEntryId", session.getQueueEntryId(),
+                        "prepaidBlocks", seat == null ? 0 : seat.blocks(),
+                        "paidTxId", seat == null ? null : seat.paidTxId()));
         live.stationChanged(station.id());
         return settleAndDescribe(session, at);
     }
@@ -205,6 +217,13 @@ public class SessionService implements SessionSeating {
         } else {
             removeOneBlock(session, live, at);
         }
+        // Blocks are money: the delta is a charge or a credit on a seat, so it is an op even
+        // though a clock tick is not (§5.8 names money mutations, and only the ledger is one).
+        outbox.record(SyncOutboxWriter.SESSIONS, SyncOutboxWriter.BLOCKS_CHANGED, id,
+                SyncOutboxWriter.data(
+                        "stationId", session.getStationId(),
+                        "delta", delta,
+                        "blocks", live.size() + delta));
         this.live.stationChanged(session.getStationId());
         return settleAndDescribe(session, at);
     }
@@ -302,6 +321,15 @@ public class SessionService implements SessionSeating {
         session.setEndedAt(at);
         log.info("session {} ended on station {} after {}s", id, session.getStationId(),
                 session.getConsumedSec());
+        outbox.record(SyncOutboxWriter.SESSIONS, SyncOutboxWriter.ENDED, id,
+                SyncOutboxWriter.data(
+                        "stationId", session.getStationId(),
+                        "shiftId", session.getShiftId(),
+                        "memberId", session.getMemberId(),
+                        "blocks", live.size(),
+                        "consumedSec", session.getConsumedSec(),
+                        "endedAt", session.getEndedAt() == null ? null
+                                : session.getEndedAt().toString()));
         this.live.stationChanged(session.getStationId());
         return SessionDetail.of(session, live, balance, at);
     }

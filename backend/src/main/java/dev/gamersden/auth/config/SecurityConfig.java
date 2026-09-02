@@ -7,6 +7,7 @@ import dev.gamersden.auth.web.JwtAuthenticationFilter;
 import dev.gamersden.common.config.WebMvcConfig;
 import dev.gamersden.common.error.ErrorResponseWriter;
 import dev.gamersden.settings.web.TerminalSettingsController;
+import dev.gamersden.sync.domain.SyncPusher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
@@ -64,6 +65,15 @@ public class SecurityConfig {
             WebMvcConfig.API_BASE_PATH + TerminalSettingsController.LOGIN_BG_PATH + "/*"
     };
 
+    /**
+     * The cloud's sync receiver (B22). Its caller is the venue box — a machine with no staff, no
+     * shift and no terminal — so the bearer chain has nothing to authenticate. It carries the
+     * shared {@code SYNC_TOKEN} instead, checked constant-time by the controller, which is the
+     * only reason this route is out of the chain's hands. It exists at all only under the
+     * {@code cloud} profile; everywhere else the path 404s.
+     */
+    private static final String[] SYNC_RECEIVER_ROUTES = { SyncPusher.PUSH_PATH };
+
     public SecurityConfig(AuthProperties properties, Environment environment) {
         assertUsableSecret(properties, environment);
     }
@@ -91,6 +101,7 @@ public class SecurityConfig {
                         .requestMatchers(PUBLIC_PATHS).permitAll()
                         .requestMatchers(HttpMethod.POST, PUBLIC_AUTH_ROUTES).permitAll()
                         .requestMatchers(HttpMethod.GET, PUBLIC_IMAGE_ROUTES).permitAll()
+                        .requestMatchers(HttpMethod.POST, SYNC_RECEIVER_ROUTES).permitAll()
                         .anyRequest().authenticated())
                 .exceptionHandling(handling -> handling
                         .authenticationEntryPoint(entryPoint)

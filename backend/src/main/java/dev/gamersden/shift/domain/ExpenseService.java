@@ -5,6 +5,7 @@ import dev.gamersden.common.error.ValidationFailedException;
 import dev.gamersden.common.security.CurrentStaff;
 import dev.gamersden.common.security.StaffPrincipal;
 import dev.gamersden.common.spi.ExpenseVoucherPrinting;
+import dev.gamersden.common.spi.SyncOutboxWriter;
 import dev.gamersden.common.util.Money;
 import dev.gamersden.shift.repo.ExpenseRepository;
 import org.slf4j.Logger;
@@ -35,15 +36,18 @@ public class ExpenseService {
     private final ExpenseRepository expenses;
     private final ShiftService shifts;
     private final ExpenseVoucherPrinting vouchers;
+    private final SyncOutboxWriter outbox;
     private final Clock clock;
 
     public ExpenseService(ExpenseRepository expenses,
                           ShiftService shifts,
                           ExpenseVoucherPrinting vouchers,
+                          SyncOutboxWriter outbox,
                           Clock clock) {
         this.expenses = expenses;
         this.shifts = shifts;
         this.vouchers = vouchers;
+        this.outbox = outbox;
         this.clock = clock;
     }
 
@@ -72,6 +76,15 @@ public class ExpenseService {
                 expense.getId(), shift.getId(), staff.id(), Money.format(amount), category,
                 expense.getDescription(),
                 printJobId == null ? "" : " — voucher print job " + printJobId);
+        // Petty cash comes out of the same drawer the takings go into: net profit is takings
+        // minus expenses, so the mirror needs both halves (design.md S9).
+        outbox.record(SyncOutboxWriter.EXPENSES, SyncOutboxWriter.RECORDED, expense.getId(),
+                SyncOutboxWriter.data("shiftId", shift.getId(),
+                        "staffId", staff.id(),
+                        "description", expense.getDescription(),
+                        "category", category.name(),
+                        "amount", amount,
+                        "printJobId", printJobId));
         return new RecordedExpense(expense, printJobId);
     }
 
