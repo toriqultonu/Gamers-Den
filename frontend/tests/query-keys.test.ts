@@ -32,6 +32,7 @@ describe('the canonical keys', () => {
     expect(queryKeys.tournaments.board(3)).toEqual(['tournaments', 3, 'matches']);
     expect(queryKeys.shift.current()).toEqual(['shift', 'current']);
     expect(queryKeys.expenses.all()).toEqual(['expenses']);
+    expect(queryKeys.overview.all()).toEqual(['overview']);
     expect(queryKeys.reports.range('14d')).toEqual(['reports', '14d']);
     expect(queryKeys.printJobs.detail(9)).toEqual(['print-jobs', 9]);
     expect(queryKeys.printJobs.render(9)).toEqual(['print-jobs', 9, 'render']);

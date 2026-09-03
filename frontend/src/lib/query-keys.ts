@@ -80,6 +80,17 @@ export const queryKeys = {
   expenses: {
     all: () => ['expenses'] as const,
   },
+  /**
+   * S2's one read (`GET /overview`). §4.1 does not name it — it lists the keys
+   * SSE writes into, and nothing pushes the overview — but the screen's KPIs,
+   * trends, watchlist and closes arrive as one server-folded document, so it
+   * gets a namespaced key here rather than a hand-typed array in the screen
+   * (F14). It sits beside `['reports', range]` because they are the same
+   * endpoint family under two windows: today, and a range.
+   */
+  overview: {
+    all: () => ['overview'] as const,
+  },
   reports: {
     range: (range: string) => ['reports', range] as const,
   },
@@ -130,6 +141,7 @@ export type QueryKey =
   | ReturnType<typeof queryKeys.tournaments.board>
   | ReturnType<typeof queryKeys.shift.current>
   | ReturnType<typeof queryKeys.expenses.all>
+  | ReturnType<typeof queryKeys.overview.all>
   | ReturnType<typeof queryKeys.reports.range>
   | ReturnType<typeof queryKeys.printJobs.detail>
   | ReturnType<typeof queryKeys.printJobs.render>

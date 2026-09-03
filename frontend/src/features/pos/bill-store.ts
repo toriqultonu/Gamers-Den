@@ -221,11 +221,25 @@ export type TournamentsSlice = {
 };
 
 /**
+ * S2's rail — §4.2's `alertsRailOpen`.
+ *
+ * `null` means the operator has not chosen yet, which is not the same as
+ * closed: design.md §4 has the rail **starting** collapsed between 1024 and
+ * 1279 and open above it, so the default is a property of the viewport and the
+ * stored value is the override. `AlertsRail` resolves the two.
+ */
+export type AlertsSlice = {
+  alertsRailOpen: boolean | null;
+
+  setAlertsRailOpen: (open: boolean) => void;
+};
+
+/**
  * The store. Later screens add their own slices to this same object
  * (`alertsRailOpen`, `selectedTournamentId`, `bookingsTab`, …) — §4.2 is one
  * store, not one per feature.
  */
-export const useAppStore = create<PosSlice & BookingsSlice & TournamentsSlice>()((set, get) => ({
+export const useAppStore = create<PosSlice & BookingsSlice & TournamentsSlice & AlertsSlice>()((set, get) => ({
   posMode: 'counter',
   selectedStationId: null,
   category: 'ALL',
@@ -338,6 +352,12 @@ export const useAppStore = create<PosSlice & BookingsSlice & TournamentsSlice>()
     set(get().tournamentsTab === tab ? {} : { tournamentsTab: tab, selectedTournamentId: null }),
 
   selectTournament: (tournamentId) => set({ selectedTournamentId: tournamentId }),
+
+  /* --------------------------------------------------------------- alerts */
+
+  alertsRailOpen: null,
+
+  setAlertsRailOpen: (open) => set({ alertsRailOpen: open }),
 }));
 
 /** Test isolation and sign-out: the terminal forgets what it was selling. */
@@ -355,6 +375,7 @@ export function resetPosStore(): void {
     bookingFormOpen: false,
     tournamentsTab: 'live',
     selectedTournamentId: null,
+    alertsRailOpen: null,
   });
 }
 

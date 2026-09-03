@@ -1,12 +1,16 @@
+import { cookies } from 'next/headers';
+import { ReportsScreen } from '@/components/domain/reports-screen';
+import { SESSION_COOKIE, decodeSessionCookie } from '@/lib/session-cookie';
+
 /**
- * S9 — Reports. Scaffolded in TASK F01; built in TASK F13.
+ * S9 — Reports (TASK F14).
+ *
+ * Manager+. The middleware keeps a cashier off the route; the role is read here
+ * too so a stale cookie earns the access notice instead of a 403 the screen has
+ * to catch mid-render (§4.3).
  */
-export default function ReportsPage() {
-  return (
-    <section className="flex flex-col gap-2 p-8">
-      <p className="type-label text-accent-strong">S9</p>
-      <h1 className="text-h2">Reports</h1>
-      <p className="text-body opacity-75">Scaffolded in F01 — built in F13.</p>
-    </section>
-  );
+export default async function ReportsPage() {
+  const store = await cookies();
+  const role = decodeSessionCookie(store.get(SESSION_COOKIE)?.value);
+  return <ReportsScreen role={role} />;
 }
