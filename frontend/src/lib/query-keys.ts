@@ -47,6 +47,23 @@ export const queryKeys = {
     all: () => ['tournaments'] as const,
     detail: (id: number | string) => ['tournaments', id] as const,
     finance: (id: number | string) => ['tournaments', id, 'finance'] as const,
+    /**
+     * The Done/called-off list behind S12's History tab (`GET
+     * /tournaments/history`). §4.1 names the three keys above — the live list,
+     * one event, its finances — and history is a fourth read with a different
+     * lifetime: it changes only when an event finishes. It nests under
+     * `['tournaments']` so one invalidation after a final still refreshes it
+     * (F11; called out in the task notes).
+     */
+    history: () => ['tournaments', 'history'] as const,
+    /**
+     * The match board with its console availability (`GET
+     * /tournaments/{id}/matches`). The bracket comes with the detail; what only
+     * this read carries is *why* each allocated console is or is not free, which
+     * is what the start button explains — so it nests under the event exactly as
+     * `['sessions', id, 'bill']` nests under a session (F11).
+     */
+    board: (id: number | string) => ['tournaments', id, 'matches'] as const,
   },
   shift: {
     current: () => ['shift', 'current'] as const,
@@ -99,6 +116,8 @@ export type QueryKey =
   | ReturnType<typeof queryKeys.tournaments.all>
   | ReturnType<typeof queryKeys.tournaments.detail>
   | ReturnType<typeof queryKeys.tournaments.finance>
+  | ReturnType<typeof queryKeys.tournaments.history>
+  | ReturnType<typeof queryKeys.tournaments.board>
   | ReturnType<typeof queryKeys.shift.current>
   | ReturnType<typeof queryKeys.expenses.all>
   | ReturnType<typeof queryKeys.reports.range>

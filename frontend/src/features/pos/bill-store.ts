@@ -32,6 +32,7 @@
 import { create } from 'zustand';
 import type { Schemas } from '@/lib/api';
 import type { BookingTab } from '@/features/bookings/schemas';
+import type { TournamentTab } from '@/features/tournaments/schemas';
 import type { ConsoleType } from '@/features/queue/schemas';
 import type { PaymentSplitDraft } from '@/features/payments/schemas';
 
@@ -202,11 +203,29 @@ export type BookingsSlice = {
 };
 
 /**
+ * S12's rail — §4.2's `selectedTournamentId`, plus the tab beside it.
+ *
+ * Which event the screen is looking at is the same kind of choice as
+ * `selectedBookingId`: it belongs to this terminal, it is meaningless to
+ * anyone else, and what the event *is* comes from `['tournaments', id]`. The
+ * tab is the S14 pattern too — switching it drops the selection, because an
+ * event picked out of the live list is not on the History table the operator
+ * is now reading.
+ */
+export type TournamentsSlice = {
+  tournamentsTab: TournamentTab;
+  selectedTournamentId: number | null;
+
+  setTournamentsTab: (tab: TournamentTab) => void;
+  selectTournament: (tournamentId: number | null) => void;
+};
+
+/**
  * The store. Later screens add their own slices to this same object
  * (`alertsRailOpen`, `selectedTournamentId`, `bookingsTab`, …) — §4.2 is one
  * store, not one per feature.
  */
-export const useAppStore = create<PosSlice & BookingsSlice>()((set, get) => ({
+export const useAppStore = create<PosSlice & BookingsSlice & TournamentsSlice>()((set, get) => ({
   posMode: 'counter',
   selectedStationId: null,
   category: 'ALL',
@@ -309,6 +328,16 @@ export const useAppStore = create<PosSlice & BookingsSlice>()((set, get) => ({
   openBookingForm: () => set({ bookingFormOpen: true, selectedBookingId: null }),
 
   closeBookingForm: () => set({ bookingFormOpen: false }),
+
+  /* ---------------------------------------------------------- tournaments */
+
+  tournamentsTab: 'live',
+  selectedTournamentId: null,
+
+  setTournamentsTab: (tab) =>
+    set(get().tournamentsTab === tab ? {} : { tournamentsTab: tab, selectedTournamentId: null }),
+
+  selectTournament: (tournamentId) => set({ selectedTournamentId: tournamentId }),
 }));
 
 /** Test isolation and sign-out: the terminal forgets what it was selling. */
@@ -324,6 +353,8 @@ export function resetPosStore(): void {
     bookingsTab: 'upcoming',
     selectedBookingId: null,
     bookingFormOpen: false,
+    tournamentsTab: 'live',
+    selectedTournamentId: null,
   });
 }
 
