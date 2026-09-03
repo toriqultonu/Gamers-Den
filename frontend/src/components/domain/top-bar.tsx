@@ -14,13 +14,16 @@ import { useEffect, useState } from 'react';
 import { SyncChip } from './sync-chip';
 import { formatVenueTime, serverNow } from '@/lib/time';
 import type { Occupancy } from '@/features/sessions/queries';
+import type { SyncChipStatus } from '@/features/sync/use-sync-status';
 
 export type TopBarProps = {
   title: string;
   occupancy: Occupancy;
+  /** `['sync']`, read by the shell — the chip stays presentational. */
+  sync?: SyncChipStatus;
 };
 
-export function TopBar({ title, occupancy }: TopBarProps) {
+export function TopBar({ title, occupancy, sync }: TopBarProps) {
   const clock = useVenueClock();
 
   return (
@@ -43,7 +46,7 @@ export function TopBar({ title, occupancy }: TopBarProps) {
         </div>
 
         <div className="flex items-center border-l-2 border-divider pl-5">
-          <SyncChip />
+          <SyncChip state={sync?.state} lastSyncedAt={sync?.lastSyncedAt} />
         </div>
       </div>
     </header>

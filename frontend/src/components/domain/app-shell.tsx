@@ -30,6 +30,8 @@ import { useBookingSettings } from '@/features/bookings/queries';
 import { autoLockMinutes, useTerminalSettings } from '@/features/settings/use-terminal-settings';
 import { hasLiveTournament, useTournaments } from '@/features/tournaments/queries';
 import { occupancyOf, useStations } from '@/features/sessions/queries';
+import { useSyncStatus } from '@/features/sync/use-sync-status';
+import { useLiveEvents } from '@/lib/sse';
 import {
   appRouteOf,
   isRouteAllowed,
@@ -58,6 +60,13 @@ export function AppShell({ initialRole, children }: AppShellProps) {
   const terminalSettings = useTerminalSettings({ enabled: signedIn });
   const tournaments = useTournaments({ enabled: signedIn });
   const stations = useStations({ enabled: signedIn });
+  const sync = useSyncStatus({ enabled: signedIn });
+
+  // One `/events` subscription per terminal, mounted here rather than on the
+  // screens: every screen reads the same cache, and a second stream would only
+  // write the same rows twice. It carries the 10 s fallback with it, so the
+  // floor stays true even while the stream is down (lib/sse.ts).
+  useLiveEvents({ enabled: signedIn });
 
   useAutoLock({
     minutes: autoLockMinutes(terminalSettings.data),
@@ -128,6 +137,7 @@ export function AppShell({ initialRole, children }: AppShellProps) {
           <TopBar
             title={role ? screenTitle(pathname, role) : "Gamer's Den"}
             occupancy={occupancyOf(stations.data)}
+            sync={sync}
           />
           <main className="min-h-0 flex-1">
             {allowed ? (

@@ -48,7 +48,18 @@ type Backend = {
   autoLockMin?: number;
   tournaments?: { id: number; status: string }[];
   stations?: { id: number; floorState: string }[];
+  sync?: { state: string; lastSyncedAt?: string; pendingOps?: number };
 };
+
+/** A stream that stays open: the shell subscribes, and nothing else happens. */
+function idleEventStream(): Response {
+  return {
+    ok: true,
+    status: 200,
+    headers: new Headers({ 'Content-Type': 'text/event-stream' }),
+    body: new ReadableStream<Uint8Array>({ start() {} }),
+  } as unknown as Response;
+}
 
 function serve({
   role = 'ADMIN',
@@ -56,6 +67,7 @@ function serve({
   autoLockMin = 0,
   tournaments = [],
   stations = [],
+  sync = { state: 'SYNCED', pendingOps: 0 },
 }: Backend = {}) {
   fetchMock.mockImplementation((input: string) => {
     const url = String(input);
@@ -78,6 +90,8 @@ function serve({
     if (url.endsWith('/terminal-settings')) {
       return Promise.resolve(json({ theme: 'DARK', autoLockMin, receiptCopies: 1, sound: true }));
     }
+    if (url.endsWith('/events')) return Promise.resolve(idleEventStream());
+    if (url.endsWith('/sync/status')) return Promise.resolve(json(sync));
     if (url.endsWith('/tournaments')) return Promise.resolve(json(tournaments));
     if (url.endsWith('/stations')) return Promise.resolve(json(stations));
     if (url.endsWith('/auth/logout')) return Promise.resolve(new Response(null, { status: 204 }));
@@ -230,7 +244,17 @@ describe('the topbar', () => {
 
   it('carries the sync chip from the very first screen', async () => {
     renderShell('ADMIN');
-    expect(await screen.findByTestId('sync-chip')).toHaveAttribute('data-state', 'synced');
+    const chip = await screen.findByTestId('sync-chip');
+    await waitFor(() => expect(chip).toHaveAttribute('data-state', 'synced'));
+  });
+
+  it('shows the cloud being unreachable without touching anything else', async () => {
+    serve({ role: 'ADMIN', sync: { state: 'OFFLINE', lastSyncedAt: '2026-09-03T08:30:00Z' } });
+    renderShell('ADMIN');
+
+    const chip = await screen.findByTestId('sync-chip');
+    await waitFor(() => expect(chip).toHaveTextContent('Offline since 14:30'));
+    expect(screen.getByText('screen body')).toBeInTheDocument();
   });
 });
 
