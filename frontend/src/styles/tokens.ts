@@ -27,6 +27,19 @@ export const DEFAULT_TEXT_SIZE: TextSize = 'default';
  */
 export const APPEARANCE_CACHE_KEY = 'gd.appearance';
 
+/**
+ * What that cache holds. `loginBgImageId` is here for S1's sake: the login
+ * screen paints the owner's photo under a dark overlay before anyone has a
+ * token, and `GET /terminal-settings` — where the id lives — needs one. The
+ * image route itself is public, so the terminal only has to remember the id.
+ */
+export type AppearanceCache = {
+  theme?: Theme;
+  accent?: Accent;
+  textSize?: TextSize;
+  loginBgImageId?: string | null;
+};
+
 export const ACCENT_LABELS: Record<Accent, string> = {
   red: 'Den Red',
   blue: 'Blue',

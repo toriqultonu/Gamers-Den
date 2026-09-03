@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { Archivo } from 'next/font/google';
 import './globals.css';
 import { QueryProvider } from '@/lib/query-provider';
+import { SessionProvider } from '@/features/auth/session';
 import {
   APPEARANCE_CACHE_KEY,
   DEFAULT_ACCENT,
@@ -55,7 +56,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <script dangerouslySetInnerHTML={{ __html: NO_FLASH_SCRIPT }} />
       </head>
       <body>
-        <QueryProvider>{children}</QueryProvider>
+        {/* The session sits inside the query cache: signing out clears it. */}
+        <QueryProvider>
+          <SessionProvider>{children}</SessionProvider>
+        </QueryProvider>
       </body>
     </html>
   );
