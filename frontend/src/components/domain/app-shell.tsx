@@ -27,7 +27,11 @@ import { AccessNotice } from './access-notice';
 import { useSession } from '@/features/auth/session';
 import { useAutoLock } from '@/features/auth/use-auto-lock';
 import { useBookingSettings } from '@/features/bookings/queries';
-import { autoLockMinutes, useTerminalSettings } from '@/features/settings/use-terminal-settings';
+import {
+  autoLockMinutes,
+  useAppliedAppearance,
+  useTerminalSettings,
+} from '@/features/settings/use-terminal-settings';
 import { hasLiveTournament, useTournaments } from '@/features/tournaments/queries';
 import { occupancyOf, useStations } from '@/features/sessions/queries';
 import { useSyncStatus } from '@/features/sync/use-sync-status';
@@ -67,6 +71,11 @@ export function AppShell({ initialRole, children }: AppShellProps) {
   // write the same rows twice. It carries the 10 s fallback with it, so the
   // floor stays true even while the stream is down (lib/sse.ts).
   useLiveEvents({ enabled: signedIn });
+
+  // The terminal's own theme, text size and accent (design.md §6). The inline
+  // script in `app/layout.tsx` has already painted them from the cache; this
+  // is what corrects a terminal whose cache is empty or stale (§5.5).
+  useAppliedAppearance(terminalSettings.data);
 
   useAutoLock({
     minutes: autoLockMinutes(terminalSettings.data),

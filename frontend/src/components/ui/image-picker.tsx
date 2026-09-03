@@ -5,7 +5,9 @@
  *
  * Preview box + "Choose image" (a label wrapping a hidden file input, so it is
  * still a real keyboard-reachable control) + "Remove", disabled while empty.
- * The picker hands the caller a data URL; where it is stored is the screen's
+ * The picker hands the caller a data URL for the preview and, alongside it,
+ * the `File` itself — S13 uploads that to `POST /terminal-settings/login-bg`
+ * (multipart, validated by its own bytes). Where it is stored is the screen's
  * business, not the primitive's.
  */
 
@@ -17,7 +19,8 @@ export type ImagePickerProps = {
   label: string;
   /** Current image as a data/URL string, or null when unset. */
   value: string | null;
-  onChange: (value: string | null) => void;
+  /** The preview URL, plus the chosen file when this was a pick rather than a clear. */
+  onChange: (value: string | null, file?: File) => void;
   /** Caption drawn over the preview when an image is set. */
   previewLabel?: string;
   /** Caption drawn in the empty preview box. */
@@ -48,7 +51,7 @@ export function ImagePicker({
     const reader = new FileReader();
     reader.onload = () => {
       setError(null);
-      onChange(typeof reader.result === 'string' ? reader.result : null);
+      onChange(typeof reader.result === 'string' ? reader.result : null, file);
     };
     reader.onerror = () => setError('Could not read that file.');
     reader.readAsDataURL(file);

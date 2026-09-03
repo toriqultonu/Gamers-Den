@@ -3,12 +3,8 @@ import { Archivo } from 'next/font/google';
 import './globals.css';
 import { QueryProvider } from '@/lib/query-provider';
 import { SessionProvider } from '@/features/auth/session';
-import {
-  APPEARANCE_CACHE_KEY,
-  DEFAULT_ACCENT,
-  DEFAULT_TEXT_SIZE,
-  DEFAULT_THEME,
-} from '@/styles/tokens';
+import { noFlashScript } from '@/features/settings/appearance';
+import { DEFAULT_ACCENT, DEFAULT_TEXT_SIZE, DEFAULT_THEME } from '@/styles/tokens';
 
 const archivo = Archivo({
   subsets: ['latin'],
@@ -33,14 +29,12 @@ export const viewport: Viewport = {
  * already correct in the server-rendered HTML, so a terminal with JavaScript
  * disabled still paints dark + Den Red; this script only re-applies whatever
  * the terminal last saved.
+ *
+ * The script itself is built in `features/settings/appearance.ts`, beside the
+ * cache S13 writes and the mapping both of them read — the two must agree on
+ * every spelling, so neither gets to keep its own copy (F15).
  */
-const NO_FLASH_SCRIPT = `(function(){try{
-var s=JSON.parse(localStorage.getItem(${JSON.stringify(APPEARANCE_CACHE_KEY)})||'{}');
-var r=document.documentElement;
-if(s.theme==='dark'||s.theme==='light')r.dataset.theme=s.theme;
-if(s.accent==='red'||s.accent==='blue'||s.accent==='green')r.dataset.accent=s.accent;
-if(s.textSize==='compact'||s.textSize==='default'||s.textSize==='large')r.dataset.textSize=s.textSize;
-}catch(e){}})();`;
+const NO_FLASH_SCRIPT = noFlashScript();
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (

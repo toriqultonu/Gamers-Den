@@ -111,6 +111,16 @@ export const queryKeys = {
   terminalSettings: {
     all: () => ['terminal-settings'] as const,
   },
+  /**
+   * The signed-in operator's own swatch (`GET/PUT /me/prefs`). §4.1 names
+   * `['terminal-settings']` — what the *terminal* looks like — and this is the
+   * other half of design.md §6's table: the one row scoped "per staff login".
+   * It gets its own key rather than riding in the terminal's because it
+   * follows the person to another counter (F15).
+   */
+  prefs: {
+    me: () => ['me', 'prefs'] as const,
+  },
   sync: {
     status: () => ['sync'] as const,
   },
@@ -147,5 +157,6 @@ export type QueryKey =
   | ReturnType<typeof queryKeys.printJobs.render>
   | ReturnType<typeof queryKeys.printers.all>
   | ReturnType<typeof queryKeys.terminalSettings.all>
+  | ReturnType<typeof queryKeys.prefs.me>
   | ReturnType<typeof queryKeys.sync.status>
   | ReturnType<typeof queryKeys.alerts.all>;

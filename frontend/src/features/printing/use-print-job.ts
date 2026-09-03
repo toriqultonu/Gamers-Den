@@ -99,3 +99,79 @@ export function printFailureNotice(job: PrintJob | undefined): string {
   const reason = job?.error;
   return (reason ? PRINT_FAILURES[reason] : undefined) ?? 'This ticket did not print.';
 }
+
+/* ------------------------------------------------------------------ S11 */
+
+/**
+ * Why a ticket is being printed again (api-contract.md; backend
+ * `ReprintReason`). The set is closed and the choice is required — a reprint
+ * that nobody has to justify is how a second receipt for the same money leaves
+ * the counter unexplained.
+ */
+export const REPRINT_REASONS = ['LOST', 'DAMAGED', 'CUSTOMER_COPY', 'DISPUTE'] as const;
+export type ReprintReason = (typeof REPRINT_REASONS)[number];
+
+export const REPRINT_REASON_LABELS: Record<ReprintReason, string> = {
+  LOST: 'Lost',
+  DAMAGED: 'Damaged',
+  CUSTOMER_COPY: 'Customer copy',
+  DISPUTE: 'Dispute',
+};
+
+export function isReprintReason(value: unknown): value is ReprintReason {
+  return typeof value === 'string' && (REPRINT_REASONS as readonly string[]).includes(value);
+}
+
+/**
+ * The S11 state table, verbatim from design.md §5: "rendering, ready
+ * (Print/Reprint), queued (printer offline), failed (retry), reprint-mode".
+ *
+ * The first four are a function of the two reads; reprint-mode is the screen's
+ * own — it is the operator having asked for another copy and not yet said why.
+ */
+export const PRINT_PREVIEW_STATES = ['rendering', 'ready', 'queued', 'failed'] as const;
+export type PrintPreviewState = (typeof PRINT_PREVIEW_STATES)[number];
+
+export function printPreviewState(
+  job: PrintJob | undefined,
+  renderPending: boolean,
+): PrintPreviewState {
+  // The paper is what this screen is for: until the stored render is in hand
+  // there is nothing to show, whatever the printer is doing.
+  if (renderPending || !job) return 'rendering';
+  if (job.status === 'FAILED') return 'failed';
+  if (job.status === 'QUEUED' || job.status === 'PRINTING') return 'queued';
+  return 'ready';
+}
+
+/** The document types a job can be (api-contract.md, `POST /print-jobs`). */
+export const PRINT_JOB_TYPE_LABELS: Record<string, string> = {
+  RECEIPT: 'Sale ticket',
+  Z_REPORT: 'Z report',
+  X_REPORT: 'X report',
+  EXPENSE_VOUCHER: 'Expense voucher',
+  TOURNAMENT_STUB: 'Tournament entry stub',
+  PLAY_TICKET: 'Play ticket',
+  BOOKING_CONFIRMATION: 'Booking confirmation',
+  TEST: 'Test ticket',
+};
+
+export function printJobTypeLabel(type: string | undefined): string {
+  return PRINT_JOB_TYPE_LABELS[type ?? ''] ?? type ?? 'Ticket';
+}
+
+/** The house copy for where the paper is, per status (design.md §5, S11). */
+export function printJobStatusNote(job: PrintJob | undefined): string {
+  switch (job?.status) {
+    case 'DONE':
+      return 'Printed.';
+    case 'PRINTING':
+      return 'Printing now.';
+    case 'QUEUED':
+      return 'Queued — it prints as soon as the printer answers.';
+    case 'FAILED':
+      return printFailureNotice(job);
+    default:
+      return 'Checking the printer…';
+  }
+}

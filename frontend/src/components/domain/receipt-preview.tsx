@@ -22,6 +22,7 @@
  * its reprint reasons (F15).
  */
 
+import Link from 'next/link';
 import { TokenBadge } from '@/components/ui/token-badge';
 import { cn } from '@/components/ui/cn';
 import {
@@ -126,7 +127,20 @@ export function ReceiptPreview({ printJobId, result, today, className }: Receipt
         </pre>
       )}
 
-      {printJobId !== null ? <JobStatus job={job.data} pending={job.isPending} /> : null}
+      {printJobId !== null ? (
+        <>
+          <JobStatus job={job.data} pending={job.isPending} />
+          {/* design.md §1 lists "POS settle" as an S11 entry point: the reprint
+              reasons and the retry live there, on the job (F15). */}
+          <Link
+            href={{ pathname: `/print/${printJobId}` }}
+            data-testid="open-print-preview"
+            className="text-[12px] text-accent-strong underline underline-offset-4"
+          >
+            Open print preview
+          </Link>
+        </>
+      ) : null}
     </section>
   );
 }
