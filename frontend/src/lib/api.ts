@@ -512,16 +512,37 @@ async function dispatch(url: string, options: DispatchOptions): Promise<Response
 }
 
 /** One refresh at a time, however many calls hit 401 together. */
-let refreshInFlight: Promise<boolean> | null = null;
+let refreshInFlight: Promise<Schemas['SessionResponse'] | null> | null = null;
 
-function refreshAccessToken(): Promise<boolean> {
+/**
+ * Rotate the refresh cookie once, and hand every concurrent caller the same
+ * rotation.
+ *
+ * **The refresh family is single-use.** The backend revokes the whole family
+ * when a token is presented twice (`RefreshTokenService`: "refresh token reuse
+ * detected — family revoked"), which is the right behaviour against a stolen
+ * cookie and a trap for us: on a page load the screen's queries fire before the
+ * session has been restored, 401, and ask for a refresh — while the restore is
+ * already rotating the same cookie. Two rotations of one token is a reuse, and
+ * the terminal is signed out mid-shift for no reason.
+ *
+ * So there is exactly one refresh in this module and both callers share it: the
+ * 401 path below, and `features/auth/session.tsx` restoring a reloaded
+ * terminal. It answers with the session rather than a boolean because the
+ * restore needs the staff behind it.
+ */
+export function refreshSession(): Promise<Schemas['SessionResponse'] | null> {
   refreshInFlight ??= performRefresh().finally(() => {
     refreshInFlight = null;
   });
   return refreshInFlight;
 }
 
-async function performRefresh(): Promise<boolean> {
+async function refreshAccessToken(): Promise<boolean> {
+  return (await refreshSession()) !== null;
+}
+
+async function performRefresh(): Promise<Schemas['SessionResponse'] | null> {
   try {
     const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
       method: 'POST',
@@ -529,13 +550,13 @@ async function performRefresh(): Promise<boolean> {
       credentials: 'include',
     });
     noteServerTime(response.headers.get('Date'));
-    if (!response.ok) return false;
+    if (!response.ok) return null;
     const session = (await response.json()) as Schemas['SessionResponse'];
-    if (!session?.accessToken) return false;
+    if (!session?.accessToken) return null;
     setAccessToken(session.accessToken);
-    return true;
+    return session;
   } catch {
-    return false;
+    return null;
   }
 }
 

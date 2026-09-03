@@ -39,6 +39,8 @@ import {
   roleNote,
   setupSections,
   stationRemovable,
+  type Pricing,
+  type Station,
 } from '@/features/setup/schemas';
 import { defaultPrinter, printerReady, printerStatusLabel } from '@/features/printing/printers';
 
@@ -61,7 +63,7 @@ const STAFF_BY_ROLE: Record<Role, { id: number; name: string; role: Role }> = {
 const STATIONS = [
   { id: 1, name: 'Titan', consoleType: 'PS5', status: 'AVAILABLE', floorState: 'FREE' },
   { id: 2, name: 'Nova', consoleType: 'PS4', status: 'AVAILABLE', floorState: 'RUNNING' },
-];
+] satisfies Station[];
 
 const PRICING = [
   {
@@ -82,7 +84,7 @@ const PRICING = [
     morningStart: '10:00',
     morningEnd: '14:00',
   },
-];
+] satisfies Pricing[];
 
 const STAFF = [
   { id: 1, name: 'Rumi Haque', role: 'ADMIN', active: true },

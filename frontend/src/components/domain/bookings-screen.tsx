@@ -33,6 +33,7 @@ import { errorNotice, isApiError } from '@/lib/api';
 import { formatBDT } from '@/lib/money';
 import { serverNow, venueToday } from '@/lib/time';
 import { useBookingSettings, useBookings, upcomingCount } from '@/features/bookings/queries';
+import type { Booking } from '@/features/bookings/schemas';
 import { useStations } from '@/features/sessions/queries';
 import { usePricing, type Pricing } from '@/features/pos/queries';
 import { useAppStore } from '@/features/pos/bill-store';
@@ -51,14 +52,22 @@ export function BookingsScreen() {
 
   /** What the last confirm charged, when it was not what the box promised. */
   const [drift, setDrift] = useState<string | null>(null);
+  /**
+   * The booking this terminal just checked in, held for as long as it takes the
+   * two lists to agree about which tab it belongs on. Without it the rail — and
+   * the token on it — blinks out between the row leaving Upcoming and arriving
+   * in History, and the token is the thing the operator reads out loud.
+   */
+  const [checkedIn, setCheckedIn] = useState<Booking | null>(null);
 
   const now = serverNow();
   const today = venueToday(now);
   const rows = bookings.data ?? [];
-  const selected = useMemo(
-    () => rows.find((row) => row.id === selectedBookingId) ?? null,
-    [rows, selectedBookingId],
-  );
+  const selected = useMemo(() => {
+    const row = rows.find((entry) => entry.id === selectedBookingId) ?? null;
+    if (row) return row;
+    return checkedIn?.id === selectedBookingId ? checkedIn : null;
+  }, [rows, selectedBookingId, checkedIn]);
 
   const enabled = settings.data?.enabled !== false;
 
@@ -68,7 +77,7 @@ export function BookingsScreen() {
   }
 
   return (
-    <div data-testid="bookings-screen" className="flex min-h-0 flex-1">
+    <div data-testid="bookings-screen" className="relative flex min-h-0 flex-1">
       <div className="flex min-w-0 flex-1 flex-col gap-4 overflow-auto p-5">
         <div className="flex flex-wrap items-center gap-2">
           <BookingTabs
@@ -148,7 +157,21 @@ export function BookingsScreen() {
             booking={selected}
             now={now}
             today={today}
-            onClose={() => store().selectBooking(null)}
+            onClose={() => {
+              setCheckedIn(null);
+              store().selectBooking(null);
+            }}
+            // The row it just checked in is in History now; follow it, so the
+            // token and its stub stay on screen instead of unmounting under the
+            // operator (design.md §1, S14: the token is read out loud). The tab
+            // switch drops the selection by design — "a booking selected on
+            // Upcoming is not on History" — so this one, which is on both, is
+            // re-selected behind it.
+            onCheckedIn={(booking) => {
+              setCheckedIn(booking);
+              store().setBookingsTab('history');
+              store().selectBooking(booking.id ?? selected.id ?? null);
+            }}
           />
         ) : (
           <RailIdle

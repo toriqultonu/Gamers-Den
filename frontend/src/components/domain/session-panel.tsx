@@ -208,8 +208,15 @@ export function SessionPanel({
   const paidBlocks = session?.paidBlocks ?? station.session?.paidBlocks ?? 0;
   const outstanding = session?.netOutstanding ?? bill?.netTotal ?? 0;
   const endBlocked = session ? hasBalance(session) : outstanding > 0;
-  const running = (session?.state ?? station.session?.state) === 'RUNNING';
-  const started = Boolean(session?.startedAt ?? station.session?.startedAt);
+  const clockState = session?.state ?? station.session?.state;
+  const running = clockState === 'RUNNING';
+  // **Paused, not "has a startedAt".** `sessions.started_at` defaults to `now()`
+  // when the row is written (V001), so it says the session was opened, not that
+  // the clock has ever run — reading it as "started" offers Resume on a
+  // brand-new session, and RESUME is legal only from PAUSED (`ClockAction`), so
+  // the server answers 409 and the walk-in never gets a clock. The state is the
+  // only honest source: OPEN and LOCKED start, PAUSED resumes, RUNNING pauses.
+  const paused = clockState === 'PAUSED';
 
   return (
     <aside
@@ -265,9 +272,9 @@ export function SessionPanel({
               className="w-full border-text bg-text text-bg"
               disabled={disabled || blocks === 0}
               loading={busy === 'clock'}
-              onClick={() => onClock?.(running ? 'PAUSE' : started ? 'RESUME' : 'START')}
+              onClick={() => onClock?.(running ? 'PAUSE' : paused ? 'RESUME' : 'START')}
             >
-              {running ? 'Pause the clock' : started ? 'Resume the clock' : 'Start the clock'}
+              {running ? 'Pause the clock' : paused ? 'Resume the clock' : 'Start the clock'}
             </Button>
           </div>
 

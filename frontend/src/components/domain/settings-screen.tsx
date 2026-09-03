@@ -30,8 +30,9 @@ import { Button } from '@/components/ui/button';
 import { ChipSelect } from '@/components/ui/chip-select';
 import { ImagePicker } from '@/components/ui/image-picker';
 import { SegmentedChoice } from '@/components/ui/segmented-choice';
+import { AccessNotice } from './access-notice';
 import { initialsOf } from './signed-in-card';
-import { errorNotice } from '@/lib/api';
+import { errorNotice, isApiError } from '@/lib/api';
 import type { Role } from '@/lib/nav';
 import { useSession } from '@/features/auth/session';
 import { useTerminalSettings } from '@/features/settings/use-terminal-settings';
@@ -156,6 +157,13 @@ export function SettingsScreen({ role }: SettingsScreenProps) {
 
   const backgroundValue =
     pickedBg ?? (current.loginBgImageId ? loginBgUrl(current.loginBgImageId) : null);
+
+  // S13 is open to every role, so this is the disagreement case: a terminal
+  // whose row the API refuses outright has nothing to show behind the form
+  // (design.md §1 — an API 403 renders as an access notice).
+  if (isApiError(settings.error) && settings.error.status === 403) {
+    return <AccessNotice screen="Settings" />;
+  }
 
   return (
     <section data-testid="settings-screen" className="flex flex-col gap-5 p-8">

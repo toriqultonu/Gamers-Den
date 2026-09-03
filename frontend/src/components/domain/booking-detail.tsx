@@ -49,12 +49,21 @@ import {
 export type BookingDetailProps = {
   booking: Booking;
   onClose: () => void;
+  /**
+   * The check-in went through, with the booking the server answered with.
+   *
+   * Check-in moves a booking from Upcoming to History (docs/bookings.md §2), so
+   * without this the list re-read pulls the row — and this rail with it — out
+   * from under the token the operator is about to call out. The screen follows
+   * the row instead, and holds on to this copy while the lists catch up.
+   */
+  onCheckedIn?: (booking: Booking) => void;
   /** Server-offset now, injected so the cutoff maths stays testable. */
   now?: number;
   today?: string;
 };
 
-export function BookingDetail({ booking, onClose, now, today }: BookingDetailProps) {
+export function BookingDetail({ booking, onClose, onCheckedIn, now, today }: BookingDetailProps) {
   const at = now ?? serverNow();
   const day = today ?? venueToday(at);
 
@@ -85,12 +94,21 @@ export function BookingDetail({ booking, onClose, now, today }: BookingDetailPro
     checkIn.mutate(
       { bookingId: booking.id },
       {
-        onSuccess: (result) =>
+        onSuccess: (result) => {
           setIssued({
             tokenNo: result.token?.tokenNo ?? 0,
             tokenDate: result.token?.tokenDate,
             printJobId: result.printJobId ?? null,
-          }),
+          });
+          onCheckedIn?.(
+            result.booking ?? {
+              ...booking,
+              status: 'ARRIVED',
+              tokenNo: result.token?.tokenNo,
+              tokenDate: result.token?.tokenDate,
+            },
+          );
+        },
         // `ALREADY_CHECKED_IN` — another terminal got there first. The booking
         // is fine; the refetch behind this notice brings its token in.
         onError: (error) => setNotice(errorNotice(error, 'The check-in did not go through.')),

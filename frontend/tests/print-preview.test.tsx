@@ -211,7 +211,7 @@ describe('the S11 state table', () => {
   });
 
   it('draws a skeleton until the stored render is in hand', async () => {
-    let release: (() => void) | null = null;
+    let release!: () => void;
     fetchMock.mockImplementation((input: RequestInfo) => {
       const path = new URL(String(input)).pathname.replace('/api/v1', '');
       if (path === '/print-jobs/41/render') {
@@ -226,7 +226,7 @@ describe('the S11 state table', () => {
 
     expect(await screen.findByTestId('print-skeleton')).toBeInTheDocument();
     expect(screen.queryByTestId('print-render')).not.toBeInTheDocument();
-    release?.();
+    release();
     expect(await screen.findByTestId('print-render')).toBeInTheDocument();
   });
 

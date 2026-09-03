@@ -464,7 +464,7 @@ describe('the default state', () => {
 
 describe('the loading state', () => {
   it('shows a skeleton shaped like the tile grid', async () => {
-    let release: (() => void) | null = null;
+    let release!: () => void;
     const held = new Promise<Response>((resolve) => {
       release = () => resolve(json(OVERVIEW));
     });
@@ -473,7 +473,7 @@ describe('the loading state', () => {
     renderScreen();
 
     expect(await screen.findByTestId('overview-skeleton')).toBeInTheDocument();
-    release?.();
+    release();
     await waitFor(() => expect(screen.queryByTestId('overview-skeleton')).not.toBeInTheDocument());
   });
 });

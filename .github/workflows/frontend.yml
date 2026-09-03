@@ -1,14 +1,22 @@
-### Frontend CI — the F03 build gate.
+### Frontend CI — the F03 build gate and the F17 release gate.
 #
-# Two things have to hold on every push touching `frontend/`:
+# Three things have to hold on every push touching `frontend/` (or the backend
+# it talks to):
 #
 #   1. `npm run build && npm test` are green (TASKLIST.md GLOBAL RULE 8);
-#   2. the committed OpenAPI types still match the backend.
+#   2. the committed OpenAPI types still match the backend;
+#   3. the money path still works end to end against a seeded venue (F17).
 #
-# (2) is why this job boots Postgres and the Spring app: `npm run types:check`
+# (2) is why both jobs boot Postgres and the Spring app: `npm run types:check`
 # re-fetches `/v3/api-docs` from a live backend and fails when `openapi.json`
 # or `src/lib/api-types.ts` has drifted, so a renamed field breaks the build
 # here rather than a screen at the counter (frontend/ARCHITECTURE.md §2).
+#
+# (3) is the `e2e` job. It runs the same `dev` profile, whose start-up seeds the
+# demo venue (TASKLIST B22) — a floor, a menu, members, an open till, a paid
+# booking and a waiting token — and drives it through a real browser. It is a
+# separate job so a broken money path and a broken unit test are two different
+# red marks, and because each job wants its own untouched venue.
 
 name: frontend
 
@@ -61,12 +69,14 @@ jobs:
       - name: Start the backend
         working-directory: backend
         run: |
-          ./mvnw -q -DskipTests spring-boot:run -Dspring-boot.run.profiles=dev &
+          nohup ./mvnw -q -DskipTests spring-boot:run -Dspring-boot.run.profiles=dev \
+            > backend.log 2>&1 &
           for i in $(seq 1 60); do
             if curl -sf http://localhost:8080/actuator/health > /dev/null; then exit 0; fi
             sleep 3
           done
           echo "backend did not come up" >&2
+          tail -100 backend.log >&2
           exit 1
 
       - name: Check OpenAPI type drift
@@ -80,3 +90,84 @@ jobs:
       - name: Unit tests
         working-directory: frontend
         run: npm test
+
+  e2e:
+    name: e2e (money path)
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: gamersden
+          POSTGRES_USER: gamersden
+          POSTGRES_PASSWORD: gamersden
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U gamersden"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Install Chromium
+        working-directory: frontend
+        run: npx playwright install --with-deps chromium
+
+      # The `dev` profile seeds the demo venue on start-up (B22's
+      # DemoDataSeeder), so this is the seeded backend F17 asks for — on a fresh
+      # Postgres, which is what makes the run reproducible.
+      - name: Start the seeded backend
+        working-directory: backend
+        run: |
+          nohup ./mvnw -q -DskipTests spring-boot:run -Dspring-boot.run.profiles=dev \
+            > backend.log 2>&1 &
+          for i in $(seq 1 60); do
+            if curl -sf http://localhost:8080/actuator/health > /dev/null; then exit 0; fi
+            sleep 3
+          done
+          echo "backend did not come up" >&2
+          tail -100 backend.log >&2
+          exit 1
+
+      # Builds the app with the venue's same-origin API base and drives it —
+      # see frontend/scripts/e2e.mjs. Playwright starts `next start` itself.
+      - name: Money-path suite
+        working-directory: frontend
+        run: npm run e2e
+
+      - name: Upload the Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            frontend/playwright-report
+            frontend/test-results
+          retention-days: 7
+
+      - name: Upload the backend log
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-log
+          path: backend/backend.log
+          retention-days: 7

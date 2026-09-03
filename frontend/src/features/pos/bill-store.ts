@@ -154,6 +154,8 @@ export type PosSlice = {
   ticketBlocks: number;
   /** 1024–1279: the ticket column hides behind a Preview button (design.md §4). */
   previewOpen: boolean;
+  /** 768–1023: the bill panel becomes a drawer, shut until asked for (§4). */
+  billDrawerOpen: boolean;
   /** The target the current draft belongs to — switching it clears the draft. */
   target: BillTarget;
   draft: BillDraft;
@@ -163,6 +165,7 @@ export type PosSlice = {
   setCategory: (category: MenuCategory) => void;
   setTicketBlocks: (blocks: number) => void;
   setPreviewOpen: (open: boolean) => void;
+  setBillDrawerOpen: (open: boolean) => void;
 
   /** Points the draft at a bill; clears it when that is a different bill. */
   setTarget: (target: BillTarget) => void;
@@ -245,6 +248,7 @@ export const useAppStore = create<PosSlice & BookingsSlice & TournamentsSlice & 
   category: 'ALL',
   ticketBlocks: 2,
   previewOpen: false,
+  billDrawerOpen: false,
   target: 'counter',
   draft: EMPTY_DRAFT,
 
@@ -253,6 +257,7 @@ export const useAppStore = create<PosSlice & BookingsSlice & TournamentsSlice & 
   setCategory: (category) => set({ category }),
   setTicketBlocks: (blocks) => set({ ticketBlocks: Math.max(1, Math.trunc(blocks)) }),
   setPreviewOpen: (open) => set({ previewOpen: open }),
+  setBillDrawerOpen: (open) => set({ billDrawerOpen: open }),
 
   setTarget: (target) =>
     set(get().target === target ? {} : { target, draft: EMPTY_DRAFT }),
@@ -368,6 +373,7 @@ export function resetPosStore(): void {
     category: 'ALL',
     ticketBlocks: 2,
     previewOpen: false,
+    billDrawerOpen: false,
     target: 'counter',
     draft: EMPTY_DRAFT,
     bookingsTab: 'upcoming',

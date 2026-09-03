@@ -7,3 +7,9 @@ next-env.d.ts
 coverage/
 .env*.local
 .DS_Store
+
+# Playwright (F17) — the run's own output, never the suite itself.
+playwright-report/
+test-results/
+blob-report/
+.playwright/

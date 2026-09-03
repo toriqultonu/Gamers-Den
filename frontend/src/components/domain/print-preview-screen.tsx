@@ -29,7 +29,8 @@ import { AlertTriangle, Printer as PrinterIcon, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ChipSelect } from '@/components/ui/chip-select';
 import { Tag } from '@/components/ui/tag';
-import { errorNotice, hasErrorCode } from '@/lib/api';
+import { AccessNotice } from './access-notice';
+import { errorNotice, hasErrorCode, isApiError } from '@/lib/api';
 import { useReprintJob, useRetryPrintJob } from '@/features/printing/mutations';
 import {
   REPRINT_REASONS,
@@ -63,6 +64,12 @@ export function PrintPreviewScreen({ jobId }: PrintPreviewScreenProps) {
 
   const state = printPreviewState(job.data, render.isPending);
   const lines = renderLines(render.data);
+
+  // A job this role may not read has nothing behind it — reprint history is
+  // manager-gated (design.md §1: an API 403 renders as an access notice).
+  if (isApiError(job.error) && job.error.status === 403) {
+    return <AccessNotice screen="Print preview" />;
+  }
 
   if (jobId === null) {
     return (
