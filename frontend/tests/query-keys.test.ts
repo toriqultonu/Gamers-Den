@@ -31,6 +31,7 @@ describe('the canonical keys', () => {
     expect(queryKeys.expenses.all()).toEqual(['expenses']);
     expect(queryKeys.reports.range('14d')).toEqual(['reports', '14d']);
     expect(queryKeys.printJobs.detail(9)).toEqual(['print-jobs', 9]);
+    expect(queryKeys.printJobs.render(9)).toEqual(['print-jobs', 9, 'render']);
     expect(queryKeys.printers.all()).toEqual(['printers']);
     expect(queryKeys.terminalSettings.all()).toEqual(['terminal-settings']);
     expect(queryKeys.sync.status()).toEqual(['sync']);

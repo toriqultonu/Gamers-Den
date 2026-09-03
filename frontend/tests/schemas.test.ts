@@ -207,13 +207,44 @@ describe('settle', () => {
     expect(splitsBalance(splits, 550, 100)).toBe(true);
   });
 
-  it('settles a session or a counter cart, never both and never neither', () => {
+  it('settles a session or a counter cart, never both', () => {
     const splits = [{ method: 'CASH' as const, amount: 100 }];
     expect(settleRequestSchema.safeParse({ target: { cartId: 8 }, splits }).success).toBe(true);
     expect(
       settleRequestSchema.safeParse({ target: { sessionId: 1, cartId: 8 }, splits }).success,
     ).toBe(false);
+    // Neither, with nothing else on the bill, is nothing to settle.
     expect(settleRequestSchema.safeParse({ target: {}, splits }).success).toBe(false);
+  });
+
+  it('lets a walk-up ticket sale settle against an empty target', () => {
+    // "A walk-up buying only tickets: no seat, no basket" — PaymentService
+    // resolves an empty target when playTickets[] or tournamentEntries[] carry
+    // the sale (billing/domain/PaymentService.java, `walkUp`).
+    const splits = [{ method: 'CASH' as const, amount: 160 }];
+    expect(
+      settleRequestSchema.safeParse({
+        target: {},
+        splits,
+        playTickets: [{ consoleType: 'PS5', blocks: 2 }],
+      }).success,
+    ).toBe(true);
+    expect(
+      settleRequestSchema.safeParse({
+        target: {},
+        splits,
+        tournamentEntries: [{ tournamentId: 5, playerName: 'Rafiul Karim' }],
+      }).success,
+    ).toBe(true);
+  });
+
+  it('takes no tenders at all on a bill points paid for outright', () => {
+    // payment_splits carries CHECK (amount <> 0): "paid nothing" is an empty
+    // list, never a zero row (billing/domain/Settlement.java).
+    expect(
+      settleRequestSchema.safeParse({ target: { sessionId: 41 }, splits: [], redeemPoints: 160 })
+        .success,
+    ).toBe(true);
   });
 
   it('demands the TrxID on an MFS split', () => {

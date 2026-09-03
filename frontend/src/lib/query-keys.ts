@@ -59,6 +59,14 @@ export const queryKeys = {
   },
   printJobs: {
     detail: (id: number | string) => ['print-jobs', id] as const,
+    /**
+     * The stored 48-column render. §4.1 names `['print-jobs', id]`; the render
+     * is a second read of the same job with the opposite lifetime — the status
+     * is polled while the paper moves, the render never changes at all — so it
+     * nests under it exactly as `['sessions', id, 'bill']` nests under the
+     * session (F08; called out in the task notes).
+     */
+    render: (id: number | string) => ['print-jobs', id, 'render'] as const,
   },
   printers: {
     all: () => ['printers'] as const,
@@ -95,6 +103,7 @@ export type QueryKey =
   | ReturnType<typeof queryKeys.expenses.all>
   | ReturnType<typeof queryKeys.reports.range>
   | ReturnType<typeof queryKeys.printJobs.detail>
+  | ReturnType<typeof queryKeys.printJobs.render>
   | ReturnType<typeof queryKeys.printers.all>
   | ReturnType<typeof queryKeys.terminalSettings.all>
   | ReturnType<typeof queryKeys.sync.status>
