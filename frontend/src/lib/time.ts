@@ -200,3 +200,83 @@ function toMillis(value: string | number | Date | null | undefined): number | nu
 function pad(value: number): string {
   return String(value).padStart(2, '0');
 }
+
+/* ------------------------------------------------ the venue's wall clock */
+
+/**
+ * How far the venue's timezone is ahead of UTC at an instant, in minutes.
+ *
+ * Worked out by formatting the instant in venue time and reading the result
+ * back as if it were UTC — the standard trick, and the only one that stays
+ * right across a DST rule this app does not hard-code (Dhaka has none today;
+ * that is a fact about the timezone database, not something to bake in).
+ */
+export function venueOffsetMinutes(at: number = serverNow()): number {
+  const parts = partsFormatter.formatToParts(new Date(at));
+  const read = (type: Intl.DateTimeFormatPartTypes) =>
+    Number(parts.find((part) => part.type === type)?.value ?? '0');
+  const asUtc = Date.UTC(
+    read('year'),
+    read('month') - 1,
+    read('day'),
+    read('hour') % 24,
+    read('minute'),
+    read('second'),
+  );
+  return Math.round((asUtc - at) / 60_000);
+}
+
+/** `+06:00` — the offset a venue-local wall time has to be written with. */
+export function venueOffset(at: number = serverNow()): string {
+  const minutes = venueOffsetMinutes(at);
+  const sign = minutes < 0 ? '-' : '+';
+  const abs = Math.abs(minutes);
+  return `${sign}${pad(Math.floor(abs / 60))}:${pad(abs % 60)}`;
+}
+
+/**
+ * `2026-09-04T21:00` in venue time — the value a `datetime-local` input wants.
+ *
+ * The booking form's start-time picker is the one place this app has to put a
+ * wall-clock reading *into* a control rather than take one out, and the reading
+ * has to be the venue's: a terminal left on some other timezone must still
+ * offer "tonight at nine" as 21:00.
+ */
+export function venueLocalInput(instant: string | number | Date = serverNow()): string {
+  const ms = toMillis(instant);
+  if (ms === null) return '';
+  const parts = partsFormatter.formatToParts(new Date(ms));
+  const read = (type: Intl.DateTimeFormatPartTypes) =>
+    parts.find((part) => part.type === type)?.value ?? '00';
+  const hour = read('hour') === '24' ? '00' : read('hour');
+  return `${read('year')}-${read('month')}-${read('day')}T${hour}:${read('minute')}`;
+}
+
+/**
+ * The other direction: a `datetime-local` value read as venue wall time, turned
+ * into the absolute instant the API takes (`2026-09-04T21:00:00+06:00`).
+ *
+ * Two passes, because the offset depends on the instant it is being asked
+ * about: guess by reading the text as UTC, then re-ask at the guessed instant.
+ * `null` for anything that is not a complete `YYYY-MM-DDTHH:mm`.
+ */
+export function instantFromVenueLocal(input: string): string | null {
+  const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/.exec(input.trim());
+  if (!match) return null;
+  const asUtc = Date.parse(`${input}:00Z`);
+  if (Number.isNaN(asUtc)) return null;
+  const guess = asUtc - venueOffsetMinutes(asUtc) * 60_000;
+  const offset = venueOffset(guess);
+  return `${input}:00${offset}`;
+}
+
+const partsFormatter = new Intl.DateTimeFormat('en-GB', {
+  timeZone: VENUE_TIMEZONE,
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+  hour: '2-digit',
+  minute: '2-digit',
+  second: '2-digit',
+  hour12: false,
+});

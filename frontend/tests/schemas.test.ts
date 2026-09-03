@@ -99,9 +99,13 @@ describe('cancellation cutoff (the CANCEL_CUTOFF_PASSED twin)', () => {
     expect(isCancellable(booking, serverNow())).toBe(false);
   });
 
-  it('locks exactly on the cutoff — "at least cutoff hours before"', () => {
+  it('still cancels exactly on the cutoff, and locks a second later', () => {
+    // The boundary itself is inside the window, as the server measures it:
+    // `!now.isAfter(startAt − cutoffHours)` (backend `Booking.cancellableAt`,
+    // BookingCutoffTest "the boundary itself is still inside the window").
     noteServerTime('2026-09-02T16:00:00+06:00');
-    expect(isCancellable(booking, serverNow())).toBe(false);
+    expect(isCancellable(booking, serverNow())).toBe(true);
+    expect(isCancellable(booking, serverNow() + 1000)).toBe(false);
   });
 
   it('is closed for anything already checked in or cancelled', () => {

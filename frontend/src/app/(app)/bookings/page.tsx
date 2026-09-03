@@ -1,12 +1,16 @@
 /**
- * S14 — Bookings. Scaffolded in TASK F01; built in TASK F10.
+ * S14 — Bookings (TASK F10).
+ *
+ * A server component that mounts the screen: the tabs, the rail and the
+ * pay-first form are a selection, a mutation and a form — the client side of
+ * frontend/ARCHITECTURE.md §5.1. The sidebar already hides this route while
+ * `booking_settings.enabled` is false; the screen itself still renders the
+ * feature notice, because a flag flipped mid-shift leaves paid bookings that
+ * staff must still be able to check in (docs/bookings.md §7).
  */
+
+import { BookingsScreen } from '@/components/domain/bookings-screen';
+
 export default function BookingsPage() {
-  return (
-    <section className="flex flex-col gap-2 p-8">
-      <p className="type-label text-accent-strong">S14</p>
-      <h1 className="text-h2">Bookings</h1>
-      <p className="text-body opacity-75">Scaffolded in F01 — built in F10.</p>
-    </section>
-  );
+  return <BookingsScreen />;
 }

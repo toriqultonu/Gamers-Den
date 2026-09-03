@@ -31,6 +31,7 @@
 
 import { create } from 'zustand';
 import type { Schemas } from '@/lib/api';
+import type { BookingTab } from '@/features/bookings/schemas';
 import type { ConsoleType } from '@/features/queue/schemas';
 import type { PaymentSplitDraft } from '@/features/payments/schemas';
 
@@ -177,11 +178,35 @@ export type PosSlice = {
 };
 
 /**
+ * S14's rail — §4.2's `bookingsTab`, `selectedBookingId`, `bookingFormOpen`.
+ *
+ * The three of them are one choice made of three fields: the rail shows the
+ * form, or a booking, or its idle hint, and never two of those at once. So the
+ * setters are written as that choice rather than as three independent flags —
+ * picking a row closes the form, opening the form drops the selection, and
+ * switching tab clears both, because a booking selected on Upcoming is not on
+ * the screen the operator is now looking at.
+ *
+ * All of it is safely lost on a refresh: what a booking *is* comes from
+ * `['bookings', …]`, and this only remembers where the operator was looking.
+ */
+export type BookingsSlice = {
+  bookingsTab: BookingTab;
+  selectedBookingId: number | null;
+  bookingFormOpen: boolean;
+
+  setBookingsTab: (tab: BookingTab) => void;
+  selectBooking: (bookingId: number | null) => void;
+  openBookingForm: () => void;
+  closeBookingForm: () => void;
+};
+
+/**
  * The store. Later screens add their own slices to this same object
  * (`alertsRailOpen`, `selectedTournamentId`, `bookingsTab`, …) — §4.2 is one
  * store, not one per feature.
  */
-export const useAppStore = create<PosSlice>()((set, get) => ({
+export const useAppStore = create<PosSlice & BookingsSlice>()((set, get) => ({
   posMode: 'counter',
   selectedStationId: null,
   category: 'ALL',
@@ -265,6 +290,25 @@ export const useAppStore = create<PosSlice>()((set, get) => ({
   setSplits: (splits) => set({ draft: { ...get().draft, splits } }),
 
   resetDraft: () => set({ draft: EMPTY_DRAFT }),
+
+  /* ------------------------------------------------------------- bookings */
+
+  bookingsTab: 'upcoming',
+  selectedBookingId: null,
+  bookingFormOpen: false,
+
+  setBookingsTab: (tab) =>
+    set(
+      get().bookingsTab === tab
+        ? {}
+        : { bookingsTab: tab, selectedBookingId: null, bookingFormOpen: false },
+    ),
+
+  selectBooking: (bookingId) => set({ selectedBookingId: bookingId, bookingFormOpen: false }),
+
+  openBookingForm: () => set({ bookingFormOpen: true, selectedBookingId: null }),
+
+  closeBookingForm: () => set({ bookingFormOpen: false }),
 }));
 
 /** Test isolation and sign-out: the terminal forgets what it was selling. */
@@ -277,6 +321,9 @@ export function resetPosStore(): void {
     previewOpen: false,
     target: 'counter',
     draft: EMPTY_DRAFT,
+    bookingsTab: 'upcoming',
+    selectedBookingId: null,
+    bookingFormOpen: false,
   });
 }
 
