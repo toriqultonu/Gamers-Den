@@ -1,12 +1,12 @@
+import { InventoryScreen } from '@/components/domain/inventory-screen';
+
 /**
- * S5 — Inventory. Scaffolded in TASK F01; built in TASK F09.
+ * S5 — Inventory (TASK F13).
+ *
+ * Open to every role (`NAV` carries it for all three) and read-only by design:
+ * the stock table reports, and the corrections happen in Setup where the write
+ * is guarded and audited.
  */
 export default function InventoryPage() {
-  return (
-    <section className="flex flex-col gap-2 p-8">
-      <p className="type-label text-accent-strong">S5</p>
-      <h1 className="text-h2">Inventory</h1>
-      <p className="text-body opacity-75">Scaffolded in F01 — built in F09.</p>
-    </section>
-  );
+  return <InventoryScreen />;
 }

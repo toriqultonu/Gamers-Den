@@ -31,7 +31,13 @@
 import { useMutation, useQueryClient, type QueryClient } from '@tanstack/react-query';
 import { api, type Schemas } from '@/lib/api';
 import { queryKeys } from '@/lib/query-keys';
-import { bookingIntent, cancelIntent, type CreateBookingInput } from './schemas';
+import {
+  bookingIntent,
+  cancelIntent,
+  type BookingSettings,
+  type CreateBookingInput,
+  type UpdateBookingSettingsInput,
+} from './schemas';
 
 export type BookingCreated = Schemas['BookingCreated'];
 export type BookingCheckedIn = Schemas['BookingCheckedIn'];
@@ -145,6 +151,38 @@ export function useCancelBooking() {
       if (typeof memberId === 'number') {
         void client.invalidateQueries({ queryKey: queryKeys.members.detail(memberId) });
       }
+    },
+  });
+}
+
+/* -------------------------------------------------------------- settings */
+
+/**
+ * `PUT /booking-settings` (Admin, S10) — the feature flag, the package fee and
+ * the cancellation window.
+ *
+ * The one write in this file that takes no money and still reaches the whole
+ * venue: switching `enabled` off takes the Bookings nav item away from every
+ * terminal and starts refusing new bookings with 409 `PREBOOKING_DISABLED`
+ * (docs/bookings.md §1). So the answer is written straight into
+ * `['booking-settings']` — the key the shell filters `NAV[role]` on
+ * (frontend/ARCHITECTURE.md §4.3) — and the sidebar loses the item on the same
+ * frame the switch settles, rather than up to a minute later when the flag
+ * goes stale.
+ *
+ * Not optimistic, for the ordinary reason: a sidebar that dropped a screen and
+ * then had to put it back on a 403 would be worse than one that waits a
+ * round-trip. Fee and cutoff changes "apply to NEW bookings only" — every
+ * booking already sold keeps the terms it was sold under, which is the
+ * server's rule and needs nothing from the cache.
+ */
+export function useUpdateBookingSettings() {
+  const client = useQueryClient();
+
+  return useMutation<BookingSettings, unknown, UpdateBookingSettingsInput>({
+    mutationFn: (settings) => api.put<BookingSettings>('/booking-settings', settings),
+    onSuccess: (settings) => {
+      client.setQueryData(queryKeys.bookings.settings(), settings);
     },
   });
 }

@@ -6,7 +6,7 @@
  * The menu grid is three different things stacked into one grid, and only the
  * first is a menu:
  *
- *  - **stock items** from `GET /items?active=true`;
+ *  - **stock items** from `GET /items`, minus the retired rows;
  *  - **tournament entries** — one card per OPEN event, priced at its fee and
  *    disabled when `slotsLeft` is 0 (docs/tournaments.md §5). The list itself
  *    is `['tournaments']`, already owned by `features/tournaments/queries.ts`;
@@ -30,14 +30,19 @@ export type PageResponseMember = Schemas['PageResponseMember'];
 /* -------------------------------------------------------------- the menu */
 
 /**
- * `GET /items?active=true` — "The POS passes active=true; S10's editor passes
- * nothing and sees retired rows too" (api-contract.md). The key stays
- * `['items']` because there is one menu; S10 will widen the read, not fork it.
+ * `GET /items` — the whole menu, retired rows included.
+ *
+ * F07 read it as `?active=true` because the POS grid only ever wanted sellable
+ * rows; F13 widened it, exactly as that task's note said it would ("S10 will
+ * widen the read, not fork it"). One key, one shape, three readers: the POS
+ * grid filters the retired rows out on the way to the screen
+ * (`visibleItems`), S5 lists them because a stock record is not a menu, and
+ * S10's editor edits them because reactivating one is the point.
  */
 export function menuQueryOptions() {
   return {
     queryKey: queryKeys.items.all(),
-    queryFn: () => api.get<Item[]>('/items', { query: { active: true } }),
+    queryFn: () => api.get<Item[]>('/items'),
   };
 }
 

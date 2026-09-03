@@ -44,6 +44,8 @@ export const updateBookingSettingsSchema = z.object({
   cancelCutoffHours: z.int().nonnegative().max(72),
 });
 
+export type UpdateBookingSettingsInput = z.infer<typeof updateBookingSettingsSchema>;
+
 /**
  * The S14 form. `blocks` is capped at the backend's 48 (24 hours) and floored
  * at 1 — the TimeStepper's −30 is disabled there rather than hidden.
