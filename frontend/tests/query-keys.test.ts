@@ -16,6 +16,7 @@ describe('the canonical keys', () => {
     expect(queryKeys.sessions.bill(41)).toEqual(['sessions', 41, 'bill']);
     expect(queryKeys.stations.all()).toEqual(['stations']);
     expect(queryKeys.items.all()).toEqual(['items']);
+    expect(queryKeys.pricing.all()).toEqual(['pricing']);
     expect(queryKeys.members.search('rafi')).toEqual(['members', 'rafi']);
     expect(queryKeys.members.detail(7)).toEqual(['members', 7]);
     expect(queryKeys.bookings.tab('upcoming')).toEqual(['bookings', 'upcoming']);
