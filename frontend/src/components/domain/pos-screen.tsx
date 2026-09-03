@@ -491,9 +491,15 @@ export function openTournaments(tournaments: Tournament[] | undefined): Tourname
   );
 }
 
-/** The stock rows the chosen category shows. */
+/**
+ * The stock rows the chosen category shows.
+ *
+ * `['items']` carries the whole menu — S5 and S10 need the retired rows — so
+ * the grid drops them here: an item taken off the menu is not sellable, and a
+ * card for one would only earn a 409 at settle.
+ */
 export function visibleItems(items: Item[] | undefined, category: MenuCategory): Item[] {
-  const rows = items ?? [];
+  const rows = (items ?? []).filter((item) => item.active !== false);
   if (category === 'ALL') return rows;
   if (category === 'PLAY_TICKET' || category === 'TOURNAMENT') return [];
   return rows.filter((item) => item.category === category);

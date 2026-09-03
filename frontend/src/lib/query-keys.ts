@@ -31,6 +31,15 @@ export const queryKeys = {
   pricing: {
     all: () => ['pricing'] as const,
   },
+  /**
+   * The staff roster S10 edits (`GET /staff`, Admin). §4.1 does not name it —
+   * it lists the keys SSE writes into, and nothing pushes staff — but the
+   * roster is server state read by a screen, so it gets a namespaced key here
+   * rather than a hand-typed array in the setup screen (F13).
+   */
+  staff: {
+    all: () => ['staff'] as const,
+  },
   members: {
     search: (query: string) => ['members', query] as const,
     detail: (id: number | string) => ['members', id] as const,
@@ -107,6 +116,7 @@ export type QueryKey =
   | ReturnType<typeof queryKeys.stations.all>
   | ReturnType<typeof queryKeys.items.all>
   | ReturnType<typeof queryKeys.pricing.all>
+  | ReturnType<typeof queryKeys.staff.all>
   | ReturnType<typeof queryKeys.members.search>
   | ReturnType<typeof queryKeys.members.detail>
   | ReturnType<typeof queryKeys.bookings.tab>
