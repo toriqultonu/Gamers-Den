@@ -1,12 +1,13 @@
 /**
- * S6 — Members. Scaffolded in TASK F01; built in TASK F09.
+ * S6 — Members (TASK F09).
+ *
+ * A server component that mounts the screen: the directory is a debounced
+ * search, the rail is a selection, and both wallet writes are forms — the
+ * client side of frontend/ARCHITECTURE.md §5.1.
  */
+
+import { MembersScreen } from '@/components/domain/members-screen';
+
 export default function MembersPage() {
-  return (
-    <section className="flex flex-col gap-2 p-8">
-      <p className="type-label text-accent-strong">S6</p>
-      <h1 className="text-h2">Members</h1>
-      <p className="text-body opacity-75">Scaffolded in F01 — built in F09.</p>
-    </section>
-  );
+  return <MembersScreen />;
 }

@@ -15,10 +15,11 @@
  *    (docs/bookings.md §3).
  */
 
-import { keepPreviousData, useQuery } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { api, type Schemas } from '@/lib/api';
 import { queryKeys } from '@/lib/query-keys';
 import type { ConsoleType } from '@/features/queue/schemas';
+import { memberSearchQueryOptions as memberDirectoryQueryOptions } from '@/features/members/queries';
 import { ticketPrice } from './bill-math';
 
 export type Item = Schemas['Item'];
@@ -109,17 +110,17 @@ export function playTicketProducts(
 /**
  * `GET /members?q=` — "One box over name and phone" (api-contract.md).
  *
- * Only asked once the operator has typed something: an empty box on a POS bill
- * means "no member", not "show me the whole directory". `keepPreviousData`
- * stops the result list flickering empty between keystrokes.
+ * The read itself is S6's (`features/members/queries.ts`): one key, one shape.
+ * The POS only narrows it — only asked once the operator has typed something,
+ * because an empty box on a bill means "no member", not "show me the whole
+ * directory", where S6's table opens on exactly that listing under the same
+ * `['members', '']` key.
  */
 export function memberSearchQueryOptions(query: string) {
   const term = query.trim();
   return {
-    queryKey: queryKeys.members.search(term),
-    queryFn: () => api.get<PageResponseMember>('/members', { query: { q: term, size: 6 } }),
+    ...memberDirectoryQueryOptions(term),
     enabled: term.length > 0,
-    placeholderData: keepPreviousData,
   };
 }
 
