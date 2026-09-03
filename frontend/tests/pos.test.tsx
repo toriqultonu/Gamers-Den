@@ -30,7 +30,7 @@ import { CartLine } from '@/components/domain/cart-line';
 import { RedeemStepper } from '@/components/domain/redeem-stepper';
 import { memberSearchVariant } from '@/components/domain/member-search';
 import { useSetCartLine, applyLine } from '@/features/pos/mutations';
-import { playTicketProducts, blockPriceOf } from '@/features/pos/queries';
+import { playTicketProducts, blockPriceOf, type Pricing } from '@/features/pos/queries';
 import {
   EMPTY_DRAFT,
   billTarget,
@@ -122,7 +122,7 @@ const BUSY_PS4: Station = {
   session: { id: 42, blocks: 2, paidBlocks: 0, remainingSeconds: 1800, state: 'RUNNING' },
 };
 
-const PRICING = [
+const PRICING: Pricing[] = [
   { consoleType: 'PS5', perHour: 120, perHalfHour: 80, currentBlockPrice: 80 },
   { consoleType: 'PS4', perHour: 80, perHalfHour: 50, currentBlockPrice: 50 },
 ];
@@ -289,7 +289,7 @@ function cardNamed(name: string | RegExp) {
 
 describe('the cart moves first and the server reconciles it', () => {
   it('paints the line before the server answers, then takes the server’s cart', async () => {
-    let release: (() => void) | null = null;
+    let release: () => void = () => {};
     const gate = new Promise<void>((resolve) => {
       release = resolve;
     });
@@ -322,7 +322,7 @@ describe('the cart moves first and the server reconciles it', () => {
     expect(within(line).getByTestId('cart-line-qty')).toHaveTextContent('1');
     expect(within(line).getByText('৳40')).toBeInTheDocument();
 
-    release?.();
+    release();
 
     // Reconciled: the server's snapshot replaces the guess outright.
     await waitFor(() => {
@@ -471,7 +471,7 @@ describe('redemption is capped at min(points, subtotal)', () => {
     expect(totals.due).toBe(400);
   });
 
-  it('spends points before prepaid credit', () => {
+  it('reports prepaid credit without ever charging against it twice', () => {
     const draft: BillDraft = {
       ...EMPTY_DRAFT,
       memberId: 7,
@@ -479,6 +479,10 @@ describe('redemption is capped at min(points, subtotal)', () => {
       memberPoints: 100,
       redeemPoints: 100,
     };
+    // `gamingDue` is unbilled blocks only — the 250 a booking prepaid never
+    // entered it. `prepaidCredit` is "a credit note, already excluded, never
+    // something to subtract a second time" (billing/domain/Bill.java), so it
+    // is reported beside the bill and taken off nothing.
     const totals = billTotals(draft, {
       gamingDue: 300,
       tournamentDue: 0,
@@ -486,8 +490,9 @@ describe('redemption is capped at min(points, subtotal)', () => {
       memberPoints: 100,
     });
     expect(totals.redeem).toBe(100);
-    expect(totals.credit).toBe(200); // only what is left to cover
-    expect(totals.due).toBe(0);
+    expect(totals.credit).toBe(250);
+    // What POST /payments will expect the splits to sum to: gross − redeemed.
+    expect(totals.due).toBe(200);
   });
 
   it('renders only the rungs the cap allows', async () => {
@@ -507,22 +512,40 @@ describe('redemption is capped at min(points, subtotal)', () => {
     renderPos();
 
     await billPanel();
-    await user.click(screen.getByRole('radio', { name: /counter sale/i }));
-
-    // Nothing to redeem against until the bill has something on it.
-    useAppStore.getState().addTicket({ consoleType: 'PS5', blocks: 2, price: 160 });
+    // A station bill: loyalty rides on the session's member, which is the only
+    // member POST /payments has (see the counter-sale case below).
+    await user.click(screen.getByRole('radio', { name: /station/i }));
 
     await user.type(screen.getByLabelText(/search name or phone/i), 'Rafi');
     const hit = await screen.findByTestId('member-result');
     await user.click(hit);
 
-    // 320 points against a ৳160 bill: the cap is the bill.
+    // 320 points against the ৳160 of unbilled blocks: the cap is the bill.
     const stepper = await screen.findByTestId('redeem-stepper');
     expect(stepper).toHaveAttribute('data-max', '160');
 
     await user.click(within(stepper).getByRole('button', { name: 'Max 160' }));
     await waitFor(() => expect(screen.getByTestId('bill-due')).toHaveTextContent('৳0'));
     expect(screen.getByTestId('bill-redeem')).toHaveTextContent('160 pts');
+  });
+
+  it('offers no redemption on a counter sale, because the settle carries no member', async () => {
+    const user = userEvent.setup();
+    renderPos();
+
+    await billPanel();
+    await user.click(screen.getByRole('radio', { name: /counter sale/i }));
+    useAppStore.getState().addTicket({ consoleType: 'PS5', blocks: 2, price: 160 });
+
+    await user.type(screen.getByLabelText(/search name or phone/i), 'Rafi');
+    await user.click(await screen.findByTestId('member-result'));
+
+    // "A counter sale: F&B only, and no member … loyalty simply does not
+    // apply" (billing/domain/PaymentService.java). Offering the stepper here
+    // would tender short of the gross and 409 SPLIT_MISMATCH every time.
+    expect(await screen.findByTestId('loyalty-off')).toBeInTheDocument();
+    expect(screen.queryByTestId('redeem-stepper')).not.toBeInTheDocument();
+    expect(screen.getByTestId('bill-due')).toHaveTextContent('৳160');
   });
 });
 
@@ -806,7 +829,7 @@ describe('station and counter bills', () => {
     expect(billTarget('station', null)).toBe('station:none');
   });
 
-  it('applies a seated booking’s prepaid credit', async () => {
+  it('shows a seated booking’s prepaid credit beside the bill, not inside it', async () => {
     serve({ bill: bill({ gamingDue: 0, prepaidCredit: 240, netTotal: 0 }) });
     const user = userEvent.setup();
     renderPos();
@@ -815,8 +838,10 @@ describe('station and counter bills', () => {
     await user.click(screen.getByRole('radio', { name: /station/i }));
     useAppStore.getState().addTicket({ consoleType: 'PS4', blocks: 2, price: 100 });
 
-    await waitFor(() => expect(screen.getByTestId('bill-credit')).toHaveTextContent('−৳100'));
-    expect(screen.getByTestId('bill-due')).toHaveTextContent('৳0');
+    // The seat's own time is covered — and was never in `gamingDue` to begin
+    // with. The ticket just added is not, so it is what has to be tendered.
+    await waitFor(() => expect(screen.getByTestId('bill-credit')).toHaveTextContent('৳240'));
+    expect(screen.getByTestId('bill-due')).toHaveTextContent('৳100');
   });
 });
 

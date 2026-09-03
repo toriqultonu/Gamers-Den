@@ -12,16 +12,18 @@
  * + tournament entries (draft — settles as `tournamentEntries[]`)
  * + play tickets (draft — settles as `playTickets[]`)
  * − points redeemed (capped at min(points, subtotal))
- * − prepaid credit (a seated booking's money, already taken)
  * = due
+ *
+ * A seated booking's prepaid time shows as a credit note beside that sum, not
+ * inside it: the server already left those blocks out of `gamingDue`, so this
+ * rail reports what is covered and charges what is not
+ * (`features/pos/bill-math.ts`).
  *
  * Presentational on purpose: every number arrives computed
  * (`features/pos/bill-math.ts`) and every control calls back up. The screen
  * owns the mutations, which is what lets the optimistic cart and the
- * never-optimistic settle live side by side without this file knowing.
- *
- * Settle itself is F08 — the button is here, wired to `onSettle` when the
- * caller has one, because the bill's shape is decided by where the total sits.
+ * never-optimistic settle live side by side without this file knowing — the
+ * split panel arrives through `paymentSlot` for the same reason.
  */
 
 import type { ReactNode } from 'react';
@@ -65,7 +67,24 @@ export type BillPanelProps = {
   onPlayerNameChange: (name: string) => void;
   member: Omit<MemberSearchProps, 'disabled' | 'className'>;
 
+  /**
+   * Whether points and the wallet apply to this bill at all.
+   *
+   * They do on a station bill, where the member is attached to the session.
+   * They do not on a counter sale: `POST /payments` carries no `memberId` and a
+   * counter cart has no seat to inherit one from, so the server settles it with
+   * no member — "a counter sale: F&B only, and no member … loyalty simply does
+   * not apply" (`billing/domain/PaymentService.java`). Offering a redemption
+   * there would tender less than is owed and 409 `SPLIT_MISMATCH` every time.
+   */
+  loyaltyEnabled?: boolean;
+
+  /** The PaymentSplit panel — it sits under the total it has to add up to. */
+  paymentSlot?: ReactNode;
+
   onSettle?: () => void;
+  /** False while the split is short, over, or missing a TrxID. */
+  canSettle?: boolean;
   /** The last domain error, rendered over an otherwise intact bill. */
   notice?: string | null;
   busy?: boolean;
@@ -91,7 +110,10 @@ export function BillPanel({
   onRedeemChange,
   onPlayerNameChange,
   member,
+  loyaltyEnabled = true,
+  paymentSlot,
   onSettle,
+  canSettle = true,
   notice = null,
   busy = false,
   disabled = false,
@@ -229,7 +251,14 @@ export function BillPanel({
 
       <MemberSearch {...member} disabled={disabled} />
 
-      {draft.memberId !== null ? (
+      {draft.memberId !== null && !loyaltyEnabled ? (
+        <p data-testid="loyalty-off" className="text-[11px] opacity-55">
+          Points and the wallet belong to a station bill — a counter sale settles without a
+          member.
+        </p>
+      ) : null}
+
+      {loyaltyEnabled && draft.memberId !== null ? (
         <RedeemStepper
           max={totals.maxRedeem}
           value={totals.redeem}
@@ -238,14 +267,22 @@ export function BillPanel({
         />
       ) : null}
 
-      <Row
-        testId="bill-redeem"
-        label={totals.redeem > 0 ? `Points redeemed (${totals.redeem} pts)` : 'Points redeemed'}
-        amount={-totals.redeem}
-      />
+      {loyaltyEnabled ? (
+        <Row
+          testId="bill-redeem"
+          label={totals.redeem > 0 ? `Points redeemed (${totals.redeem} pts)` : 'Points redeemed'}
+          amount={-totals.redeem}
+        />
+      ) : null}
 
       {totals.credit > 0 ? (
-        <Row testId="bill-credit" label="Booking deposit credit" amount={-totals.credit} />
+        // Not a deduction: those blocks were paid at the booking or ticket sale
+        // and never entered `gamingDue`. Subtracting it here would tender less
+        // than `POST /payments` expects (features/pos/bill-math.ts).
+        <div data-testid="bill-credit" className="flex justify-between text-body opacity-70">
+          <span>Prepaid time · already paid</span>
+          <span className="tabular">{formatBDT(totals.credit)}</span>
+        </div>
       ) : null}
 
       <div className="flex items-baseline justify-between font-heading text-[30px] font-extrabold tracking-tighter">
@@ -255,25 +292,32 @@ export function BillPanel({
         </span>
       </div>
 
+      {loyaltyEnabled && draft.memberId !== null ? (
+        // P1's loyalty line, previewed: "points earned · balance" (design.md §5).
+        <p data-testid="bill-points-earned" className="flex justify-between text-[12px] opacity-60">
+          <span>Points earned</span>
+          <span className="tabular">
+            {`${totals.pointsEarned} pts · balance ${draft.memberPoints - totals.redeem + totals.pointsEarned}`}
+          </span>
+        </p>
+      ) : null}
+
       <hr className="rule" />
 
-      <div className="mt-auto flex flex-col gap-2">
+      {paymentSlot}
+
+      <div className="mt-auto flex flex-col gap-2 pt-2.5">
         {previewToggle}
         <Button
           variant="primary"
           className="h-12 w-full text-[15px]"
           data-testid="settle"
-          disabled={disabled || totals.subtotal === 0 || !onSettle}
+          disabled={disabled || totals.subtotal === 0 || !onSettle || !canSettle}
           loading={busy}
           onClick={() => onSettle?.()}
         >
           {`Take ${formatBDT(totals.due)} & print`}
         </Button>
-        {onSettle ? null : (
-          <p data-testid="settle-pending" className="text-[11px] opacity-55">
-            Split payment, settle and the ticket preview arrive with F08.
-          </p>
-        )}
       </div>
     </aside>
   );

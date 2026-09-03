@@ -5,12 +5,22 @@
  * The server prices and settles and is always right. What is computed here is
  * what the operator has to see the instant they tap a card: the running
  * subtotal, how many points the redeem stepper is allowed to offer, and the
- * amount due after redemption and any prepaid credit. `POST /payments`
- * re-derives all of it and answers `SPLIT_MISMATCH` if the tender disagrees.
+ * amount due after redemption. `POST /payments` re-derives all of it and
+ * answers `SPLIT_MISMATCH` if the tender disagrees — so `due` here is not
+ * decoration, it is the number the split panel has to add up to.
  *
  * Two figures come from the server and are never recomputed here: `gamingDue`
  * (unbilled blocks at their snapshot rates, which the client does not know)
  * and `prepaidCredit` (what a seated booking or play ticket already paid).
+ *
+ * **`prepaidCredit` is a credit note, not a discount.** The server's own
+ * contract is explicit about it — "`sum(lines) == gamingDue + fnbDue +
+ * tournamentDue == netTotal`. `prepaidCredit` is deliberately *outside* that
+ * sum — it is a credit note, already excluded, never something to subtract a
+ * second time" (`billing/domain/Bill.java`). Blocks a booking paid for carry a
+ * `paid_tx_id` and never reach `gamingDue` at all, so taking the credit off
+ * `due` again would tender less than `POST /payments` expects and 409 every
+ * seated booking. It is shown, not subtracted.
  *
  * Everything is integer BDT — there is no paisa in this system (lib/money.ts).
  */
@@ -54,24 +64,30 @@ export type BillTotals = {
   fnb: number;
   entries: number;
   tickets: number;
-  /** Everything chargeable, before points and prepaid credit. */
+  /** Everything chargeable, before points. Equals the server's `netTotal`. */
   subtotal: number;
   /** The most the stepper may offer: min(points, subtotal). */
   maxRedeem: number;
   /** What the operator actually chose, clamped to `maxRedeem`. */
   redeem: number;
-  /** Prepaid credit actually consumed by this bill. */
+  /**
+   * What a seated booking or play ticket already paid for this seat. Shown so
+   * the customer can see their time is covered — **never subtracted**: the
+   * server already left those blocks out of `gamingDue`.
+   */
   credit: number;
-  /** What has to be tendered. Never negative. */
+  /** What has to be tendered — the number `splits[]` must sum to. Never negative. */
   due: number;
+  /** floor(due / 20), and only with a member on the bill to earn them. */
+  pointsEarned: number;
 };
 
 /**
  * The whole bill in one pass.
  *
- * Order matters and follows the prototype: points come off first, then the
- * prepaid credit covers what is left. Redeeming against money a customer has
- * already paid would burn points for nothing.
+ * `due = subtotal − redeem`, which is exactly the server's
+ * `charges.gross() − pointsRedeemed` (`billing/domain/Settlement.java`), so a
+ * balanced split panel is a split the settle accepts.
  */
 export function billTotals(draft: BillDraft, figures: BillFigures = NO_FIGURES): BillTotals {
   const fnb = cartTotal(draft.cart);
@@ -84,7 +100,7 @@ export function billTotals(draft: BillDraft, figures: BillFigures = NO_FIGURES):
   );
   const maxRedeem = maxRedeemable(draft.memberId === null ? 0 : figures.memberPoints, subtotal);
   const redeem = Math.min(Math.max(0, draft.redeemPoints), maxRedeem);
-  const credit = Math.min(Math.max(0, figures.prepaidCredit), Math.max(0, subtotal - redeem));
+  const due = Math.max(0, subtotal - redeem);
 
   return {
     fnb,
@@ -93,9 +109,24 @@ export function billTotals(draft: BillDraft, figures: BillFigures = NO_FIGURES):
     subtotal,
     maxRedeem,
     redeem,
-    credit,
-    due: Math.max(0, subtotal - redeem - credit),
+    credit: Math.max(0, Math.trunc(figures.prepaidCredit)),
+    due,
+    pointsEarned: draft.memberId === null ? 0 : pointsEarned(due),
   };
+}
+
+/**
+ * The loyalty line P1 prints: "points earned · balance".
+ *
+ * `floor(due / 20)` of the **post-discount** total (`Money.pointsEarned`,
+ * mirrored in `Settlement`: "Earning is on what was actually paid … so
+ * redeeming points cannot quietly re-earn them"). A preview like every other
+ * figure on this rail — the ledger the server writes is the record.
+ */
+export const TAKA_PER_POINT = 20;
+
+export function pointsEarned(due: number): number {
+  return due <= 0 ? 0 : Math.floor(due / TAKA_PER_POINT);
 }
 
 /**

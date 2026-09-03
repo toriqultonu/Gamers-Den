@@ -32,6 +32,7 @@
 import { create } from 'zustand';
 import type { Schemas } from '@/lib/api';
 import type { ConsoleType } from '@/features/queue/schemas';
+import type { PaymentSplitDraft } from '@/features/payments/schemas';
 
 export type Cart = Schemas['Cart'];
 export type CartLine = Schemas['CartLine'];
@@ -111,6 +112,15 @@ export type BillDraft = {
   redeemPoints: number;
   /** The name printed on an entry stub or a play ticket. */
   playerName: string;
+  /**
+   * The tender rows. Empty means untouched — the panel then shows one cash row
+   * for the whole bill, which is the overwhelmingly common sale and keeps the
+   * split balanced as the bill grows (`payments/schemas.ts`,
+   * `effectiveSplits`). Amounts are the operator's own text, kept verbatim so
+   * a failed settle gives the entered figures back rather than a rounded
+   * reading of them (§4.4: an error never destroys entered data).
+   */
+  splits: PaymentSplitDraft[];
 };
 
 export const EMPTY_DRAFT: BillDraft = {
@@ -124,6 +134,7 @@ export const EMPTY_DRAFT: BillDraft = {
   memberTouched: false,
   redeemPoints: 0,
   playerName: '',
+  splits: [],
 };
 
 export type AttachedMember = {
@@ -161,6 +172,7 @@ export type PosSlice = {
   clearMember: () => void;
   setRedeemPoints: (points: number) => void;
   setPlayerName: (name: string) => void;
+  setSplits: (splits: PaymentSplitDraft[]) => void;
   resetDraft: () => void;
 };
 
@@ -207,6 +219,7 @@ export const useAppStore = create<PosSlice>()((set, get) => ({
         memberWallet: member.wallet,
         memberTouched: true,
         redeemPoints: 0,
+        splits: [],
       },
     }),
 
@@ -222,6 +235,7 @@ export const useAppStore = create<PosSlice>()((set, get) => ({
         memberPoints: member.points,
         memberWallet: member.wallet,
         redeemPoints: 0,
+        splits: [],
       },
     });
   },
@@ -236,6 +250,7 @@ export const useAppStore = create<PosSlice>()((set, get) => ({
         memberWallet: 0,
         memberTouched: true,
         redeemPoints: 0,
+        splits: [],
       },
     }),
 
@@ -243,6 +258,11 @@ export const useAppStore = create<PosSlice>()((set, get) => ({
     set({ draft: { ...get().draft, redeemPoints: Math.max(0, Math.trunc(points)) } }),
 
   setPlayerName: (name) => set({ draft: { ...get().draft, playerName: name } }),
+
+  // The panel hands over the whole array: the rules that decide it (which
+  // method absorbs the remainder, what a removed row gives back) are pure
+  // functions in `payments/schemas.ts`, so they are testable without a store.
+  setSplits: (splits) => set({ draft: { ...get().draft, splits } }),
 
   resetDraft: () => set({ draft: EMPTY_DRAFT }),
 }));

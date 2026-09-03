@@ -5,8 +5,8 @@
  *
  * Three columns at ≥1280: the menu grid, the bill, and the 80mm ticket. The
  * ticket column collapses behind a Preview button between 1024 and 1279
- * (design.md §4); the ticket itself is the server's stored render and arrives
- * with F08, which is also where settle lives.
+ * (design.md §4); the ticket itself is the server's stored render, read back
+ * from the print job the settle created (invariant §5.6).
  *
  * The menu is one grid over three different kinds of product, and the
  * difference that matters is what turns a card off:
@@ -21,16 +21,26 @@
  * cart) and draft state (entries, tickets), and only the cart moves
  * optimistically. Everything money-bearing that is not a cart line waits for
  * `POST /payments` to say it happened.
+ *
+ * **The settle is the sharp end of that.** One call, never optimistic, and on
+ * refusal the bill is exactly as it was: the lines, the member, the redemption
+ * and the tender amounts all still on screen with the notice above them, ready
+ * to send again under the same `Idempotency-Key`. Success is the only thing
+ * that clears the draft — and it clears it *after* the response, holding on to
+ * the receipt so the ticket column can draw it.
  */
 
 import { useEffect, useMemo, useState } from 'react';
 import { AccessNotice } from './access-notice';
 import { BillPanel } from './bill-panel';
 import { MenuItemCard } from './menu-item-card';
+import { PaymentSplit } from './payment-split';
+import { ReceiptPreview } from './receipt-preview';
 import { Button } from '@/components/ui/button';
 import { ChipSelect } from '@/components/ui/chip-select';
 import { TimeStepper, formatBlocks } from '@/components/ui/time-stepper';
 import { errorNotice, isApiError } from '@/lib/api';
+import { venueToday } from '@/lib/time';
 import { useSessionBill, useStations, type Station } from '@/features/sessions/queries';
 import { useTournaments, type Tournament } from '@/features/tournaments/queries';
 import {
@@ -50,7 +60,13 @@ import {
   useAppStore,
   type MenuCategory,
 } from '@/features/pos/bill-store';
-import { billTotals, type BillFigures } from '@/features/pos/bill-math';
+import { billTotals, effectivePlayerName, type BillFigures } from '@/features/pos/bill-math';
+import { useSettle } from '@/features/payments/mutations';
+import {
+  validateSplits,
+  type PaymentSplitDraft,
+  type SettleResult,
+} from '@/features/payments/schemas';
 import type { ConsoleType } from '@/features/queue/schemas';
 
 export function PosScreen() {
@@ -98,13 +114,34 @@ export function PosScreen() {
     });
   }, [store, billMemberId, bill.data?.memberName, bill.data?.memberPoints, bill.data?.memberWallet]);
 
+  // Loyalty is a station-bill affair. `POST /payments` carries no `memberId`
+  // and a counter cart has no seat to inherit one from, so the server settles a
+  // counter sale with no member at all — quoting a redemption there would
+  // tender short and 409 SPLIT_MISMATCH every time
+  // (billing/domain/PaymentService.java, `counter`/`walkUp`).
+  const stationMode = posMode === 'station';
+  const loyaltyEnabled = stationMode;
+
   const figures: BillFigures = {
-    gamingDue: posMode === 'station' ? (bill.data?.gamingDue ?? 0) : 0,
-    tournamentDue: posMode === 'station' ? (bill.data?.tournamentDue ?? 0) : 0,
-    prepaidCredit: posMode === 'station' ? (bill.data?.prepaidCredit ?? 0) : 0,
-    memberPoints: draft.memberPoints,
+    gamingDue: stationMode ? (bill.data?.gamingDue ?? 0) : 0,
+    tournamentDue: stationMode ? (bill.data?.tournamentDue ?? 0) : 0,
+    prepaidCredit: stationMode ? (bill.data?.prepaidCredit ?? 0) : 0,
+    memberPoints: loyaltyEnabled ? draft.memberPoints : 0,
   };
   const totals = billTotals(draft, figures);
+
+  /* --------------------------------------------------------------- settle */
+
+  const settle = useSettle();
+  const splitIssues = validateSplits(
+    draft.splits,
+    totals.due,
+    loyaltyEnabled ? draft.memberWallet : 0,
+  );
+  // The receipt of the settle that just happened. Held here rather than in the
+  // draft because it outlives the bill it came from: the draft clears, the
+  // ticket stays on screen until the next sale begins.
+  const [receipt, setReceipt] = useState<SettleResult | null>(null);
 
   const openEvents = useMemo(() => openTournaments(tournaments.data), [tournaments.data]);
   const entryCaps = useMemo(
@@ -179,6 +216,52 @@ export function PosScreen() {
       wallet: member.wallet ?? 0,
     });
     setMemberQuery('');
+  };
+
+  const onSplitsChange = (splits: PaymentSplitDraft[]) => {
+    setNotice(null);
+    store().setSplits(splits);
+  };
+
+  /**
+   * Take the money. Nothing local moves until the server answers.
+   *
+   * The intent names the bill, not the attempt: a timeout and the operator's
+   * second press are the same intent, so `lib/api.ts` sends the same
+   * `Idempotency-Key` and the server replays its stored receipt instead of
+   * charging twice.
+   */
+  const onSettle = () => {
+    if (settle.isPending || !splitIssues.ok) return;
+    setNotice(null);
+
+    settle.mutate(
+      {
+        intent: `settle:${target}`,
+        sessionId,
+        cartId: sessionId === null ? (draft.cart?.id ?? null) : null,
+        splits: draft.splits,
+        due: totals.due,
+        redeemPoints: totals.redeem,
+        entries: draft.entries,
+        tickets: draft.tickets,
+        playerName: effectivePlayerName(draft),
+        memberId: loyaltyEnabled ? draft.memberId : null,
+      },
+      {
+        onSuccess: (result) => {
+          // Only now. The tokens and the receipt exist, so the bill they came
+          // from can go.
+          setReceipt(result);
+          store().resetDraft();
+          store().setPreviewOpen(true);
+          setMemberQuery('');
+        },
+        // The bill is untouched — no rollback, because nothing rolled forward.
+        // design.md §1, S4: "settle failure keeps bill intact, retry".
+        onError: (error) => setNotice(errorNotice(error, 'The payment was not taken.')),
+      },
+    );
   };
 
   /* ---------------------------------------------------------------- render */
@@ -337,8 +420,25 @@ export function PosScreen() {
           onAttach: onAttachMember,
           onClear: () => store().clearMember(),
         }}
+        loyaltyEnabled={loyaltyEnabled}
+        paymentSlot={
+          totals.subtotal > 0 ? (
+            <PaymentSplit
+              due={totals.due}
+              splits={draft.splits}
+              onChange={onSplitsChange}
+              issues={splitIssues}
+              walletBalance={loyaltyEnabled ? draft.memberWallet : 0}
+              walletAvailable={loyaltyEnabled && draft.memberId !== null}
+              disabled={settle.isPending}
+            />
+          ) : null
+        }
+        onSettle={onSettle}
+        canSettle={splitIssues.ok}
         notice={notice}
-        busy={setCartLine.isPending}
+        busy={setCartLine.isPending || settle.isPending}
+        disabled={settle.isPending}
         previewToggle={
           <div className="hidden max-[1279px]:block">
             <Button
@@ -363,11 +463,11 @@ export function PosScreen() {
             : 'flex w-[306px] flex-none flex-col gap-2.5 overflow-auto border-l-2 border-divider bg-neutral-200 p-5 max-[1279px]:hidden'
         }
       >
-        <h2 className="type-label opacity-55">80 mm thermal ticket</h2>
-        <p className="text-[12px] opacity-60">
-          The preview renders the server&apos;s stored artifact once a payment has been taken
-          (F08).
-        </p>
+        <ReceiptPreview
+          printJobId={receipt?.printJobId ?? null}
+          result={receipt}
+          today={venueToday()}
+        />
       </aside>
     </div>
   );
