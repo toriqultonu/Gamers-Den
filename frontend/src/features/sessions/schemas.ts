@@ -8,7 +8,7 @@
 
 import { z } from 'zod';
 import type { Schemas } from '@/lib/api';
-import type { ClockSnapshot } from '@/lib/time';
+import { serverOffsetMs, type ClockSnapshot } from '@/lib/time';
 
 /** `OPEN → RUNNING ⇄ PAUSED → LOCKED → CLOSED`. */
 export const SESSION_STATES = ['OPEN', 'RUNNING', 'PAUSED', 'LOCKED', 'CLOSED'] as const;
@@ -76,4 +76,83 @@ export function clockSnapshot(
  */
 export function hasBalance(session: Pick<Session, 'netOutstanding'>): boolean {
   return (session.netOutstanding ?? 0) > 0;
+}
+
+/* ------------------------------------------------------- the floor's cards */
+
+/**
+ * A StationCard's variant, straight off `Station.floorState`.
+ *
+ * The eight design.md §2 variants and the eight server states are the same
+ * eight things under different names, so this is a rename, not a decision —
+ * which is the point: the card never second-guesses what the floor is.
+ */
+export const STATION_VARIANTS = [
+  'free',
+  'open',
+  'active',
+  'paused',
+  'locked',
+  'reserved',
+  'booked',
+  'maintenance',
+] as const;
+export type StationVariant = (typeof STATION_VARIANTS)[number];
+
+const VARIANT_BY_FLOOR_STATE: Record<FloorState, StationVariant> = {
+  FREE: 'free',
+  OPEN: 'open',
+  RUNNING: 'active',
+  PAUSED: 'paused',
+  LOCKED: 'locked',
+  RESERVED: 'reserved',
+  BOOKED: 'booked',
+  MAINTENANCE: 'maintenance',
+};
+
+export function stationVariant(station: Pick<Station, 'floorState'>): StationVariant {
+  return VARIANT_BY_FLOOR_STATE[(station.floorState ?? 'FREE') as FloorState] ?? 'free';
+}
+
+/** A console nobody is on and nothing is holding — the only seatable state. */
+export function isSeatable(station: Pick<Station, 'floorState'>): boolean {
+  const variant = stationVariant(station);
+  return variant === 'free' || variant === 'booked';
+}
+
+/**
+ * The card's clock reading.
+ *
+ * `Station` carries no `serverTime` of its own — the list is one snapshot of
+ * the whole floor — so the reading is dated by *when the response landed*,
+ * converted into server time with the offset `lib/api.ts` measures from every
+ * `Date` header. Pass `receivedAt` as the query's `dataUpdatedAt`; the result
+ * is the same instant the server was describing, expressed the way
+ * `remainingSecondsNow` wants it.
+ *
+ * A reserved console with a started match ticks its **match** clock here — the
+ * floor shows it like any other session (docs/tournaments.md §4).
+ */
+export function stationClockSnapshot(
+  station: Pick<Station, 'session' | 'match' | 'floorState'>,
+  receivedAt: number,
+): ClockSnapshot | null {
+  const asOf = receivedAt + serverOffsetMs();
+
+  if (station.match && typeof station.match.remainingSeconds === 'number') {
+    return {
+      remainingSeconds: station.match.remainingSeconds,
+      asOf,
+      // A started match runs on the server's clock whatever the console does.
+      running: true,
+    };
+  }
+
+  const session = station.session;
+  if (!session) return null;
+  return {
+    remainingSeconds: session.remainingSeconds ?? 0,
+    asOf,
+    running: session.state === 'RUNNING',
+  };
 }

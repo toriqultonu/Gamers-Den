@@ -1,12 +1,13 @@
 /**
- * S3 — Floor. Scaffolded in TASK F01; built in TASK F06.
+ * S3 — Floor (TASK F06).
+ *
+ * A server component whose only job is to mount the screen: everything on the
+ * floor is a timer, a subscription or an optimistic mutation, which is exactly
+ * the list frontend/ARCHITECTURE.md §5.1 puts on the client side of the line.
  */
+
+import { FloorScreen } from '@/components/domain/floor-screen';
+
 export default function FloorPage() {
-  return (
-    <section className="flex flex-col gap-2 p-8">
-      <p className="type-label text-accent-strong">S3</p>
-      <h1 className="text-h2">Floor</h1>
-      <p className="text-body opacity-75">Scaffolded in F01 — built in F06.</p>
-    </section>
-  );
+  return <FloorScreen />;
 }
