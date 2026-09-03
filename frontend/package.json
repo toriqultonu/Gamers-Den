@@ -10,7 +10,11 @@
     "types:gen": "node scripts/generate-api-types.mjs",
     "types:check": "node scripts/generate-api-types.mjs --check",
     "test": "node scripts/run.mjs vitest run",
-    "test:watch": "node scripts/run.mjs vitest"
+    "test:watch": "node scripts/run.mjs vitest",
+    "e2e": "node scripts/e2e.mjs",
+    "e2e:ui": "node scripts/e2e.mjs --ui",
+    "e2e:install": "node scripts/run.mjs playwright install chromium",
+    "e2e:reset": "docker compose -f ../backend/docker-compose.yml down -v && docker compose -f ../backend/docker-compose.yml up -d"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.102.8",
@@ -23,6 +27,7 @@
     "zustand": "^5.0.15"
   },
   "devDependencies": {
+    "@playwright/test": "^1.62.1",
     "@tailwindcss/postcss": "4.1.13",
     "@testing-library/dom": "10.4.1",
     "@testing-library/jest-dom": "6.8.0",

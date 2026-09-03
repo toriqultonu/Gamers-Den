@@ -33,7 +33,7 @@ import { DataTable, type Column } from '@/components/ui/data-table';
 import { FieldInput } from '@/components/ui/field-input';
 import { SegmentedChoice } from '@/components/ui/segmented-choice';
 import { Tag } from '@/components/ui/tag';
-import { errorNotice } from '@/lib/api';
+import { errorNotice, isApiError } from '@/lib/api';
 import { formatBDT, parseAmount } from '@/lib/money';
 import type { Role } from '@/lib/nav';
 import { CONSOLE_TYPES, type ConsoleType } from '@/features/queue/schemas';
@@ -86,6 +86,12 @@ export type SetupScreenProps = {
 };
 
 export function SetupScreen({ role }: SetupScreenProps) {
+  // The menu is the one read every Setup role has (Manager sees menu & stock;
+  // Admin sees that and more), so it is the read that tells this screen the
+  // cookie's role and the server's disagree. Same cache entry as the section
+  // below — mounting it here costs nothing.
+  const menu = useMenu({ enabled: canOpenSetup(role) });
+
   if (!canOpenSetup(role)) {
     return (
       <AccessNotice
@@ -93,6 +99,12 @@ export function SetupScreen({ role }: SetupScreenProps) {
         message="Stations, pricing, staff and stock are configured by the owner and the manager. Your till and the floor are unaffected."
       />
     );
+  }
+
+  // A 403 off the wire refuses the screen itself, whatever the cookie said
+  // (design.md §1: an API 403 renders as an access notice).
+  if (isApiError(menu.error) && menu.error.status === 403) {
+    return <AccessNotice screen="Setup" />;
   }
 
   const showStations = hasSetupSection(role, 'stations');
@@ -324,6 +336,12 @@ function PricingSection() {
 
       {pricing.isPending ? (
         <RowsSkeleton testId="pricing-skeleton" rows={2} />
+      ) : pricing.isError ? (
+        // A rate card that could not be read must not become a form full of
+        // zeros somebody can save over the real one (design.md §1, S10).
+        <Notice testId="pricing-error">
+          {errorNotice(pricing.error, 'The rate card could not be read.')}
+        </Notice>
       ) : (
         <>
           <div className="grid grid-cols-2 gap-4">
@@ -469,6 +487,12 @@ function PreBookingSection() {
 
       {settings.isPending ? (
         <RowsSkeleton testId="prebooking-skeleton" rows={2} />
+      ) : settings.isError ? (
+        // Same rule as the rate card: a fee and a cutoff nobody could read are
+        // not a fee and a cutoff to save.
+        <Notice testId="prebooking-error">
+          {errorNotice(settings.error, 'The pre-booking settings could not be read.')}
+        </Notice>
       ) : (
         <div className="flex max-w-[560px] flex-col gap-3 border-2 border-text p-4">
           <div className="flex items-center gap-3">

@@ -32,6 +32,7 @@ import {
   api,
   configureApi,
   logout as apiLogout,
+  refreshSession,
   setAccessToken,
   type Schemas,
 } from '@/lib/api';
@@ -137,12 +138,14 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     setState((current) => ({ ...current, status: 'restoring' }));
     void (async () => {
       try {
-        const session = await api.post<Schemas['SessionResponse']>('/auth/refresh', undefined, {
-          anonymous: true,
-        });
-        const staff = toSignedInStaff(session.staff);
+        // Through `refreshSession`, not a plain POST: the screens' queries are
+        // already in flight and will hit 401 while this runs, and a second
+        // rotation of the same cookie is a reuse the backend answers by
+        // revoking the family (lib/api.ts). One rotation, shared.
+        const session = await refreshSession();
+        const staff = toSignedInStaff(session?.staff);
         if (!live) return;
-        if (!staff || !session.accessToken) {
+        if (!session || !staff || !session.accessToken) {
           forget();
           return;
         }

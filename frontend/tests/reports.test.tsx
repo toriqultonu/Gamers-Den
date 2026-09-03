@@ -463,7 +463,7 @@ describe('the range switch', () => {
 
 describe('the loading state', () => {
   it('shows a skeleton shaped like the screen', async () => {
-    let release: (() => void) | null = null;
+    let release!: () => void;
     const held = new Promise<Response>((resolve) => {
       release = () => resolve(json(REPORT));
     });
@@ -472,7 +472,7 @@ describe('the loading state', () => {
     renderScreen();
 
     expect(await screen.findByTestId('reports-skeleton')).toBeInTheDocument();
-    release?.();
+    release();
     await waitFor(() => expect(screen.queryByTestId('reports-skeleton')).not.toBeInTheDocument());
   });
 });

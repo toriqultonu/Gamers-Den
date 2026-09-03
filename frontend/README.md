@@ -12,6 +12,7 @@ npm test           # Vitest + Testing Library — the task gate
 npm run typecheck  # tsc --noEmit
 npm run types:gen  # regenerate the API types from a running backend
 npm run types:check # CI gate: fail when they drift from /v3/api-docs
+npm run e2e        # Playwright money path against a seeded backend — the release gate
 ```
 
 ## Talking to the backend
@@ -49,6 +50,57 @@ files and `npm run types:check` is what CI runs to fail the build on drift.
 countdown: `lib/api.ts` measures the offset from every response's `Date` header
 and `useCountdown(snapshot)` re-derives the remainder each tick, so a terminal
 with a wrong clock still shows the right time left.
+
+## The money path, end to end (F17)
+
+`e2e/` drives the built app through a real browser against a **real seeded
+backend** — no stubs, no fixtures. Eight scenarios, numbered in the order the
+money moves, ending with the shift close that adds them all up:
+
+```
+01 session -> blocks -> bill -> split settle -> ticket
+02 counter sale (and why loyalty stays out of it)
+03 member: points -> wallet, then points off a bill
+04 booking -> refund outside the cutoff -> retake inside it -> check-in token -> seat -> prepaid clock
+05 play ticket sold to a full floor -> queue rail -> seat -> add time
+06 tournament entries -> the bracket draws itself at cap -> start -> winners -> champion
+07 a failed ticket explains itself and retries
+08 shift close over a discrepancy, tournament + pre-booking lines read, till re-opened
+```
+
+Running it:
+
+```bash
+docker compose -f ../backend/docker-compose.yml up -d          # Postgres
+cd ../backend && ./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
+cd ../frontend && npm run e2e            # builds, starts the app, drives it
+npm run e2e -- 04-booking --headed       # one scenario, watching it happen
+npm run e2e:install                      # once, to fetch Chromium
+npm run e2e:reset                        # throw the dev database away
+```
+
+Three things about it are deliberate:
+
+- **One worker, no retries, in order.** The specs share one venue: they seat
+  people on its consoles, sell from its stock, take numbers off its daily token
+  counter and finally close its till. Two workers would be two cashiers fighting
+  over one drawer, and a retry would replay real writes onto a floor the first
+  attempt already charged.
+- **The app is built same-origin.** The venue image serves the app and the API
+  behind one proxy, which is why the backend disables CORS outright; `npm run
+  e2e` (see `scripts/e2e.mjs`) builds with `NEXT_PUBLIC_API_BASE_URL=/api/v1`
+  and lets Next stand in for that proxy through `API_PROXY_TARGET`.
+- **Start from the seed.** `DemoDataSeeder` only fills an empty floor, so a run
+  that fails half way can leave a console occupied or a token waiting. `npm run
+  e2e:reset` plus a backend restart gives the suite the venue it expects; the
+  pre-flight in `e2e/support/global-setup.ts` says so in as many words rather
+  than letting twelve specs time out.
+
+The one thing the suite stages is the printer's transport — the fake port lives
+inside the backend JVM and has no HTTP surface to take offline, so
+`07-print-retry` rewrites the job read and answers the retry write, over a real
+sale and a real print job. `e2e/07-print-retry.spec.ts` says exactly what is
+real and what is not.
 
 ## The design tokens
 

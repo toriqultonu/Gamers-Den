@@ -282,7 +282,7 @@ describe('the equipment register', () => {
 
 describe('the other four states', () => {
   it('loads a skeleton shaped like the table it becomes', async () => {
-    let release: (() => void) | null = null;
+    let release!: () => void;
     const held = new Promise<void>((resolve) => {
       release = resolve;
     });
@@ -299,7 +299,7 @@ describe('the other four states', () => {
     expect(screen.getByTestId('low-stock-skeleton')).toBeInTheDocument();
     expect(screen.queryByRole('table')).not.toBeInTheDocument();
 
-    release?.();
+    release();
     await waitFor(() => expect(screen.getByRole('table')).toBeInTheDocument());
   });
 

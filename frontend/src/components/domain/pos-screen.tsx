@@ -40,6 +40,7 @@ import { Button } from '@/components/ui/button';
 import { ChipSelect } from '@/components/ui/chip-select';
 import { TimeStepper, formatBlocks } from '@/components/ui/time-stepper';
 import { errorNotice, isApiError } from '@/lib/api';
+import { formatBDT } from '@/lib/money';
 import { venueToday } from '@/lib/time';
 import { useSessionBill, useStations, type Station } from '@/features/sessions/queries';
 import { useTournaments, type Tournament } from '@/features/tournaments/queries';
@@ -75,6 +76,7 @@ export function PosScreen() {
   const category = useAppStore((state) => state.category);
   const ticketBlocks = useAppStore((state) => state.ticketBlocks);
   const previewOpen = useAppStore((state) => state.previewOpen);
+  const billDrawerOpen = useAppStore((state) => state.billDrawerOpen);
   const draft = useAppStore((state) => state.draft);
   const store = useAppStore.getState;
 
@@ -272,13 +274,26 @@ export function PosScreen() {
   }
 
   return (
-    <div data-testid="pos-screen" className="flex min-h-0 flex-1">
+    <div data-testid="pos-screen" className="relative flex min-h-0 flex-1">
       <div className="flex min-w-0 flex-1 flex-col gap-4 overflow-auto p-5">
         {menu.isError ? (
           <p role="alert" data-testid="pos-error" className="border-2 border-accent px-3 py-2 text-body text-accent-strong">
             {errorNotice(menu.error, 'The menu could not be read — the bill is untouched.')}
           </p>
         ) : null}
+
+        {/* design.md §4 — 768–1023: the bill is a drawer, opened from here. */}
+        <div className="hidden max-lg:block">
+          <Button
+            variant="secondary"
+            className="w-full"
+            data-testid="bill-drawer-toggle"
+            aria-expanded={billDrawerOpen}
+            onClick={() => store().setBillDrawerOpen(!billDrawerOpen)}
+          >
+            {billDrawerOpen ? 'Hide bill' : `Bill · ${formatBDT(totals.due)}`}
+          </Button>
+        </div>
 
         <ChipSelect
           label="Menu category"
@@ -434,6 +449,8 @@ export function PosScreen() {
             />
           ) : null
         }
+        drawerOpen={billDrawerOpen}
+        onCloseDrawer={() => store().setBillDrawerOpen(false)}
         onSettle={onSettle}
         canSettle={splitIssues.ok}
         notice={notice}
@@ -459,7 +476,9 @@ export function PosScreen() {
         data-open={previewOpen}
         className={
           previewOpen
-            ? 'flex w-[306px] flex-none flex-col gap-2.5 overflow-auto border-l-2 border-divider bg-neutral-200 p-5'
+            ? // Below 1024 the ticket has no column to sit in either — it comes
+              // over the top, above the bill drawer that opened it (§4).
+              'flex w-[306px] flex-none flex-col gap-2.5 overflow-auto border-l-2 border-divider bg-neutral-200 p-5 max-lg:absolute max-lg:right-0 max-lg:top-0 max-lg:bottom-0 max-lg:z-30 max-lg:max-w-full max-lg:shadow-lg'
             : 'flex w-[306px] flex-none flex-col gap-2.5 overflow-auto border-l-2 border-divider bg-neutral-200 p-5 max-[1279px]:hidden'
         }
       >

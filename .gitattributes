@@ -1,0 +1,11 @@
+# Line endings for the files a *program* compares byte for byte.
+#
+# `npm run types:check` (frontend/scripts/generate-api-types.mjs) regenerates
+# the OpenAPI snapshot and the types from the live backend and fails CI when
+# either differs from what is committed — that is the F03/F17 type-drift gate.
+# The generator writes LF, so on a Windows checkout with `core.autocrlf=true`
+# the working copy comes back CRLF and the gate reports drift that does not
+# exist. These two are generated artefacts, never hand-edited, and are pinned to
+# LF everywhere so the comparison means what it says.
+frontend/openapi.json text eol=lf
+frontend/src/lib/api-types.ts text eol=lf

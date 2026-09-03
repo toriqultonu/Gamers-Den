@@ -91,6 +91,14 @@ export type BillPanelProps = {
   disabled?: boolean;
   /** The preview toggle for 1024–1279 (design.md §4). */
   previewToggle?: ReactNode;
+
+  /**
+   * 768–1023 (design.md §4): the rail stops being a column and becomes a
+   * drawer over the menu. Open is the screen's state, not this panel's — the
+   * button that opens it lives in the menu column, where there is room for it.
+   */
+  drawerOpen?: boolean;
+  onCloseDrawer?: () => void;
 };
 
 export function BillPanel({
@@ -118,6 +126,8 @@ export function BillPanel({
   busy = false,
   disabled = false,
   previewToggle,
+  drawerOpen = false,
+  onCloseDrawer,
 }: BillPanelProps) {
   const station = billableStations.find((row) => row.id === selectedStationId) ?? null;
   const stationMode = mode === 'station';
@@ -127,7 +137,25 @@ export function BillPanel({
   const lines = draft.cart?.lines ?? [];
 
   return (
-    <aside data-testid="bill-panel" data-mode={mode} className={panelShell}>
+    <aside
+      data-testid="bill-panel"
+      data-mode={mode}
+      data-drawer-open={drawerOpen}
+      className={cn(panelShell, drawerOpen ? panelDrawerOpen : panelDrawerShut)}
+    >
+      {onCloseDrawer ? (
+        <div className="hidden max-lg:block">
+          <Button
+            variant="ghost"
+            className="w-full"
+            data-testid="bill-drawer-close"
+            onClick={onCloseDrawer}
+          >
+            Close bill
+          </Button>
+        </div>
+      ) : null}
+
       <SegmentedChoice
         label="Bill"
         value={mode}
@@ -325,6 +353,15 @@ export function BillPanel({
 
 const panelShell =
   'flex w-[348px] flex-none flex-col gap-2.5 overflow-auto border-l-2 border-divider bg-surface p-5';
+
+/**
+ * The drawer, at 768–1023 only. Above 1024 both strings are inert and the rail
+ * is the column it has always been — which is the operating target; the tablet
+ * width is the owner's, and design.md §4 says so.
+ */
+const panelDrawerOpen =
+  'max-lg:absolute max-lg:right-0 max-lg:top-0 max-lg:bottom-0 max-lg:z-20 max-lg:w-[348px] max-lg:max-w-full max-lg:shadow-lg';
+const panelDrawerShut = 'max-lg:hidden';
 
 function Row({ testId, label, amount }: { testId?: string; label: string; amount: number }) {
   return (

@@ -160,7 +160,8 @@ export function FloorScreen() {
             No stations — add one in Setup.
           </p>
         ) : (
-          <div className="grid grid-cols-2 gap-4">
+          // design.md §4: 1-up below 1024 — the tablet reads one console at a time.
+          <div className="grid grid-cols-2 gap-4 max-lg:grid-cols-1">
             {rows.map((station) => (
               <StationCard
                 key={station.id}
@@ -211,7 +212,11 @@ export function FloorScreen() {
 /** The loading state, shaped like the grid it becomes (design.md §1). */
 function FloorSkeleton() {
   return (
-    <div data-testid="floor-skeleton" aria-busy="true" className="grid grid-cols-2 gap-4">
+    <div
+      data-testid="floor-skeleton"
+      aria-busy="true"
+      className="grid grid-cols-2 gap-4 max-lg:grid-cols-1"
+    >
       {[0, 1, 2, 3].map((row) => (
         <div key={row} className="min-h-[210px] border-2 border-l-[10px] border-divider p-5">
           <div className="h-6 w-32 bg-track" />

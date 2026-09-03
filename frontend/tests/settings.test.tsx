@@ -45,6 +45,7 @@ import {
   settingsDraft,
   settingsDraftSchema,
   toUpdateRequest,
+  type TerminalSettings,
 } from '@/features/settings/schemas';
 import { APPEARANCE_CACHE_KEY } from '@/styles/tokens';
 
@@ -78,7 +79,7 @@ const SETTINGS = {
   sound: true,
   autoLockMin: 5,
   receiptCopies: 1,
-};
+} satisfies TerminalSettings;
 
 /* --------------------------------------------------------------- server */
 
@@ -463,7 +464,7 @@ describe('profile colour', () => {
 
 describe('the state table', () => {
   it('draws a skeleton shaped like the groups while the settings load', async () => {
-    let release: (() => void) | null = null;
+    let release!: () => void;
     serve({
       getSettings: () => json(stored),
     });
@@ -488,7 +489,7 @@ describe('the state table', () => {
     renderSettings('ADMIN');
 
     expect(await screen.findByTestId('settings-skeleton')).toBeInTheDocument();
-    release?.();
+    release();
     await waitFor(() => expect(screen.queryByTestId('settings-skeleton')).not.toBeInTheDocument());
   });
 
