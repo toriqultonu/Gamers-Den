@@ -1,12 +1,16 @@
+import { PrintPreviewScreen } from '@/components/domain/print-preview-screen';
+
 /**
- * S11 — Print preview. Scaffolded in TASK F01; built in TASK F15, which owns
- * the job-state table (rendering/ready/queued/failed/retry) and the reprint
- * reason picker. F08 built the reads it will stand on
- * (`features/printing/use-print-job.ts`) and the `ReceiptPreview` that draws
- * them in the POS ticket column.
+ * S11 — Print preview (TASK F15).
  *
- * Always renders the server's stored render (frontend/ARCHITECTURE.md §5.6) —
- * never a client-side redraw of the receipt.
+ * A server component whose only job is the URL: the id arrives as a string and
+ * the screen wants a job number, so a hand-typed `/print/abc` becomes a notice
+ * rather than a query for job `NaN`. Everything else — the stored render, the
+ * job's state, retry and reprint — is the client screen's, because the job is
+ * the one thing here that moves while the paper does.
+ *
+ * Reached from a settle, a shift close, or a ticket's own job; it has no nav
+ * item, and the cookie guard covers it like any `(app)` route (`lib/nav.ts`).
  */
 export default async function PrintPreviewPage({
   params,
@@ -14,12 +18,6 @@ export default async function PrintPreviewPage({
   params: Promise<{ jobId: string }>;
 }) {
   const { jobId } = await params;
-
-  return (
-    <section className="flex flex-col gap-2 p-8">
-      <p className="type-label text-accent-strong">S11</p>
-      <h1 className="text-h2">Print preview</h1>
-      <p className="tabular text-body opacity-75">Job {jobId} — scaffolded in F01, built in F15.</p>
-    </section>
-  );
+  const id = Number(jobId);
+  return <PrintPreviewScreen jobId={Number.isInteger(id) && id > 0 ? id : null} />;
 }

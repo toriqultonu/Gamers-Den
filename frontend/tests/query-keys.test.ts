@@ -38,6 +38,7 @@ describe('the canonical keys', () => {
     expect(queryKeys.printJobs.render(9)).toEqual(['print-jobs', 9, 'render']);
     expect(queryKeys.printers.all()).toEqual(['printers']);
     expect(queryKeys.terminalSettings.all()).toEqual(['terminal-settings']);
+    expect(queryKeys.prefs.me()).toEqual(['me', 'prefs']);
     expect(queryKeys.sync.status()).toEqual(['sync']);
     expect(queryKeys.alerts.all()).toEqual(['alerts']);
   });

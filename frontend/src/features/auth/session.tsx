@@ -69,6 +69,11 @@ export type SessionContextValue = SessionState & {
   lock: () => void;
   /** Re-checks the PIN of whoever is already signed in. */
   unlock: (pin: string) => Promise<void>;
+  /**
+   * The swatch S13 just saved to `PUT /me/prefs`, so the sidebar avatar moves
+   * with it instead of waiting for the next sign-in (design.md §6, Profile).
+   */
+  setAvatarColor: (avatarColor: string | null) => void;
 };
 
 const ANONYMOUS: SessionState = {
@@ -221,9 +226,15 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     [applySession, state.staff],
   );
 
+  const setAvatarColor = useCallback((avatarColor: string | null) => {
+    setState((current) =>
+      current.staff ? { ...current, staff: { ...current.staff, avatarColor } } : current,
+    );
+  }, []);
+
   const value = useMemo<SessionContextValue>(
-    () => ({ ...state, signIn, signOut, lock, unlock }),
-    [state, signIn, signOut, lock, unlock],
+    () => ({ ...state, signIn, signOut, lock, unlock, setAvatarColor }),
+    [state, signIn, signOut, lock, unlock, setAvatarColor],
   );
 
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;
