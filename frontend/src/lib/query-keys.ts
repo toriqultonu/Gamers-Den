@@ -21,6 +21,16 @@ export const queryKeys = {
   items: {
     all: () => ['items'] as const,
   },
+  /**
+   * The rate card. §4.1 lists the keys SSE writes into and pricing is not one
+   * of them, but §5.11 has the client pricing its previews "from cached
+   * pricing" — the POS play-ticket cards and S14's bill box both need it in
+   * the cache, so it gets the obvious namespaced key here rather than a
+   * hand-typed array in two screens (F07; called out in the task notes).
+   */
+  pricing: {
+    all: () => ['pricing'] as const,
+  },
   members: {
     search: (query: string) => ['members', query] as const,
     detail: (id: number | string) => ['members', id] as const,
@@ -71,6 +81,7 @@ export type QueryKey =
   | ReturnType<typeof queryKeys.sessions.bill>
   | ReturnType<typeof queryKeys.stations.all>
   | ReturnType<typeof queryKeys.items.all>
+  | ReturnType<typeof queryKeys.pricing.all>
   | ReturnType<typeof queryKeys.members.search>
   | ReturnType<typeof queryKeys.members.detail>
   | ReturnType<typeof queryKeys.bookings.tab>
